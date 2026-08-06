@@ -1,0 +1,49 @@
+name: Sonde de production
+
+# Sans télémétrie, on ne détecte pas un incident par les métriques : on le
+# détecte par cette sonde et par les signalements. C'est le prix assumé de la
+# promesse produit (voir docs/RUNBOOK.md, phase Qualité).
+
+on:
+  schedule: [{ cron: '0 */6 * * *' }]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  sonde:
+    runs-on: ubuntu-latest
+    # Ne tourne que si l'URL de production est renseignée :
+    #   gh variable set SITE_URL --body "https://…"
+    if: vars.SITE_URL != ''
+    steps:
+      - name: Interroger la production
+        id: sonde
+        run: |
+          code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 "${{ vars.SITE_URL }}")
+          echo "code=$code" >> "$GITHUB_OUTPUT"
+          [ "$code" = "200" ] || exit 1
+      - if: failure()
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7
+        with:
+          script: |
+            const titre = `Production indisponible (HTTP ${{ steps.sonde.outputs.code }})`;
+            const { data } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner, repo: context.repo.repo,
+              state: 'open', labels: 'prio:critique',
+            });
+            // Ne pas empiler une issue par exécution tant que l'incident dure.
+            if (data.some((i) => i.title.startsWith('Production indisponible'))) return;
+            await github.rest.issues.create({
+              owner: context.repo.owner, repo: context.repo.repo,
+              title: titre,
+              labels: ['type:defaut', 'prio:critique'],
+              body: [
+                'La sonde périodique a échoué.',
+                '',
+                'Procédure : docs/RUNBOOK.md — revenir au déploiement précédent en un clic.',
+                'Il n\'y a pas de base de données côté serveur : aucune migration à défaire.',
+              ].join('\n'),
+            });
