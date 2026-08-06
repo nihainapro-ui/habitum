@@ -3,7 +3,14 @@
    - le journal `ov` devient une table `logs` indexée [habitId+date] ;
    - le contenu utilisateur n'est plus bilingue (l'i18n ne concerne que l'UI) ;
    - `date: DateKey` partout, plus de décalage relatif `off` ;
-   - `updatedAt` sur toutes les entités, prérequis de synchronisation. */
+   - `createdAt`, `updatedAt` et `deletedAt` sur TOUTES les entités.
+
+   Sur ce dernier point (03-ARCHITECTURE.md § 3.4) : les horodatages et la
+   suppression logique sont un prérequis de synchronisation « dès la phase 1,
+   même si la phase 6 n'est jamais faite ». Ils coûtent cinq lignes avant la
+   première donnée écrite, et une migration de données après. */
+
+import type { WeekStart } from './date';
 
 /** 'YYYY-MM-DD' — clé canonique. Jamais un Date sérialisé. */
 export type DateKey = string;
@@ -54,6 +61,9 @@ export interface Habit {
   note: string;
   createdAt: string;
   updatedAt: string;
+  /** Suppression logique. Une entité effacée reste en base : c'est ce qui
+   *  permettra à deux appareils de converger sans la ressusciter. */
+  deletedAt?: string;
 }
 
 export interface LogEntry {
@@ -61,6 +71,9 @@ export interface LogEntry {
   date: DateKey;
   value: number;
   updatedAt: string;
+  /** Pierre tombale : distingue « valeur effacée » de « jamais saisie ».
+   *  La distinction est vitale pour le type 'limit' (jamais réussi d'avance). */
+  deletedAt?: string;
 }
 
 export interface Task {
@@ -78,6 +91,7 @@ export interface Task {
   recurrence?: { freq: 'daily' | 'monthly' };
   createdAt: string;
   updatedAt: string;
+  deletedAt?: string;
 }
 
 export interface Goal {
@@ -96,6 +110,7 @@ export interface Goal {
   current?: number;
   createdAt: string;
   updatedAt: string;
+  deletedAt?: string;
 }
 
 export interface Session {
@@ -105,6 +120,9 @@ export interface Session {
   date: DateKey;
   habitId?: string;
   mode: 'pomo' | 'stopwatch' | 'countdown' | 'interval';
+  createdAt: string;
+  updatedAt: string;
+  deletedAt?: string;
 }
 
 export interface Note {
@@ -114,13 +132,42 @@ export interface Note {
   habitId?: string;
   body: string;
   mood?: number;
+  createdAt: string;
   updatedAt: string;
+  deletedAt?: string;
+}
+
+/** Profil utilisateur. Le prototype en gère plusieurs (`profiles` / `pid`).
+ *  `hue` et `glyph` alimentent l'avatar génératif OKLCH (04-DESIGN-TOKENS.md). */
+export interface Profile {
+  id: string;
+  name: string;
+  handle: string;
+  glyph: string;
+  /** teinte OKLCH, 0–360 ; le prototype pioche dans 188, 214, 266, 318, 158, 32 */
+  hue: number;
+  role: number;
+  since: DateKey;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt?: string;
+}
+
+/** Article de la liste de courses — champ `shop` du prototype.
+ *  Le nom du champ persisté est figé (CLAUDE.md § 1) ; le type, non. */
+export interface ShoppingItem {
+  id: string;
+  label: string;
+  done: boolean;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt?: string;
 }
 
 export interface Settings {
   lang: 'fr' | 'en';
   theme: 'neural' | 'plasma' | 'clinical';
-  weekStart: 'mon' | 'sun';
+  weekStart: WeekStart;
   notifications: boolean;
   sound: boolean;
   vibrate: boolean;

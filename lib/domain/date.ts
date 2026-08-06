@@ -33,3 +33,16 @@ export const dow = (d: Date): number => (d.getDay() + 6) % 7;
 
 export const daysBetween = (a: Date, b: Date): number =>
   Math.round((startOfDay(a).getTime() - startOfDay(b).getTime()) / 86_400_000);
+
+/** Premier jour de la semaine : 'mon' (défaut du produit) ou 'sun'.
+ *  Source unique de la préférence portée par `Settings.weekStart`. */
+export type WeekStart = 'mon' | 'sun';
+
+/** Premier jour de la semaine contenant `d`, à minuit, en heure locale.
+ *  `dow()` renvoyant 0 pour lundi, le décalage vers dimanche vaut `getDay()`.
+ *  Ne modifie jamais la date reçue. */
+export const startOfWeek = (d: Date, weekStart: WeekStart = 'mon'): Date => {
+  const base = startOfDay(d);
+  const offset = weekStart === 'mon' ? dow(base) : base.getDay();
+  return addDays(base, -offset);
+};
