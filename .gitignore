@@ -16,6 +16,7 @@ test-results/
 playwright-report/
 blob-report/
 .playwright/
+.playwright-mcp/
 
 # environnement — ne jamais committer de secret
 .env

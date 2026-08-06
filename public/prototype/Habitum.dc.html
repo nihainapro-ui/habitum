@@ -2210,7 +2210,8 @@ class Component extends DCLogic {
     if(h.pause && h.pause.from && h.pause.to && k>=h.pause.from && k<=h.pause.to) return false;
     const m=h.mode||'dow';
     if(m==='every'){
-      const b=h.start?new Date(h.start+'T00:00:00'):this.add(this.today(),-182);
+      /* D16 - l'origine du cycle doit etre STABLE. 'today()-182' la faisait glisser d'un jour chaque jour : une habitude 'tous les 2 jours' sans date de debut changeait de jours planifies quotidiennement. Repli sur une epoque figee. */
+      const b=new Date((h.start||'2020-01-01')+'T00:00:00');
       const diff=Math.round((d-b)/86400000);
       return diff>=0 && diff%Math.max(1,h.n||2)===0;
     }

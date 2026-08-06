@@ -14,6 +14,18 @@ const config = [
   ...compat.extends('next/core-web-vitals', 'next/typescript'),
   prettier,
   {
+    // Convention du dépôt : un identifiant préfixé `_` est délibérément
+    // inutilisé. Cas d'usage : un paramètre conservé pour la stabilité d'une
+    // signature publique alors que l'implémentation ne le lit plus — voir
+    // `isScheduled(h, d, _now)` après la correction de D16.
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'warn',
+        { argsIgnorePattern: '^_', varsIgnorePattern: '^_', caughtErrorsIgnorePattern: '^_' },
+      ],
+    },
+  },
+  {
     // Le moteur métier reste pur : ni React, ni Next, ni persistance.
     files: ['lib/domain/**/*.ts'],
     rules: {
