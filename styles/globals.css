@@ -5,22 +5,28 @@ html,
 body {
   margin: 0;
   background: var(--bg);
-  color: var(--fg);
+  color: var(--txt);
   font-family: var(--font-ui);
   -webkit-font-smoothing: antialiased;
 }
 
 a {
-  color: var(--accent);
+  color: var(--acc);
   text-decoration: none;
 }
 a:hover {
-  color: var(--accent-hi);
+  color: var(--acc2);
 }
 
+/* 04-DESIGN-TOKENS.md § Formes et profondeur :
+   focus = outline 1.5px solid var(--acc2), offset 3px. */
 :focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
+  outline: 1.5px solid var(--acc2);
+  outline-offset: 3px;
+}
+
+::selection {
+  background: rgba(var(--glow), 0.32);
 }
 
 @media (prefers-reduced-motion: reduce) {

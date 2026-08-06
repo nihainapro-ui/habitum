@@ -37,7 +37,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           <Link
             key={item.href}
             href={item.href}
-            style={{ color: 'var(--fg-dim)', padding: '8px 10px', borderRadius: 8, fontSize: 14 }}
+            style={{ color: 'var(--mut)', padding: '8px 10px', borderRadius: 8, fontSize: 14 }}
           >
             {item.label}
           </Link>

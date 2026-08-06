@@ -1,46 +1,98 @@
 /* --------------------------------------------------------------------------
    Habitum — jetons de thème.
-   Extraits du prototype (public/prototype/Habitum.dc.html) ; la table complète
-   des trois thèmes est dans docs/handoff/04-DESIGN-TOKENS.md.
-   Décision B1 : l'application reste sombre, Modernist est réservé à la vitrine
-   et à la documentation (docs/handoff/07-DECISION-B1.md).
+
+   FICHIER GÉNÉRÉ — ne pas éditer à la main.
+   Source      : public/prototype/Habitum.dc.html
+   Régénérer   : node scripts/extract-tokens.mjs
+   Vérifier    : npm run check:tokens  (inclus dans npm run verify)
+   Test        : tests/unit/tokens.test.ts
+
+   Table commentée des valeurs : docs/handoff/04-DESIGN-TOKENS.md
+   Décision B1 : l'application reste sombre ; Modernist est réservé à la
+   vitrine et à la documentation (docs/handoff/07-DECISION-B1.md).
    -------------------------------------------------------------------------- */
 
-:root,
+:root {
+  --bg: #04060d;
+  --bg2: #070c18;
+  --panel: rgba(11,18,34,.66);
+  --panel2: rgba(120,175,255,.075);
+  --line: rgba(120,190,255,.16);
+  --line2: rgba(120,190,255,.34);
+  --txt: #eaf2ff;
+  --txt2: #a9bdda;
+  --mut: #69809f;
+  --acc: #4d7cff;
+  --acc2: #22e0d0;
+  --acc3: #b57cff;
+  --ok: #2ee6a8;
+  --warn: #ffb340;
+  --bad: #ff4d6d;
+  --glow: 77,124,255;
+}
+
 [data-theme='neural'] {
-  --bg: #08090d;
-  --bg-2: #0d0f16;
-  --panel: rgb(255 255 255 / 4%);
-  --line: rgb(255 255 255 / 9%);
-  --fg: #eef1f7;
-  --fg-dim: #9aa3b5;
-  --accent: #7c8cff;
-  --accent-hi: #a3aeff;
-  --ok: #35d6a4;
-  --warn: #ffb545;
-  --bad: #ff5f6d;
-  --radius: 14px;
-  --blur: 12px;
-  --font-ui: 'Space Grotesk', system-ui, sans-serif;
-  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+  --bg: #04060d;
+  --bg2: #070c18;
+  --panel: rgba(11,18,34,.66);
+  --panel2: rgba(120,175,255,.075);
+  --line: rgba(120,190,255,.16);
+  --line2: rgba(120,190,255,.34);
+  --txt: #eaf2ff;
+  --txt2: #a9bdda;
+  --mut: #69809f;
+  --acc: #4d7cff;
+  --acc2: #22e0d0;
+  --acc3: #b57cff;
+  --ok: #2ee6a8;
+  --warn: #ffb340;
+  --bad: #ff4d6d;
+  --glow: 77,124,255;
 }
 
 [data-theme='plasma'] {
-  --bg: #0a0612;
-  --bg-2: #130a20;
-  --fg: #f3ecff;
-  --fg-dim: #a898c4;
-  --accent: #c264ff;
-  --accent-hi: #dd97ff;
+  --bg: #07040e;
+  --bg2: #0d0718;
+  --panel: rgba(24,12,40,.66);
+  --panel2: rgba(220,140,255,.08);
+  --line: rgba(216,140,255,.18);
+  --line2: rgba(216,140,255,.36);
+  --txt: #f6ecff;
+  --txt2: #cbb0e4;
+  --mut: #8b71a6;
+  --acc: #c264ff;
+  --acc2: #ff5fa8;
+  --acc3: #6fe3ff;
+  --ok: #3ce6b0;
+  --warn: #ffb340;
+  --bad: #ff4d6d;
+  --glow: 194,100,255;
 }
 
 [data-theme='clinical'] {
-  --bg: #f5f6f8;
-  --bg-2: #ffffff;
-  --panel: rgb(15 20 35 / 3%);
-  --line: rgb(15 20 35 / 10%);
-  --fg: #141821;
-  --fg-dim: #5a6376;
-  --accent: #2f5bff;
-  --accent-hi: #1e46e0;
+  --bg: #eef2f8;
+  --bg2: #e4eaf3;
+  --panel: rgba(255,255,255,.74);
+  --panel2: rgba(20,60,120,.06);
+  --line: rgba(20,60,120,.16);
+  --line2: rgba(20,60,120,.3);
+  --txt: #0d1725;
+  --txt2: #3c4c63;
+  --mut: #6c7d95;
+  --acc: #2b5bff;
+  --acc2: #0aa9a0;
+  --acc3: #7c3aed;
+  --ok: #0f9d64;
+  --warn: #b26a00;
+  --bad: #d32546;
+  --glow: 43,91,255;
+}
+
+/* Typographie — non extraite : le prototype charge ses familles par une balise
+   <link>. Ces variables sont réaffectées aux polices auto-hébergées par
+   next/font au moment où elles seront posées (défaut D7, phase « Système
+   visuel »). Tant que ce n'est pas fait, le repli système s'applique. */
+:root {
+  --font-ui: 'Space Grotesk', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
 }
