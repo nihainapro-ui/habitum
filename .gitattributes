@@ -1,0 +1,22 @@
+# Normalisation des fins de ligne. Le dépôt est créé sous Windows, la CI tourne
+# sous Ubuntu : sans cela, les deux divergent au premier commit.
+* text=auto eol=lf
+
+# Le prototype est une ARCHIVE de référence (CLAUDE.md § 7) : Git ne doit pas
+# y toucher une seule ligne. Habitum.dc.html fait exactement 336 396 octets ;
+# un écart signale une normalisation, donc une archive altérée.
+public/prototype/** -text
+
+# Binaires — jamais de diff, jamais de conversion.
+*.png binary
+*.webp binary
+*.jpg binary
+*.jpeg binary
+*.ico binary
+*.woff  binary
+*.woff2 binary
+*.pdf binary
+
+# Fichiers générés : diff bruité, à replier dans les revues.
+package-lock.json      linguist-generated=true -diff
+styles/tokens.css      linguist-generated=true

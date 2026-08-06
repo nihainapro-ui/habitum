@@ -1,0 +1,40 @@
+# dépendances
+node_modules/
+.pnp
+.pnp.js
+
+# build
+.next/
+out/
+build/
+next-env.d.ts
+*.tsbuildinfo
+
+# tests
+coverage/
+test-results/
+playwright-report/
+blob-report/
+.playwright/
+
+# environnement — ne jamais committer de secret
+.env
+.env.local
+.env*.local
+
+# plateformes
+.vercel/
+
+# éditeurs / OS
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+~$*            # fichiers de verrouillage Word/Excel
+
+# fichiers personnels déposés dans le dossier de travail, hors périmètre du
+# projet. Le dépôt est public : rien de personnel n'y entre.
+/Phase.docx
+/Photo/
+*.docx
+*.xlsx

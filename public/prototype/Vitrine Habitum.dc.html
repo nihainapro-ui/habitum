@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/modernist-8b2e5546-807b-4975-bde8-911e4f671604/styles.css">
+<script src="_ds/modernist-8b2e5546-807b-4975-bde8-911e4f671604/_ds_bundle.js"></script>
+<style>
+body{margin:0;background:var(--color-bg);color:var(--color-text)}
+a{color:var(--color-accent-700);text-decoration:none}
+a:hover{color:var(--color-accent)}
+@media (max-width:1000px){
+[data-head]{flex-wrap:wrap;row-gap:var(--space-2)}
+[data-tagline]{display:none}
+[data-hero],[data-split]{grid-template-columns:1fr!important}
+[data-hero] [data-aside]{border-left:0!important;border-top:2px solid var(--color-divider);padding-left:0!important;padding-top:var(--space-6)}
+[data-3col]{grid-template-columns:1fr!important}
+[data-3col]>div{border-right:0!important;border-bottom:1px solid var(--color-neutral-300);padding:var(--space-6) 0!important}
+[data-poster] h2{font-size:38px!important}
+[data-hero] h1{font-size:44px!important}
+}
+</style>
+</helmet>
+
+<div style="max-width:1280px;margin:0 auto;padding:0 var(--space-6) var(--space-10)">
+
+  <header data-head style="display:flex;align-items:baseline;gap:var(--space-6);padding:var(--space-5) 0;border-bottom:2px solid var(--color-divider)">
+    <span style="font-family:var(--font-heading);font-size:20px;font-weight:700;letter-spacing:-.02em">Habitum</span>
+    <span data-tagline style="font-family:var(--font-body);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--color-neutral-600);white-space:nowrap">Habitudes · Tâches · Objectifs · Focus</span>
+    <span style="flex:1"></span>
+    <a href="Habitum.dc.html" style="font-family:var(--font-body);font-size:13px;font-weight:600;white-space:nowrap">Ouvrir l'application →</a>
+  </header>
+
+  <section data-hero style="display:grid;grid-template-columns:7fr 5fr;gap:var(--space-8);padding:var(--space-9) 0;border-bottom:2px solid var(--color-divider)">
+    <div>
+      <p style="margin:0 0 var(--space-4);font-family:var(--font-body);font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--color-accent-700)">Local-first · sans compte · gratuit</p>
+      <h1 style="margin:0;font-family:var(--font-heading);font-size:64px;line-height:1.02;font-weight:700;letter-spacing:-.03em;max-width:22ch">Vos habitudes restent sur votre machine.</h1>
+      <p style="margin:var(--space-5) 0 0;font-family:var(--font-body);font-size:18px;line-height:1.6;max-width:52ch;color:var(--color-neutral-800)">Onze vues, un moteur de calcul vérifié par 62&nbsp;valeurs de référence, aucune donnée qui part ailleurs. Pas de compte à créer, pas de serveur, pas d'abonnement.</p>
+      <div style="display:flex;gap:var(--space-3);margin-top:var(--space-6)">
+        <a class="btn btn-primary" href="Habitum.dc.html" style="white-space:nowrap">Ouvrir l'application</a>
+        <a class="btn btn-secondary" href="tests/domain.test.html" style="white-space:nowrap">Voir les tests</a>
+      </div>
+    </div>
+    <div data-aside style="border-left:2px solid var(--color-divider);padding-left:var(--space-6);display:flex;flex-direction:column;gap:var(--space-5);align-self:start">
+      <div>
+        <p style="margin:0;font-family:var(--font-heading);font-size:44px;font-weight:700;line-height:1;letter-spacing:-.02em">0&nbsp;€</p>
+        <p style="margin:var(--space-2) 0 0;font-family:var(--font-body);font-size:13px;color:var(--color-neutral-600)">Coût d'exploitation. Aucune brique payante.</p>
+      </div>
+      <div style="border-top:1px solid var(--color-neutral-300);padding-top:var(--space-5)">
+        <p style="margin:0;font-family:var(--font-heading);font-size:44px;font-weight:700;line-height:1;letter-spacing:-.02em">62/62</p>
+        <p style="margin:var(--space-2) 0 0;font-family:var(--font-body);font-size:13px;color:var(--color-neutral-600)">Valeurs de référence du moteur, vérifiées à chaque livraison.</p>
+      </div>
+      <div style="border-top:1px solid var(--color-neutral-300);padding-top:var(--space-5)">
+        <p style="margin:0;font-family:var(--font-heading);font-size:44px;font-weight:700;line-height:1;letter-spacing:-.02em">11</p>
+        <p style="margin:var(--space-2) 0 0;font-family:var(--font-body);font-size:13px;color:var(--color-neutral-600)">Vues, en français et en anglais, dans trois thèmes.</p>
+      </div>
+    </div>
+  </section>
+
+  <section data-3col style="display:grid;grid-template-columns:repeat(3,1fr);border-bottom:2px solid var(--color-divider)">
+    <div style="padding:var(--space-7) var(--space-6) var(--space-7) 0;border-right:1px solid var(--color-neutral-300)">
+      <p style="margin:0 0 var(--space-3);font-family:var(--font-body);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--color-neutral-600)">Suivi</p>
+      <h2 style="margin:0 0 var(--space-3);font-family:var(--font-heading);font-size:24px;font-weight:600;letter-spacing:-.01em">Séries qui ne mentent pas</h2>
+      <p style="margin:0;font-family:var(--font-body);font-size:15px;line-height:1.6;color:var(--color-neutral-800)">Série en cours, record, taux de réussite sur 7, 30, 90 ou 365 jours, carte de chaleur sur six mois. Tout est calculé depuis votre journal réel — aucun chiffre décoratif.</p>
+    </div>
+    <div style="padding:var(--space-7) var(--space-6);border-right:1px solid var(--color-neutral-300)">
+      <p style="margin:0 0 var(--space-3);font-family:var(--font-body);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--color-neutral-600)">Organisation</p>
+      <h2 style="margin:0 0 var(--space-3);font-family:var(--font-heading);font-size:24px;font-weight:600;letter-spacing:-.01em">Cinq façons de voir la semaine</h2>
+      <p style="margin:0;font-family:var(--font-body);font-size:15px;line-height:1.6;color:var(--color-neutral-800)">Orbite, mois, semaine, jour, agenda. Glisser-déposer et redimensionnement des créneaux, détection des chevauchements, sous-tâches, priorités, récurrences.</p>
+    </div>
+    <div style="padding:var(--space-7) 0 var(--space-7) var(--space-6)">
+      <p style="margin:0 0 var(--space-3);font-family:var(--font-body);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--color-neutral-600)">Focus</p>
+      <h2 style="margin:0 0 var(--space-3);font-family:var(--font-heading);font-size:24px;font-weight:600;letter-spacing:-.01em">Le temps compté, pas inventé</h2>
+      <p style="margin:0;font-family:var(--font-body);font-size:15px;line-height:1.6;color:var(--color-neutral-800)">Pomodoro, chronomètre, compte à rebours, intervalles. Une session terminée peut créditer l'habitude visée, et les minutes affichées ne viennent que de sessions réelles.</p>
+    </div>
+  </section>
+
+  <section style="padding:var(--space-8) 0;border-bottom:2px solid var(--color-divider)">
+    <h2 style="margin:0 0 var(--space-6);font-family:var(--font-heading);font-size:32px;font-weight:700;letter-spacing:-.02em">Ce que « local-first » veut dire ici</h2>
+    <table class="table" style="width:100%">
+      <thead>
+        <tr><th style="width:34%">Question</th><th>Réponse</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Où sont mes données ?</td><td>Dans le stockage local de votre navigateur, sur cette machine. Nulle part ailleurs.</td></tr>
+        <tr><td>Faut-il un compte ?</td><td>Non. Aucune inscription, aucun mot de passe, aucun courriel demandé.</td></tr>
+        <tr><td>Et si je vide mon navigateur ?</td><td>Vous perdez tout. L'application vous rappelle d'exporter au-delà de trente jours, et prend une copie de secours avant chaque import et chaque réinitialisation.</td></tr>
+        <tr><td>Puis-je récupérer mes données ?</td><td>Oui, à tout moment : un export JSON lisible, réimportable, validé avant d'être appliqué.</td></tr>
+        <tr><td>Ça marche hors ligne ?</td><td>Entièrement. Aucune requête réseau en fonctionnement.</td></tr>
+        <tr><td>Combien ça coûte ?</td><td>Rien, et rien n'est prévu : aucune brique payante n'est nécessaire au produit.</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section data-split style="display:grid;grid-template-columns:5fr 7fr;gap:var(--space-8);padding:var(--space-8) 0;border-bottom:2px solid var(--color-divider)">
+    <div>
+      <h2 style="margin:0;font-family:var(--font-heading);font-size:32px;font-weight:700;letter-spacing:-.02em">Deux identités, assumées</h2>
+      <p style="margin:var(--space-4) 0 0;font-family:var(--font-body);font-size:15px;line-height:1.65;color:var(--color-neutral-800)">L'application est sombre, dense, faite pour être regardée longtemps. Cette page est claire, filetée, faite pour être lue une fois. Ce sont deux registres différents parce que ce sont deux usages différents — et c'est une décision, pas un accident.</p>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:var(--space-4)">
+      <div class="card">
+        <p class="card-kicker">Produit</p>
+        <h3 class="card-title">Interface sombre « Neural »</h3>
+        <p class="card-body">Trois thèmes (Neural, Plasma, Clinical), typographie Space&nbsp;Grotesk et JetBrains&nbsp;Mono, densité d'outil de travail. C'est là que vous passez du temps.</p>
+      </div>
+      <div class="card">
+        <p class="card-kicker">Vitrine et documentation</p>
+        <h3 class="card-title">Système Modernist</h3>
+        <p class="card-body">Grille visible, filets de 2&nbsp;px, rouge en accent unique, tout à fleur de marge gauche. C'est cette page, et ce sera la documentation.</p>
+      </div>
+    </div>
+  </section>
+
+  <section data-poster style="background:var(--color-accent);color:#fff;padding:var(--space-9) var(--space-8);margin-top:var(--space-8)">
+    <p style="margin:0 0 var(--space-4);font-family:var(--font-body);font-size:12px;letter-spacing:.18em;text-transform:uppercase;opacity:.85">Prêt à essayer</p>
+    <h2 style="margin:0;font-family:var(--font-heading);font-size:56px;line-height:1.04;font-weight:700;letter-spacing:-.03em;max-width:26ch">Ouvrez-la. Elle contient déjà six mois d'historique de démonstration.</h2>
+    <p style="margin:var(--space-5) 0 var(--space-6);font-family:var(--font-body);font-size:16px;line-height:1.6;max-width:56ch;opacity:.92">Le jeu de démonstration est signalé comme tel dans l'interface. Importez une sauvegarde ou réinitialisez pour partir d'un compte vierge.</p>
+    <a href="Habitum.dc.html" style="display:inline-block;background:#fff;color:var(--color-accent-700);font-family:var(--font-body);font-size:15px;font-weight:700;padding:var(--space-4) var(--space-6);text-align:left">Ouvrir Habitum →</a>
+  </section>
+
+  <footer style="display:flex;gap:var(--space-6);flex-wrap:wrap;padding:var(--space-6) 0;font-family:var(--font-body);font-size:12.5px;color:var(--color-neutral-600)">
+    <span>Habitum — prototype haute fidélité</span>
+    <a href="tests/RECETTE.md">Recette</a>
+    <a href="docs/adr/README.md">Décisions</a>
+    <a href="CHANGELOG.md">Journal des versions</a>
+    <a href="design_handoff_habitum/08-PRET-A-FINIR.md">Dossier de passation</a>
+  </footer>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1280,&quot;height&quot;:900}}"></script>
+</body>
+</html>

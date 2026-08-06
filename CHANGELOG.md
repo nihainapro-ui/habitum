@@ -1,0 +1,314 @@
+# Journal des modifications
+
+## 2026-08-05 — Finalisation : plus aucune réserve côté design
+
+Objectif de cette passe : ne plus rien laisser d'ouvert qui relève du design. **Elle a trouvé trois
+défauts réels, dont un grave**, tous invisibles pour les 62 valeurs de référence.
+
+### Corrigé — grave
+
+- **Plus rien n'était restauré au rechargement.** Depuis le lot 3, `seed()` lisait
+  `localStorage.getItem(this.LS_MAIN)` — mais `LS_MAIN` est un **champ de classe déclaré après**
+  `state = this.seed()`. Les champs s'initialisent dans l'ordre du code : il valait `undefined`
+  pendant la lecture. L'application écrivait donc correctement et ne relisait **jamais** : chaque
+  ouverture repartait du jeu de démonstration. Le bloc de constantes est remonté **avant**
+  `state = this.seed()`, avec un commentaire qui dit pourquoi il doit y rester, et le contrôle
+  « restauration du stockage » verrouille le comportement (clé principale, clé volumineuse, format
+  ancien).
+- **L'import rejetait notre propre export.** `validateImport()` n'acceptait que quatre types
+  d'objectif d'habitude (`check`, `total`, `list`, `limit`) alors que le produit en compte sept :
+  `count` et `time` manquaient. Sur le jeu de démonstration, **4 habitudes sur 6 disparaissaient**
+  à l'import, et leur historique partait avec elles au nettoyage des journaux orphelins. Même défaut
+  sur les objectifs : le type `milestones` (jalons) était rejeté. Corrigé, et verrouillé par le
+  contrôle « aller-retour export / import » qui recompare **toutes** les métriques.
+- **Débordement horizontal de 54 px sur téléphone.** L'en-tête ne pouvait pas passer à la ligne
+  (l'attribut que visait la requête média n'existait plus depuis une refonte). Ajouté, plus la
+  fermeture du défilement horizontal résiduel (26 px d'anneaux et d'auras décoratifs).
+
+### Réglé — dettes de l'audit
+
+- **`B5` — le minuteur survit au rechargement.** `state.timer` est persisté et restauré
+  **toujours en pause**, écoulé conservé, phase et cycle intacts. Un toast signale la reprise.
+- **`B4` — le jeu de démonstration ne peut plus passer pour du réel.** Un badge « jeu de
+  démonstration » est affiché dans l'en-tête tant que `demo === 1`, avec une infobulle qui explique
+  comment partir d'un compte vierge ; les infobulles des jours passés portent la mention « démo ».
+- **`B6` — les migrations sont testées.** Les quatre (`v<2` … `v<5`) reçoivent une charge au format
+  d'origine et sont vérifiées, y compris le cas « déjà à jour, ne rien faire ».
+- **`B1` — décision tranchée : option (c).** Système sombre pour l'application, **Modernist pour la
+  vitrine et la documentation**. La décision est matérialisée par un artefact, pas par une phrase :
+  `Vitrine Habitum.dc.html` consomme le bundle du design system et ses classes, et documente la
+  frontière entre les deux registres. Détail dans `07-DECISION-B1.md`.
+
+### Corrigé — relevé en revue
+
+- **Le badge « jeu de démonstration » volait la place du sous-titre de l'en-tête**, y compris
+  au-dessus de 1060 px — le rendu que `CLAUDE.md` déclare intouchable. À largeur fixe (132 px) et
+  `flex:none` dans un bloc qui rogne, il se servait le premier : le sous-titre tombait à deux
+  lettres entre ~1060 et ~1200 px. Sous 1200 px le badge se réduit désormais à sa marque (21 px),
+  l'infobulle restant accessible ; à 1440 px, sous-titre **et** libellé complet tiennent tous les
+  deux. Mesuré aux quatre paliers : aucun débordement, sous-titre entier à la largeur de référence.
+
+### Ajouté — vérification
+
+- `tests/domain.test.html` compte désormais **six contrôles** : 62 valeurs de référence,
+  invalidation fine du cache, restauration du stockage, migrations de schéma, aller-retour
+  export/import, géométrie du calendrier (le placement en colonnes et la détection de chevauchement
+  derrière le glisser-déposer — la seule partie qui ne se vérifie pas au geste).
+- `tests/responsive.html` — la même application à 390, 768, 1060 et 1440 px, côte à côte, dans de
+  vrais cadres. C'est ce qui a permis de mesurer le débordement et de confirmer que sous 768 px la
+  grille horaire du calendrier devient bien une liste (`D6`) sans toucher au rendu de référence.
+
+**Mesures après correction** : aucune erreur console sur les 33 rendus (11 vues × 3 thèmes ×
+2 langues), aucun débordement horizontal aux quatre paliers, six contrôles verts.
+
+## 2026-08-05 — Vérification finale du dossier
+
+Aucun changement dans l'application. Contrôle de cohérence entre le prototype et son dossier de
+passation, après les six lots. **Trois artefacts étaient périmés** :
+
+- `reference/domain-logic-extract.js` — présenté comme « source d'autorité », c'était en réalité une
+  copie **d'avant le lot 1** : elle portait encore `focusMin_()` fabriquant les minutes par hachage
+  (supprimé au lot 2), le `memo()` à invalidation globale et le `best()` sans cache. Quelqu'un
+  portant fidèlement ce fichier aurait réintroduit exactement ce que nous avions retiré.
+  **Régénéré** depuis le fichier courant, avec des annotations « à porter » / « à ne pas porter »
+  revues et un renvoi à `tests/golden.json` comme spécification exécutable.
+- `reference/messages-fr.json` / `-en.json` — annonçaient « 271 clés, 0 manquante ». En réalité
+  3 clés manquaient côté français (`today`, `navToday`, `habitsToday`) et les 32 clés ajoutées aux
+  lots 1 à 5 étaient absentes. **Régénérés par extraction directe** des dictionnaires `L`, `EL`,
+  `PL`, `L2` : **308 clés, symétrie FR/EN vérifiée**.
+- `01-AUDIT.md`, `05-SPEC-VUES.md`, `03-ARCHITECTURE.md` — annonçaient encore comme défauts des
+  choses réglées depuis (focus fictif, faux journal, curseur activé par défaut, états vides
+  partiels, absence de layout téléphone, `B2`/`B3`). Les constats réglés sont marqués comme tels,
+  ceux qui restent vrais sont laissés intacts.
+
+`08-PRET-A-FINIR.md` porte un verdict revérifié, deux critères supplémentaires (décisions écrites,
+santé du prototype) et une règle explicite : **régénérer les trois copies de `reference/` à chaque
+livraison**.
+
+## 2026-08-05 — Lot 5 (UX et accessibilité) et Lot 6 (rangement, documentation, tests)
+
+Le lot 5 change des **comportements par défaut** et ajoute des garde-fous ; le lot 6 ne touche pas
+au code de l'application. `tests/domain.test.html` : **62 / 62** et invalidation fine saine.
+
+### UX et accessibilité (lot 5)
+
+- **`D2` — le curseur personnalisé est désactivé par défaut** (`cfg.cursor:false`). Il masquait le
+  pointeur système, ce qui est un défaut d'accessibilité pour un effet de signature. Il reste
+  activable depuis le profil, et ne s'active jamais sur écran tactile ni en mouvement réduit.
+- **`D3` — le changement de vue est annoncé** : une région `aria-live="polite"` invisible porte le
+  nom de la vue courante. Les toasts étaient déjà annoncés (`role="status"`).
+- **`D4` — la suppression d'un profil demande confirmation.** Elle était immédiate (seul le toast
+  « Annuler » rattrapait le geste), alors que la réinitialisation, moins destructrice, demandait
+  déjà confirmation.
+- **`D5` — l'export peut désormais échouer à voix haute.** `exportJSON()` n'avait aucun `try/catch` :
+  un refus du navigateur ne disait rien. Un toast confirme la réussite, un autre explique l'échec.
+  Les autres retours d'échec (import invalide, fichier trop gros, quota plein) existaient depuis le
+  lot 1.
+- **`D7` — la préférence « mouvement réduit » est réellement respectée** : l'écran de démarrage
+  (1,9 s) est supprimé, le curseur animé est désactivé (l'anneau restait auparavant figé en haut à
+  gauche, la boucle d'animation étant coupée sans que l'élément soit caché), les transitions et le
+  défilement fluide sont neutralisés.
+- **`D8` — rappel d'export.** Au-delà de 30 jours sans export, un bandeau discret s'affiche en tête
+  du tableau de bord : *Exporter maintenant* ou *Plus tard*. Refusé, il ne revient pas. La date de
+  référence (`cfg.since`) est posée une seule fois, à la première ouverture.
+- **`D6` — palier téléphone (< 768 px).** Les grilles horaires **Semaine** et **Jour** du calendrier
+  deviennent une liste (la même que l'Agenda, restreinte à la semaine ou au jour affiché), et
+  l'éditeur occupe tout l'écran. Tout passe par une branche conditionnelle `vw < 768` et une seule
+  requête média `max-width:767px` : **le rendu ≥ 1060 px n'est pas touché.**
+- **`B6` — flou allégé.** `backdrop-filter: blur(20px)` était répété sur 50 panneaux, dont 5 rendus
+  en boucle (cartes d'habitudes, d'objectifs, groupes de tâches, prévisions) — donc autant de fois
+  qu'il y a d'éléments. Le flou est retiré de ces panneaux répétés et ramené à 12 px sur les
+  autres. Écart visuel négligeable, défilement nettement plus fluide sur machine modeste.
+- **`B7` — vérifié, aucune modification nécessaire.** Le passage de la heatmap en `<canvas>` était
+  conditionné à « plus de 400 cellules » : la matrice du tableau de bord en compte 182 (26 × 7) et
+  celle du calendrier 84 (12 × 7). Le rendu DOM reste le bon choix — il conserve le survol par
+  cellule. À reconsidérer seulement si une fenêtre plus large est ajoutée.
+
+### Rangement et documentation (lot 6)
+
+- **`F3`** — les 12 captures de HabitNow sont **copiées** (`uploads/` reste intact, c'est l'espace de
+  dépôt de l'utilisateur) dans `assets/references/habitnow/`, renommées par écran et légendées dans
+  un `index.md` qui dit, pour chacune, ce qui a été retenu.
+- **`F4`** — `screenshots/cal-week.png`, orphelin et référencé par personne, supprimé.
+- **`F5`** — `reference-landing-modernist/` déplacé sous `docs/references/landing-modernist/` ; la
+  ligne `base` de son `ds-base.js` a été repointée (`../_ds/…` → `../../../_ds/…`), sans quoi le
+  gabarit aurait perdu son design system.
+- **`F6`** — `.gitignore` et `LICENSE` (MIT, avec les réserves sur `support.js`, les polices OFL et
+  les captures de HabitNow) ajoutés ; `CHANGELOG.md` existait déjà.
+- **`H3`** — journal de décisions dans `docs/adr/` : composant unique, local-first, trois thèmes et
+  deux langues jusque dans les données, cache de rendu, styles en ligne. Cinq fiches courtes, pour
+  ne plus re-débattre ces choix. La décision `B1` (système visuel) y est signalée comme **encore
+  ouverte** : elle appartient au commanditaire.
+- **`H5`** — `README.md` réécrit autour de la nouvelle arborescence et de l'ordre de lecture ;
+  `CLAUDE.md` mis à jour (dettes réglées retirées, nouvelles règles sur le cache, le responsive et
+  les styles statiques, définition de « terminé » alignée sur la recette).
+- **`G3`** — `tests/RECETTE.md` : 11 vues × 3 thèmes × 2 langues, 8 parcours critiques, contrôles
+  d'accessibilité et de préférences système, 5 paliers responsive.
+- **`G4`** — `tests/visual/reference/` : une capture par vue (thème Neural, français, jeu de
+  démonstration) et un protocole de comparaison qui dit explicitement ce qui compte (élément
+  disparu, chevauchement, texte tronqué) et ce qui ne compte pas (un pixel, un antialiasing).
+
+### Écarté volontairement
+
+- **`F2` (regrouper la passation sous `docs/handoff/`)** — non appliqué. Le dossier contient son
+  propre `CLAUDE.md`, destiné à être chargé automatiquement par l'outillage du futur dépôt de
+  production : le déplacer casserait ce rôle sans rien apporter, et la racine reste lisible avec
+  trois dossiers de documentation clairement nommés (`docs/`, `assets/references/`,
+  `design_handoff_habitum/`). À trancher au moment d'initialiser le dépôt de production, où le
+  dossier de passation devient la racine.
+
+### Inchangé (ligne rouge respectée)
+
+Les fonctions du domaine, les helpers de date, les migrations, le mécanisme d'annulation, l'ancrage
+horloge du timer, le glisser-déposer, la palette `⌘K`, les 3 thèmes et leurs tokens, les libellés
+existants. Le rendu au-dessus de 1060 px est identique.
+
+## 2026-08-05 — Lot 3 (performances) et Lot 4 (maintenabilité)
+
+Interventions **internes uniquement** : aucune fonctionnalité remplacée, aucun écran modifié.
+Les 62 métriques de référence sont **identiques avant et après** (`tests/domain.test.html` → 62/62),
+et le nouveau contrôle d'invalidation fine ne relève **aucune valeur périmée**.
+
+### Performances (lot 3)
+
+- **`B1` — record (`best_()`) mis en cache par habitude, et le cache survit au rechargement.**
+  La fonction balayait 366 jours × N habitudes et était relancée dès qu'une case était cochée,
+  même sur une autre habitude. Le résultat est désormais conservé sous une signature
+  « définition de l'habitude + empreinte de son journal + jour courant » (`habitum.best`).
+  Signature différente → recalcul : aucune valeur périmée ne peut être affichée.
+- **`B3` — invalidation fine du cache de rendu (`memo()`).** Auparavant le moindre changement
+  vidait **tout** le cache. Désormais seules les entrées réellement concernées sont jetées :
+  l'empreinte du journal est calculée par habitude en une passe, et seules les habitudes dont
+  l'empreinte a changé perdent leurs métriques. Les clés du cache portent un séparateur `|` après
+  l'identifiant d'habitude, ce qui rend cette sélection possible.
+  **Interrupteur de repli :** `cfg.fastCache=false` rétablit l'invalidation globale.
+- **`B4` — `materialize()` (180 j × N habitudes) ne bloque plus le premier rendu** : elle part en
+  `requestIdleCallback` (repli `setTimeout`). Elle n'écrivait déjà que les jours planifiés.
+- **`B5` — écriture découpée.** `persist()` sérialisait tout l'état, dont les milliers de clés de
+  `ov`, à chaque changement — y compris pour une simple bascule de réglage. `ov` et `notes` vivent
+  maintenant dans `habitum.state.big`, réécrit **seulement quand l'une des deux a changé**.
+  `split:1` signale le nouveau format ; un enregistrement antérieur reste lu tel quel, sans
+  migration. La copie de secours (`A3`) et la réinitialisation traitent les deux clés ensemble.
+
+### Corrigé en route
+
+- **Les minutes de focus n'étaient jamais invalidées.** Depuis `E1` (lot 2) elles agrègent
+  `sessions`, mais `memo()` ne surveillait pas ce champ : enregistrer une session sans toucher au
+  journal laissait le total affiché inchangé jusqu'au rendu suivant. `memo()` surveille désormais
+  `sessions`.
+- **La réinitialisation ne supprimait que `habitum.state`.** Avec l'écriture découpée, `ov` et
+  `notes` auraient survécu à une remise à zéro. Les trois clés sont supprimées ensemble.
+
+### Maintenabilité (lot 4)
+
+- **`C1` — `vals2()` (340 lignes, 8 domaines) découpée** en `habitVals`, `taskVals`, `goalVals`,
+  `calVals`, `statVals`, `timerVals`, `noteVals`, `settingVals`. `vals2()` ne fait plus que
+  composer. Le contrat de sortie (11 clés) est inscrit en commentaire au-dessus.
+- **`C4` — état mort retiré :** `vault` était initialisé, persisté et relu, mais **jamais lu** par
+  aucune vue. Supprimé de `seed()`, de `persist()` et de la liste de lecture.
+- **`C5` — constantes nommées** rassemblées en un bloc : `LS_MAIN`, `LS_BIG`, `LS_BAK`, `LS_BEST`,
+  `NMAT` (180), `NBEST` (365), `NSTREAK` (420), `NAGENDA` (21), `NCELLS` (42),
+  `DEBOUNCE_SAVE` (400 ms), `TOAST_MS` (6 000 ms), `BP_TABLET` (1 060 px), `POMO` (25/5/15 min).
+  Plus aucun de ces nombres n'est écrit en dur ailleurs.
+- **`C6` — contrat documenté (JSDoc)** sur les fonctions pures du domaine : `tgt`, `sched_`,
+  `val_`, `isDone_`, `streak_`, `pct_`, `sumVal_`, `dayRatio_`, `habFp`.
+  `// @ts-check` **n'a pas été activé** : `DCLogic` et `React` sont injectés à l'exécution, le
+  contrôleur les signalerait comme introuvables à chaque ligne. Le typage réel appartient au
+  portage (`B7`).
+- **`C7` — toutes les clés persistées documentées** (`ov`, `obj`, `occ`, `tt`, `mat`, `demo`,
+  `nq`/`nsel`, `cfg`, `profiles`/`pid`) plus les champs internes `_*`, dans
+  `03-ARCHITECTURE.md` § « Clés d'état persistées ». **Aucun renommage** : ce serait une perte de
+  données.
+- `tests/domain.test.html` gagne un **second contrôle** : chaque habitude est cochée avec un cache
+  déjà chaud, puis **toutes** les métriques de **toutes** les habitudes sont comparées à un
+  recalcul à froid. C'est le filet de sécurité exigé par le registre des risques pour `B3`.
+  Le harnais est aussi rendu hermétique au cache `habitum.best` du navigateur.
+
+### Écarté volontairement
+
+- **`C2` (fabrique `panelSt()` pour le panneau « verre » répété)** — écarté. Faire passer un style
+  **statique** par une valeur calculée empêcherait la peinture progressive : le panneau ne
+  pourrait plus s'afficher avant la fin du rendu de la logique. Le gain (−150 lignes dupliquées)
+  ne vaut pas cette régression. À reprendre au portage, où les classes CSS sont disponibles.
+- **`C3` (externaliser `L`/`EL`/`PL` dans un module)** — écarté ici pour la même raison : un
+  module chargé de façon asynchrone afficherait une interface sans libellés au premier rendu.
+  Tâche du portage (`next-intl`), pas du fichier unique.
+
+### Inchangé (ligne rouge respectée)
+
+`sched_`, `isDone_`, `tgt`, `streak_`, `best_`, `pct_`, `sumVal_`, `dayRatio_` (comportement
+identique, vérifié par les 62 valeurs de référence), les helpers de date, les migrations
+`v<2`…`v<5`, `snapshot`/`notify`/`undoLast`, l'ancrage horloge du timer, le glisser-déposer du
+calendrier, la palette `⌘K`, les 3 thèmes, les 271 libellés.
+
+## 2026-08-05 — Lot 1 (filet de sécurité) et Lot 2 (sincérité des données)
+
+Aucune fonctionnalité existante n'a été remplacée. Toutes les interventions sont additives,
+internes, ou correctives. Les 62 métriques de référence du jeu de démonstration sont **identiques
+avant et après** (`tests/domain.test.html` → 62/62).
+
+### Ajouté
+
+- `tests/domain.test.html` — **harnais de test sans chaîne de build** (`G1`). Charge la classe de
+  logique directement depuis `Habitum.dc.html` (aucune duplication), la fait tourner sur le jeu de
+  démonstration à une **date figée (5 août 2026)** et compare 62 mesures aux valeurs de référence.
+  Ne touche ni `localStorage` ni les données de l'application.
+- `tests/golden.json` — **valeurs de référence** (`G2`) : cible, série, record, taux 7/30/90 j,
+  cumul 30 j et état du jour pour les 6 habitudes de démonstration, plus les ratios journaliers sur
+  30 jours, les journées parfaites, les minutes de focus et les tâches ouvertes.
+- `validateImport()` (`A1`) — un fichier importé est **validé avant d'être appliqué** : JSON,
+  structure, taille (2 Mo max), types de chaque entité, catégories connues, jours 0–6, types
+  d'objectif autorisés, clés de journal au format `habitId|YYYY-MM-DD`, valeurs numériques
+  positives. Les entrées invalides sont ignorées, jamais appliquées ; les journaux orphelins (dont
+  l'habitude n'existe plus après import) sont retirés. Un rapport `n gardées / n lues` s'affiche.
+- `backupNow()` / `readBackup()` / `backupInfo()` / `restoreBackup()` (`A3`) — copie de secours
+  automatique sous `habitum.state.bak` **avant chaque import et chaque réinitialisation**, avec une
+  ligne « Sauvegarde automatique · Restaurer » dans les réglages.
+- Dictionnaire `L2` — libellés FR/EN des nouveaux messages, séparé de `L` pour ne pas toucher aux
+  271 clés existantes ; fusionné dans `renderVals()`.
+- États vides (`D1`) : vue **Notes** (aucune entrée), vue **Focus** (aucune session), vue
+  **Statistiques** (aucune habitude). Les états vides Habitudes / Tâches / Objectifs / Agenda
+  existaient déjà.
+- Drapeau `demo` (`A6`) — le jeu de démonstration est marqué (`demo:1`), un compte importé passe à
+  `demo:0`. Aucune logique ne dépend encore du drapeau : il rend seulement la distinction traçable.
+- Constantes nommées `MAX_IMPORT`, `NSPAN_SEARCH`, `NSPAN_RECENT` (amorce de `C5`).
+
+### Corrigé
+
+- **`SV` valait 4 alors que la dernière migration écrite est `v<5`.** La migration se rejouait donc
+  à *chaque* chargement et remettait `mat=0`, ce qui relançait `materialize()` (180 j × N habitudes)
+  à chaque ouverture de l'application. `SV=5` — la migration ne s'exécute plus qu'une fois.
+- **`persist()` échouait en silence** (`A4`) : quota dépassé ou navigation privée, et l'utilisateur
+  se croyait sauvegardé. Un avertissement s'affiche désormais une fois, invitant à exporter.
+- **`exportJSON()` perdait des données** : les habitudes archivées (`this.HB` au lieu de
+  `state.habits`), les objectifs, les sessions et la liste de courses n'étaient pas exportés.
+  L'export porte maintenant `v`, `habits`, `tasks`, `log`, `ov`, `notes`, `obj`, `sessions`, `shop` ;
+  la clé `log` est conservée pour que les anciens fichiers restent lisibles.
+- **Import et réinitialisation sont désormais annulables** (`A2`) : instantané pris avant
+  application, bouton **Annuler** dans le toast.
+- Le champ de fichier est réinitialisé après import — on peut réimporter le même fichier.
+- **`focusMin_()` fabriquait les minutes de focus** par hachage (`rnd('f'+date)`) et les affichait
+  comme réelles (`E1`). Elles agrègent désormais les sessions réellement enregistrées ; un compte
+  sans session affiche 0. *Effet visible : les minutes de focus du tableau de bord et des
+  statistiques changent — c'est la correction attendue, pas une régression.*
+- **`journalSeed()` inventait un journal** pour les jours sans note (`E2`) : il retourne maintenant
+  une chaîne vide, et l'historique du journal ne liste que les entrées réellement écrites.
+  *Effet de bord bénéfique :* la recherche dans le journal générait jusqu'à **160 faux textes par
+  rendu** (`B2`) — supprimé.
+- Réglage « Sauvegarde cloud » renommé **« Sauvegarde locale sur cet appareil »** avec une mention
+  explicite : désactivé, rien n'est enregistré (`A5`). Le comportement du réglage est inchangé.
+
+### Vérifié (sans modification)
+
+- `A7` — aucun `innerHTML`, aucun `dangerouslySetInnerHTML`, aucun `eval`, aucun `new Function`
+  dans l'application : tout contenu utilisateur passe par du texte React. Aucune surface
+  d'injection.
+- `E3` — inventaire des usages de `rnd()` : **deux seulement**, tous deux légitimes ou neutralisés —
+  `materialize()` (génération de l'historique de démonstration, explicitement marqué `demo`) et
+  `journalSeed()` (désormais inaccessible). Aucun autre chiffre affiché n'est fabriqué.
+
+### Inchangé (ligne rouge respectée)
+
+`sched_`, `isDone_`, `tgt`, `streak_`, `best_`, `pct_`, `sumVal_`, `dayRatio_`, les helpers de date,
+les migrations `v<2`…`v<5`, `snapshot`/`notify`/`undoLast`, l'ancrage horloge du timer, le
+glisser-déposer du calendrier, la palette `⌘K`, les 3 thèmes, les 271 libellés existants.

@@ -1,0 +1,78 @@
+{
+  "_meta": {
+    "fixedDate": "2026-08-05",
+    "habits": 6
+  },
+  "habit.alc": {
+    "target": 1,
+    "streak": 8,
+    "best": 37,
+    "pct7": 100,
+    "pct30": 87,
+    "pct90": 90,
+    "sum30": 26,
+    "scheduledToday": true,
+    "doneToday": true
+  },
+  "habit.water": {
+    "target": 8,
+    "streak": 2,
+    "best": 7,
+    "pct7": 43,
+    "pct30": 53,
+    "pct90": 64,
+    "sum30": 177,
+    "scheduledToday": true,
+    "doneToday": false
+  },
+  "habit.read": {
+    "target": 20,
+    "streak": 5,
+    "best": 13,
+    "pct7": 75,
+    "pct30": 71,
+    "pct90": 59,
+    "sum30": 274,
+    "scheduledToday": true,
+    "doneToday": false
+  },
+  "habit.run": {
+    "target": 3,
+    "streak": 4,
+    "best": 14,
+    "pct7": 100,
+    "pct30": 78,
+    "pct90": 79,
+    "sum30": 46,
+    "scheduledToday": true,
+    "doneToday": true
+  },
+  "habit.med": {
+    "target": 15,
+    "streak": 6,
+    "best": 10,
+    "pct7": 86,
+    "pct30": 83,
+    "pct90": 81,
+    "sum30": 406,
+    "scheduledToday": true,
+    "doneToday": true
+  },
+  "habit.film": {
+    "target": 1,
+    "streak": 3,
+    "best": 4,
+    "pct7": 100,
+    "pct30": 63,
+    "pct90": 42,
+    "sum30": 5,
+    "scheduledToday": false,
+    "doneToday": false
+  },
+  "global.dayRatios30": "8/4 5/5 4/4 5/4 5/4 4/4 4/2 5/4 4/2 4/2 5/4 5/4 4/3 4/3 5/4 4/3 4/4 5/4 5/3 4/3 4/2 5/5 4/4 4/3 5/1 5/3 4/3 4/3 5/4 4/2",
+  "global.perfectDays30": 6,
+  "global.focusMin30": 138,
+  "global.focusMin7": 138,
+  "global.tasksOpen": 6,
+  "global.journalSeedIsEmpty": true
+}

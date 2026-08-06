@@ -1,0 +1,6 @@
+.next
+node_modules
+public/prototype
+messages
+docs/references
+*.min.js

@@ -1,0 +1,46 @@
+/* --------------------------------------------------------------------------
+   Habitum — jetons de thème.
+   Extraits du prototype (public/prototype/Habitum.dc.html) ; la table complète
+   des trois thèmes est dans docs/handoff/04-DESIGN-TOKENS.md.
+   Décision B1 : l'application reste sombre, Modernist est réservé à la vitrine
+   et à la documentation (docs/handoff/07-DECISION-B1.md).
+   -------------------------------------------------------------------------- */
+
+:root,
+[data-theme='neural'] {
+  --bg: #08090d;
+  --bg-2: #0d0f16;
+  --panel: rgb(255 255 255 / 4%);
+  --line: rgb(255 255 255 / 9%);
+  --fg: #eef1f7;
+  --fg-dim: #9aa3b5;
+  --accent: #7c8cff;
+  --accent-hi: #a3aeff;
+  --ok: #35d6a4;
+  --warn: #ffb545;
+  --bad: #ff5f6d;
+  --radius: 14px;
+  --blur: 12px;
+  --font-ui: 'Space Grotesk', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+}
+
+[data-theme='plasma'] {
+  --bg: #0a0612;
+  --bg-2: #130a20;
+  --fg: #f3ecff;
+  --fg-dim: #a898c4;
+  --accent: #c264ff;
+  --accent-hi: #dd97ff;
+}
+
+[data-theme='clinical'] {
+  --bg: #f5f6f8;
+  --bg-2: #ffffff;
+  --panel: rgb(15 20 35 / 3%);
+  --line: rgb(15 20 35 / 10%);
+  --fg: #141821;
+  --fg-dim: #5a6376;
+  --accent: #2f5bff;
+  --accent-hi: #1e46e0;
+}

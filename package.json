@@ -1,0 +1,51 @@
+{
+  "name": "habitum",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Habitum — gestionnaire d'habitudes, tâches, objectifs et temps de focus. Local-first, FR/EN.",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20.9"
+  },
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "playwright test",
+    "check:messages": "node scripts/check-messages.mjs",
+    "verify": "npm run typecheck && npm run lint && npm run check:messages && npm run test"
+  },
+  "dependencies": {
+    "next": "^15.3.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "next-intl": "^3.26.0",
+    "zustand": "^5.0.3",
+    "dexie": "^4.0.11",
+    "date-fns": "^4.1.0",
+    "zod": "^3.24.1",
+    "lucide-react": "^0.474.0",
+    "clsx": "^2.1.1"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3.2.0",
+    "@playwright/test": "^1.50.0",
+    "@types/node": "^22.10.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@tailwindcss/postcss": "^4.0.0",
+    "tailwindcss": "^4.0.0",
+    "typescript": "^5.7.0",
+    "vitest": "^3.0.0",
+    "eslint": "^9.18.0",
+    "eslint-config-next": "^15.3.0",
+    "eslint-config-prettier": "^10.0.0",
+    "prettier": "^3.4.0"
+  }
+}

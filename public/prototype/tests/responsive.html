@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Habitum — paliers responsive</title>
+<style>
+  body{margin:0;background:#04060d;color:#eaf2ff;font:13px/1.55 ui-sans-serif,system-ui,sans-serif;padding:24px}
+  h1{font-size:17px;margin:0 0 4px}
+  p.sub{margin:0 0 22px;color:#69809f;font-size:12.5px;max-width:80ch}
+  .row{display:flex;gap:22px;align-items:flex-start;overflow-x:auto;padding-bottom:14px}
+  figure{margin:0;flex:none;display:flex;flex-direction:column;gap:8px}
+  figcaption{font:10.5px/1.4 ui-monospace,monospace;letter-spacing:.1em;text-transform:uppercase;color:#69809f}
+  figcaption b{color:#22e0d0;font-weight:500}
+  .frame{border:1px solid rgba(120,190,255,.22);border-radius:10px;overflow:hidden;background:#04060d}
+  iframe{display:block;border:0;background:#04060d}
+  code{color:#22e0d0}
+  .note{margin-top:18px;border-left:2px solid #22e0d0;padding:2px 0 2px 13px;color:#a9bdda;font-size:12.5px;max-width:80ch}
+</style>
+</head>
+<body>
+<h1>Habitum — les paliers responsive, côte à côte</h1>
+<p class="sub">
+  La même application à quatre largeurs. Chaque cadre est un vrai navigateur à cette largeur : ce
+  qu'on voit ici est ce que voit l'utilisateur. Le palier <b>1440</b> est la <strong>référence</strong> —
+  aucune régression n'y est tolérée. Sous <code>768&nbsp;px</code>, le calendrier Semaine et Jour
+  passent en liste et l'éditeur occupe tout l'écran (tâche <code>D6</code>).
+</p>
+
+<div class="row">
+  <figure>
+    <figcaption><b>390 px</b> — téléphone · navigation en barre basse</figcaption>
+    <div class="frame"><iframe src="../Habitum.dc.html" width="390" height="720" title="Habitum à 390 px"></iframe></div>
+  </figure>
+  <figure>
+    <figcaption><b>768 px</b> — tablette · rail en icônes</figcaption>
+    <div class="frame"><iframe src="../Habitum.dc.html" width="768" height="720" title="Habitum à 768 px"></iframe></div>
+  </figure>
+  <figure>
+    <figcaption><b>1060 px</b> — seuil · rail replié</figcaption>
+    <div class="frame"><iframe src="../Habitum.dc.html" width="1060" height="720" title="Habitum à 1060 px"></iframe></div>
+  </figure>
+  <figure>
+    <figcaption><b>1440 px</b> — <b>référence</b> · rail complet</figcaption>
+    <div class="frame"><iframe src="../Habitum.dc.html" width="1440" height="720" title="Habitum à 1440 px"></iframe></div>
+  </figure>
+</div>
+
+<p class="note">
+  Pour vérifier le calendrier : cliquez <em>Calendrier</em> puis <em>Semaine</em> dans le cadre à
+  390&nbsp;px — la grille horaire doit devenir une liste de la semaine, jour par jour. Dans le cadre
+  à 1440&nbsp;px, la même action doit afficher la grille horaire habituelle.
+</p>
+</body>
+</html>

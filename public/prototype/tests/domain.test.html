@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Habitum — tests du moteur métier</title>
+<style>
+  body{margin:0;background:#04060d;color:#eaf2ff;font:14px/1.5 ui-sans-serif,system-ui,sans-serif;padding:28px}
+  h1{font-size:18px;margin:0 0 4px}
+  p.sub{margin:0 0 20px;color:#69809f;font-size:12.5px;max-width:76ch}
+  .bar{display:flex;gap:10px;align-items:center;margin-bottom:18px;flex-wrap:wrap}
+  .pill{font:11px/1 ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;padding:7px 11px;border:1px solid rgba(120,190,255,.22);border-radius:99px}
+  .ok{color:#2ee6a8;border-color:rgba(46,230,168,.4)}
+  .ko{color:#ff4d6d;border-color:rgba(255,77,109,.45)}
+  .warn{color:#ffb340;border-color:rgba(255,179,64,.45)}
+  table{border-collapse:collapse;width:100%;max-width:1080px;font-size:12.5px}
+  th,td{text-align:left;padding:7px 10px;border-bottom:1px solid rgba(120,190,255,.14)}
+  th{font:10px/1 ui-monospace,monospace;letter-spacing:.16em;text-transform:uppercase;color:#69809f}
+  td.v{font-family:ui-monospace,monospace}
+  tr.f td{background:rgba(255,77,109,.09)}
+  tr.f td.v{color:#ff4d6d}
+  pre{background:#070c18;border:1px solid rgba(120,190,255,.16);border-radius:10px;padding:14px;font-size:11.5px;overflow:auto;max-height:320px;max-width:1080px}
+  button{font:inherit;font-size:12px;padding:7px 13px;border-radius:9px;border:1px solid rgba(120,190,255,.3);background:transparent;color:#a9bdda;cursor:pointer}
+  button:hover{border-color:#22e0d0;color:#eaf2ff}
+  code{color:#22e0d0}
+</style>
+</head>
+<body>
+<h1>Habitum — tests du moteur métier</h1>
+<p class="sub">
+  Harnais sans chaîne de build (tâche <code>G1</code>). Il charge la classe de logique
+  <em>directement</em> depuis <code>../Habitum.dc.html</code> — aucune duplication de code — et la fait
+  tourner sur le jeu de démonstration à une <strong>date figée</strong>, puis compare les métriques
+  aux valeurs de référence de <code>golden.json</code> (tâche <code>G2</code>).
+  Ni <code>localStorage</code> ni les données de l'application ne sont modifiés.
+</p>
+<div class="bar" id="bar"></div>
+<div id="out"></div>
+
+<script>
+const FIXED_Y = 2026, FIXED_M = 7, FIXED_D = 5;   /* 5 août 2026 — date de référence figée */
+const $ = (h) => { const d = document.createElement('div'); d.innerHTML = h; return d.firstElementChild; };
+
+class DCLogic {
+  constructor(props){ this.props = props || undefined; }
+  setState(){}
+  forceUpdate(){}
+}
+const React = {
+  createElement(){ return null; },
+  createRef(){ return { current: null }; },
+  Fragment: 'div',
+  useState(v){ return [v, () => {}]; },
+  useRef(v){ return { current: v }; },
+  useEffect(){}, useMemo(f){ return f(); }, useCallback(f){ return f; }
+};
+
+async function loadComponent(){
+  const src = await (await fetch('../Habitum.dc.html', {cache:'no-store'})).text();
+  const i = src.indexOf('class Component extends DCLogic');
+  const j = src.lastIndexOf('<\/script>');
+  if (i < 0 || j < i) throw new Error("classe de logique introuvable dans Habitum.dc.html");
+  const body = src.slice(i, j);
+  return new Function('DCLogic', 'React', body + '\nreturn Component;')(DCLogic, React);
+}
+
+/* `fine` = true : setState NE vide PAS le cache de rendu, ce qui fait passer les mesures par
+   l'invalidation fine de memo() (B3) au lieu de la remise à zéro globale. */
+function makeInstance(Component, fine){
+  const inst = new Component();                    /* seed() lit localStorage en LECTURE SEULE */
+  inst.persist = () => {};                         /* aucune écriture, jamais */
+  inst.notify = () => {};
+  inst._bc = {};                                   /* cache des records isolé du navigateur */
+  inst.bestCache = () => inst._bc;
+  inst.today = () => { const d = new Date(FIXED_Y, FIXED_M, FIXED_D); d.setHours(0,0,0,0); return d; };
+  inst.setState = (p) => {
+    const patch = (typeof p === 'function') ? p(inst.state) : p;
+    if (patch) Object.assign(inst.state, patch);
+    if (!fine) { inst._mc = {}; inst._mh = null; }  /* remise à zéro globale */
+  };
+  inst.state = Object.assign({}, inst.state, inst.freshData(), inst.demoData(), {
+    lang: 'fr', theme: 'neural', day: 0, filter: 'all', view: 'dash'
+  });
+  inst._mc = {}; inst._mh = null;
+  inst.materialize();                              /* historique du jeu de démo */
+  return inst;
+}
+
+function measure(inst){
+  const m = { _meta: { fixedDate: inst.key(inst.today()), habits: inst.HB.length } };
+  inst.HB.forEach(h => {
+    m['habit.' + h.id] = {
+      target: inst.tgt(h),
+      streak: inst.streak(h),
+      best: inst.best(h),
+      pct7: inst.pct(h, 7),
+      pct30: inst.pct(h, 30),
+      pct90: inst.pct(h, 90),
+      sum30: inst.sumVal(h, 30),
+      scheduledToday: inst.sched(h, inst.today()),
+      doneToday: inst.isDone(h, inst.today())
+    };
+  });
+  const ratios = [], perfect = [];
+  for (let i = 0; i < 30; i++){
+    const d = inst.add(inst.today(), -i), r = inst.dayRatio(d);
+    ratios.push(r.s + '/' + r.dn);
+    if (r.s > 0 && r.dn === r.s) perfect.push(inst.key(d));
+  }
+  m['global.dayRatios30'] = ratios.join(' ');
+  m['global.perfectDays30'] = perfect.length;
+  m['global.focusMin7'] = inst.focusMin(7);
+  m['global.focusMin30'] = inst.focusMin(30);
+  m['global.tasksOpen'] = inst.state.tasks.filter(t => !t.done).length;
+  m['global.journalSeedIsEmpty'] = inst.journalSeed(inst.today()) === '';
+  return m;
+}
+
+function flat(o, pre, out){
+  out = out || {}; pre = pre || '';
+  Object.keys(o).forEach(k => {
+    const v = o[k];
+    if (v && typeof v === 'object' && !Array.isArray(v)) flat(v, pre + k + '.', out);
+    else out[pre + k] = v;
+  });
+  return out;
+}
+
+/* ---- Restauration du stockage, migrations, aller-retour export/import, géométrie ----
+   Ces contrôles construisent des instances avec un `localStorage` SIMULÉ : ni lecture ni
+   écriture du vrai stockage. Ils verrouillent trois choses qu'aucune valeur de référence ne
+   voyait : que l'état persisté est bien relu, que les migrations font ce qu'elles annoncent,
+   et qu'un export peut être réimporté sans perte. */
+function withFakeStorage(store, fn){
+  const g = localStorage.getItem, s = localStorage.setItem, sg = sessionStorage.getItem;
+  localStorage.getItem = (k) => (Object.prototype.hasOwnProperty.call(store, k) ? store[k] : null);
+  localStorage.setItem = () => {};
+  sessionStorage.getItem = () => '1';
+  try { return fn(); } finally { localStorage.getItem = g; localStorage.setItem = s; sessionStorage.getItem = sg; }
+}
+
+function storageCheck(Component){
+  const rows = [];
+  const eq = (label, got, want) => { if (JSON.stringify(got) !== JSON.stringify(want)) rows.push({k:label, ref:want, got:got}); };
+  const tk = '2026-08-04';
+  const main = JSON.stringify({ v:5, split:1, theme:'plasma', lang:'en',
+    tasks:[{id:'x1', fr:'Tâche restaurée', en:'Restored task', cat:'work', d:tk, prio:3, done:false, sub:[], dur:60}],
+    cfg:{cloud:true, cursor:false, since:'2026-01-01'}, mat:1, demo:0,
+    timer:{mode:'count', phase:'focus', cycle:3, el:90000, running:true} });
+  const big = JSON.stringify({ v:5, ov:{ ['alc|'+tk]:1 }, notes:{ ['j|'+tk]:'note restaurée' } });
+  const inst = withFakeStorage({ 'habitum.state':main, 'habitum.state.big':big }, () => new Component());
+  eq('thème relu', inst.state.theme, 'plasma');
+  eq('langue relue', inst.state.lang, 'en');
+  eq('tâche relue', inst.state.tasks.length && inst.state.tasks[0].id, 'x1');
+  eq('journal relu depuis la clé volumineuse', inst.state.ov['alc|'+tk], 1);
+  eq('notes relues depuis la clé volumineuse', inst.state.notes['j|'+tk], 'note restaurée');
+  eq('drapeau démo relu', inst.state.demo, 0);
+  eq('minuteur : écoulé conservé', inst.state.timer.el, 90000);
+  eq('minuteur : jamais relancé seul', inst.state.timer.running, false);
+  eq('minuteur : phase et cycle conservés', inst.state.timer.mode+'/'+inst.state.timer.cycle, 'count/3');
+  /* format ancien (avant `split`) : tout dans une seule clé, doit rester lisible */
+  const legacy = JSON.stringify({ v:5, theme:'clinical', ov:{ ['run|'+tk]:3 }, notes:{} });
+  const old = withFakeStorage({ 'habitum.state':legacy }, () => new Component());
+  eq('format ancien : thème', old.state.theme, 'clinical');
+  eq('format ancien : journal', old.state.ov['run|'+tk], 3);
+  return rows;
+}
+
+function migrationCheck(Component){
+  const rows = [];
+  const eq = (label, got, want) => { if (JSON.stringify(got) !== JSON.stringify(want)) rows.push({k:label, ref:want, got:got}); };
+  const load = (payload) => withFakeStorage({ 'habitum.state':JSON.stringify(payload) }, () => new Component());
+
+  /* v<2 : l'objectif de réduction o4 avait une cible incohérente */
+  const m2 = load({ v:1, obj:[{id:'o4', kind:'reduce', target:6, fr:'x', en:'x'}] });
+  eq('v<2 · cible de o4 relevée', m2.state.obj[0].target, 12);
+
+  /* v<3 : les tâches n'avaient pas de durée */
+  const m3 = load({ v:2, tasks:[{id:'t', fr:'t', en:'t', cat:'work', off:0}] });
+  eq('v<3 · durée par défaut', m3.state.tasks[0].dur, 60);
+
+  /* v<4 : le thème par défaut a changé de nom */
+  const m4 = load({ v:3, theme:'dark' });
+  eq('v<4 · thème rebasculé', m4.state.theme, 'neural');
+
+  /* v<5 : dates relatives -> dates absolues, et l'historique de démo est re-matérialisé */
+  const m5 = load({ v:4, tasks:[{id:'t', fr:'t', en:'t', cat:'work', off:2, dur:60}],
+                    sessions:[{label:'s', en:'s', min:20, off:1}], mat:1 });
+  eq('v<5 · tâche datée', typeof m5.state.tasks[0].d, 'string');
+  eq('v<5 · session datée', typeof m5.state.sessions[0].d, 'string');
+  eq('v<5 · matérialisation relancée', m5.state.mat, 0);
+  /* la date absolue doit correspondre au décalage d'origine */
+  eq('v<5 · décalage préservé', m5.toff(m5.state.tasks[0]), 2);
+  eq('v<5 · décalage de session préservé', m5.soff(m5.state.sessions[0]), 1);
+
+  /* déjà à jour : aucune migration ne doit s'appliquer */
+  const cur = load({ v:5, theme:'plasma', mat:1, tasks:[] });
+  eq('v courant · thème intact', cur.state.theme, 'plasma');
+  eq('v courant · matérialisation non relancée', cur.state.mat, 1);
+  return rows;
+}
+
+function roundTripCheck(Component){
+  const rows = [];
+  const src = makeInstance(Component, false);
+  const before = flat(measure(src));
+  const s = src.state;
+  /* le même objet que celui écrit par exportJSON() */
+  const file = JSON.stringify({ app:'Habitum', v:src.SV, exported:new Date().toISOString(),
+    habits:s.habits, tasks:s.tasks, log:s.ov, ov:s.ov, notes:s.notes,
+    obj:s.obj, sessions:s.sessions, shop:s.shop }, null, 2);
+  const rep = src.validateImport(file);
+  if (!rep.ok){ rows.push({k:'import de notre propre export', ref:'accepté', got:'refusé · '+rep.reason}); return rows; }
+  if (rep.partial) rows.push({k:'entrées perdues à l’import', ref:'0', got:rep.summary});
+  const dst = makeInstance(Component, false);
+  dst.setState(rep.patch);
+  const after = flat(measure(dst));
+  Object.keys(before).forEach(k => {
+    if (JSON.stringify(before[k]) !== JSON.stringify(after[k]))
+      rows.push({k:'après aller-retour · '+k, ref:before[k], got:after[k]});
+  });
+  /* un fichier abîmé ne doit jamais être appliqué */
+  [['JSON illisible','{oops'], ['tableau','[]'], ['objet vide','{}'],
+   ['clés inconnues','{"lol":1}']].forEach(p => {
+    const r = src.validateImport(p[1]);
+    if (r.ok) rows.push({k:'fichier refusé : '+p[0], ref:'refusé', got:'ACCEPTÉ'});
+  });
+  return rows;
+}
+
+function laneCheck(Component){
+  const rows = [];
+  const inst = makeInstance(Component, false);
+  const at = (h, m, dur) => ({label:'e', time:'', color:'#fff', kind:'h', done:false, hour:h, min:m||0, dur:dur||60});
+  const two = inst.laneOut([at(9), at(9, 30)]);
+  if (two.length !== 2) rows.push({k:'deux évènements placés', ref:2, got:two.length});
+  if (!two.some(x => x.conflict)) rows.push({k:'chevauchement 9h00 / 9h30 signalé', ref:true, got:false});
+  if (new Set(two.map(x => x.lane)).size !== 2) rows.push({k:'colonnes distinctes', ref:2, got:new Set(two.map(x=>x.lane)).size});
+  const apart = inst.laneOut([at(9), at(11)]);
+  if (apart.some(x => x.conflict)) rows.push({k:'9h00 et 11h00 sans chevauchement', ref:false, got:true});
+  const one = inst.laneOut([at(8, 15, 90)]);
+  if (one.length !== 1 || one[0].conflict) rows.push({k:'évènement seul', ref:'sans conflit', got:JSON.stringify(one.map(x=>x.conflict))});
+  return rows;
+}
+
+/* ---- B3 / B1 : l'invalidation fine ne doit JAMAIS afficher une valeur périmée ----
+   On coche une case sur une habitude avec un cache déjà chaud, puis on compare TOUTES les
+   métriques de TOUTES les habitudes à celles d'une instance recalculée à froid. */
+function fineCheck(Component){
+  const warm = makeInstance(Component, true);
+  measure(warm);                                     /* cache chaud */
+  const rows = [];
+  warm.HB.forEach(h => {
+    const T = warm.today(), key = h.id + '|' + warm.key(T);
+    const next = warm.isDone(h, T) ? 0 : warm.tgt(h);
+    const patch = { ov: Object.assign({}, warm.state.ov, { [key]: next }) };
+    warm.setState(patch);
+    const hot = flat(measure(warm));
+    const cold = makeInstance(Component, false);
+    cold.setState(patch);
+    const truth = flat(measure(cold));
+    Object.keys(truth).forEach(k => {
+      if (JSON.stringify(truth[k]) !== JSON.stringify(hot[k]))
+        rows.push({ k: 'après ' + h.id + ' → ' + k, ref: truth[k], got: hot[k] });
+    });
+  });
+  return rows;
+}
+
+(async () => {
+  const bar = document.getElementById('bar'), out = document.getElementById('out');
+  let inst, metrics;
+  try {
+    inst = makeInstance(await loadComponent());
+    metrics = measure(inst);
+    window.__metrics = metrics;
+  } catch (err) {
+    bar.appendChild($('<span class="pill ko">échec du chargement</span>'));
+    out.appendChild($('<pre>' + String(err && err.stack || err) + '</pre>'));
+    return;
+  }
+
+  let golden = null;
+  try { const r = await fetch('golden.json', {cache:'no-store'}); if (r.ok) golden = await r.json(); } catch (err) {}
+
+  const cur = flat(metrics);
+  if (!golden) {
+    bar.appendChild($('<span class="pill warn">aucune référence</span>'));
+    bar.appendChild($('<span class="pill">' + Object.keys(cur).length + ' mesures</span>'));
+    const b = $('<button>Copier le JSON de référence</button>');
+    b.onclick = () => navigator.clipboard.writeText(JSON.stringify(metrics, null, 2));
+    bar.appendChild(b);
+    out.appendChild($('<p class="sub">Enregistrez le contenu ci-dessous dans <code>tests/golden.json</code> pour figer les valeurs de référence.</p>'));
+    out.appendChild($('<pre>' + JSON.stringify(metrics, null, 2) + '</pre>'));
+    return;
+  }
+
+  const ref = flat(golden);
+  const keys = Object.keys(ref).concat(Object.keys(cur).filter(k => !(k in ref)));
+  let pass = 0, fail = 0;
+  const rows = keys.map(k => {
+    const a = ref[k], b = cur[k];
+    const ok = JSON.stringify(a) === JSON.stringify(b);
+    ok ? pass++ : fail++;
+    return '<tr class="' + (ok ? '' : 'f') + '"><td>' + k + '</td><td class="v">' + JSON.stringify(a) +
+           '</td><td class="v">' + JSON.stringify(b) + '</td><td class="v">' + (ok ? '✓' : '✗') + '</td></tr>';
+  });
+  bar.appendChild($('<span class="pill ' + (fail ? 'ko' : 'ok') + '">' + (fail ? fail + ' écart(s)' : 'tout conforme') + '</span>'));
+  bar.appendChild($('<span class="pill">' + pass + ' / ' + keys.length + ' mesures identiques</span>'));
+  bar.appendChild($('<span class="pill">date figée ' + cur['_meta.fixedDate'] + '</span>'));
+  out.appendChild($('<table><thead><tr><th>mesure</th><th>référence</th><th>obtenu</th><th></th></tr></thead><tbody>' + rows.join('') + '</tbody></table>'));
+
+  let stale = [];
+  try { stale = fineCheck(await loadComponent()); }
+  catch (err) { stale = [{ k: 'échec du contrôle', ref: '—', got: String(err && err.message || err) }]; }
+  bar.appendChild($('<span class="pill ' + (stale.length ? 'ko' : 'ok') + '">' +
+    (stale.length ? stale.length + ' valeur(s) périmée(s)' : 'invalidation fine saine') + '</span>'));
+  out.appendChild($('<h1 style="margin:26px 0 4px">Invalidation fine du cache (B3 / B1)</h1>'));
+  out.appendChild($('<p class="sub">Chaque habitude est cochée puis décochée avec un cache déjà chaud ; toutes les métriques sont comparées à un recalcul à froid. Aucun écart n\'est toléré.</p>'));
+  if (stale.length)
+    out.appendChild($('<table><thead><tr><th>mesure</th><th>à froid</th><th>depuis le cache</th></tr></thead><tbody>' +
+      stale.map(r => '<tr class="f"><td>' + r.k + '</td><td class="v">' + JSON.stringify(r.ref) + '</td><td class="v">' + JSON.stringify(r.got) + '</td></tr>').join('') + '</tbody></table>'));
+
+  /* ---- les quatre contrôles ajoutés à la finalisation ---- */
+  const C = await loadComponent();
+  const suites = [
+    ['Restauration du stockage', storageCheck,
+     'Une instance est construite sur un <code>localStorage</code> simulé : l\'état écrit doit être relu, y compris depuis la clé volumineuse et depuis l\'ancien format. Ce contrôle a été ajouté après avoir trouvé que <strong>plus rien n\'était restauré</strong> — les constantes de clés étaient déclarées après <code>state = this.seed()</code>, donc <code>undefined</code> pendant la lecture.'],
+    ['Migrations de schéma (B6)', migrationCheck,
+     'Chaque migration <code>v&lt;2</code> … <code>v&lt;5</code> reçoit une charge au format d\'origine et doit produire exactement ce qu\'elle annonce — ni plus, ni sur un état déjà à jour.'],
+    ['Aller-retour export / import', roundTripCheck,
+     'Le fichier produit par <code>exportJSON()</code> est repassé dans <code>validateImport()</code>, appliqué à une instance vierge, et <strong>toutes</strong> les métriques sont recomparées. Quatre fichiers abîmés doivent être refusés.'],
+    ['Géométrie du calendrier', laneCheck,
+     'Le placement en colonnes et la détection de chevauchement (<code>laneOut</code>) sont testés directement : c\'est la logique derrière le glisser-déposer, la seule partie qui ne se vérifie pas au geste.']
+  ];
+  for (const [title, fn, desc] of suites){
+    let bad = [];
+    try { bad = fn(C); }
+    catch (err) { bad = [{ k:'échec du contrôle', ref:'—', got:String(err && err.message || err) }]; }
+    bar.appendChild($('<span class="pill ' + (bad.length ? 'ko' : 'ok') + '">' +
+      (bad.length ? title.toLowerCase() + ' : ' + bad.length + ' écart(s)' : title.toLowerCase() + ' ok') + '</span>'));
+    out.appendChild($('<h1 style="margin:26px 0 4px">' + title + '</h1>'));
+    out.appendChild($('<p class="sub">' + desc + '</p>'));
+    if (bad.length)
+      out.appendChild($('<table><thead><tr><th>contrôle</th><th>attendu</th><th>obtenu</th></tr></thead><tbody>' +
+        bad.map(r => '<tr class="f"><td>' + r.k + '</td><td class="v">' + JSON.stringify(r.ref) + '</td><td class="v">' + JSON.stringify(r.got) + '</td></tr>').join('') + '</tbody></table>'));
+    else
+      out.appendChild($('<p class="sub" style="color:#2ee6a8">✓ aucun écart</p>'));
+  }
+})();
+</script>
+</body>
+</html>

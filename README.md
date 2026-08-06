@@ -1,0 +1,65 @@
+# Habitum
+
+Gestionnaire d'habitudes, de tâches, d'objectifs et de temps de focus.
+**Local-first** : aucune donnée ne quitte l'appareil, aucun compte, aucun appel réseau.
+FR / EN, trois thèmes.
+
+Ce dépôt est la **base de reprise** : le moteur métier et les onze écrans existent
+et fonctionnent déjà dans un prototype haute fidélité ; le portage vers Next.js
+est commencé (structure, i18n, domaine typé, tests) et se termine dans Claude Code.
+
+## Démarrer
+
+```bash
+npm install
+npm run dev          # http://localhost:3000
+```
+
+Le prototype, lui, n'a besoin de rien : ouvrir
+`public/prototype/Habitum.dc.html` directement dans un navigateur, ou
+<http://localhost:3000/prototype/Habitum.dc.html> une fois le serveur lancé.
+
+## Commandes
+
+| Commande | Quoi |
+|---|---|
+| `npm run dev` / `build` / `start` | Next.js |
+| `npm run typecheck` | TypeScript strict, sans émission |
+| `npm run lint` / `format` | ESLint / Prettier |
+| `npm run check:messages` | symétrie FR/EN des libellés |
+| `npm test` | moteur métier (Vitest) |
+| `npm run test:e2e` | parcours (Playwright) |
+| **`npm run verify`** | **tout ce qui précède — à passer avant toute livraison** |
+
+## Où est quoi
+
+| Dossier | Rôle |
+|---|---|
+| `app/` | routes App Router — une par vue (11) |
+| `components/` | composants React : `shell/` (coque), le reste à venir |
+| `lib/domain/` | **moteur métier pur** — jamais de React, jamais de Next, 100 % testable |
+| `lib/storage/` | clés persistées figées + importeur du format du prototype |
+| `i18n/` | configuration next-intl (langue par cookie, pas par URL) |
+| `messages/` | `fr.json` / `en.json` — 308 clés, symétrie vérifiée en CI |
+| `styles/` | `globals.css` + `tokens.css` (thèmes) |
+| `types/` | alias public des types du domaine (`@/types`) |
+| `tests/` | `unit/` Vitest · `e2e/` Playwright · `fixtures/golden.json` |
+| `scripts/` | outillage local (contrôle des libellés) |
+| `public/prototype/` | **le prototype, servi tel quel** — référence exécutable |
+| `docs/` | analyse, passation, décisions (ADR), spécifications, captures |
+| `.claude/` | permissions et commandes pour Claude Code |
+| `.github/` | CI et gabarit de PR |
+| `.vscode/` | réglages d'éditeur partagés |
+
+## À lire avant d'écrire une ligne
+
+1. `CLAUDE.md` — les règles de ce dépôt (dont deux pièges déjà payés)
+2. `docs/ANALYSE-REPRISE.md` — terminé / partiel / manquant / risques
+3. `docs/PASSATION-CLAUDE-CODE.md` — le plan de reprise, phase par phase
+4. `docs/adr/` — pourquoi les choix structurants sont ce qu'ils sont
+5. `docs/handoff/03-ARCHITECTURE.md` — modèle de données et algorithmes
+
+## Licence
+
+MIT — voir `LICENSE` (réserves sur `public/prototype/support.js`, généré, et sur
+les captures de l'application d'origine dans `docs/references/habitnow/`).
