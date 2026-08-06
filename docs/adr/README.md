@@ -14,3 +14,4 @@ remplace la précédente et on marque l'ancienne « remplacée par ».
 **Décision encore en attente** — le système visuel *Modernist* rattaché au projet contredit
 l'interface sombre construite : voir `docs/handoff/07-DECISION-B1.md`. Elle n'est pas tranchée ici
 parce qu'elle appartient au commanditaire, pas à l'équipe technique.
+- [0006 — Helpers de date maison, sans bibliothèque](0006-helpers-de-date-maison.md)

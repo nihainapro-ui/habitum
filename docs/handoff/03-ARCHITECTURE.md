@@ -11,7 +11,7 @@
 | Icônes | **Lucide** | ISC | Aligné avec le design system rattaché |
 | État | **Zustand** + slices | MIT | Remplace `this.state` monolithique sans boilerplate |
 | Persistance | **Dexie** (IndexedDB) | Apache-2.0 | Transactions, index composites, quota ~ Go (corrige B3) |
-| Dates | **date-fns** (+ `date-fns-tz`) | MIT | Remplace les helpers maison, gère les fuseaux |
+| Dates | **aucune dépendance** — helpers maison, purs et testés | — | Voir `docs/adr/0006-helpers-de-date-maison.md`. `date-fns` a été retirée le 6 août 2026 : le domaine ne doit dépendre de rien, et `Intl.DateTimeFormat` suffit aux formats localisés |
 | Formulaires | **react-hook-form** + **zod** | MIT | Éditeur habitude/tâche à 4 onglets |
 | Glisser-déposer | **@dnd-kit** | MIT | Calendrier : déplacement + redimensionnement accessibles |
 | Graphiques | SVG maison (comme le prototype) ou **visx** | MIT | Heatmap et barres sont triviales en SVG, pas de gros lib |
