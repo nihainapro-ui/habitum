@@ -18,7 +18,7 @@
 | i18n | **next-intl** | MIT | Externalise `L`/`EL`/`PL` |
 | Tests | **Vitest** + **Playwright** | MIT / Apache-2.0 | Moteur métier + parcours |
 | PWA | **Serwist** | MIT | Service worker, offline, notifications planifiées |
-| Sync (opt.) | **Supabase** | plan gratuit | Postgres 500 Mo + Auth, RLS |
+| Sync (opt.) | **Neon PostgreSQL** + **Drizzle** + **Auth.js** | plans gratuits | Postgres serverless, branches de base natives, driver HTTP adapté au serverless |
 | Hébergement | **Vercel Hobby** | gratuit | ou Cloudflare Pages / Netlify free |
 
 Aucune de ces briques n'exige de plan payant pour un produit mono-utilisateur.
@@ -26,24 +26,30 @@ Aucune de ces briques n'exige de plan payant pour un produit mono-utilisateur.
 ## 2. Arborescence proposée
 
 ```
-src/
-  app/                     routes (App Router) : /, /today, /habits, /tasks, /goals,
-                           /calendar, /stats, /timer, /notes, /profile, /settings
-  domain/                  logique pure, sans React, 100 % testée
-    types.ts  date.ts  schedule.ts  stats.ts  goals.ts  recurrence.ts  cache.ts
-  data/                    persistance
-    db.ts  migrations.ts  seed.ts  repositories/  queue.ts  remote/  sync.ts
-  store/                   Zustand : habitsSlice, tasksSlice, goalsSlice, timerSlice,
-                           notesSlice, settingsSlice, uiSlice, undo.ts
-  ui/                      primitives sans métier (Panel, Chip, Switch, Sheet…)
-  components/              composants applicatifs (shell/, habits/, calendar/, stats/…)
-  features/                onboarding/, reminders/, feedback/, backup/, sync/
-  styles/                  tokens.css, themes.css
-messages/                  fr.json, en.json
-supabase/                  migrations/ (phase 6, optionnel)
+app/                     routes (App Router) : /, /today, /habits, /tasks, /goals,
+                         /calendar, /stats, /timer, /notes, /profile, /settings
+lib/
+  domain/                logique pure, sans React, 100 % testée
+    types.ts  date.ts  schedule.ts  metrics.ts  goals.ts  recurrence.ts  cache.ts
+  data/                  persistance
+    db.ts  migrations.ts  seed.ts  repositories/  import.ts  log-index.ts
+  store/                 Zustand : habits, tasks, goals, timer, notes, settings, ui, undo
+components/
+  ui/                    primitives sans métier (Panel, Chip, Switch, Sheet…)
+  shell/                 coque applicative
+  <domaine>/             composants par vue (habits/, calendar/, stats/…)
+messages/                fr.json, en.json
+styles/                  tokens.css (GÉNÉRÉ), globals.css
+tests/                   unit/  e2e/  fixtures/
+drizzle/                 migrations/ (phase 6, optionnel — Neon)
 ```
 
-Règle : `domain/` et `data/` **n'importent jamais React**. Toute vue est un assemblage de
+> **Le dépôt n'a pas de dossier `src/`.** Les chemins `src/…` des versions
+> antérieures de ce document et de `06-BACKLOG.md` étaient faux : corrigés le
+> 6 août 2026. `styles/tokens.css` est **généré** par `scripts/extract-tokens.mjs`
+> et ne s'édite pas à la main.
+
+Règle : `lib/domain/` et `lib/data/` **n'importent jamais React** — imposé par ESLint. Toute vue est un assemblage de
 `components/` alimenté par un sélecteur de store.
 
 ## 3. Modèle de données (transposé du prototype)
@@ -51,14 +57,22 @@ Règle : `domain/` et `data/` **n'importent jamais React**. Toute vue est un ass
 ```ts
 type DateKey = string;              // 'YYYY-MM-DD' — clé canonique, jamais un Date sérialisé
 type Category = 'health'|'sport'|'mind'|'work'|'home'|'study';
-type GoalKind = 'check'|'total'|'list'|'limit';
+/* ⚠ SEPT types d'habitude, pas quatre. Une liste blanche incomplète fait
+   disparaître silencieusement des entités ET leur historique : c'est arrivé
+   à l'import, 4 habitudes sur 6 perdues (CHANGELOG 2026-08-05).
+   Ce document a lui-même porté la version fautive jusqu'au 6 août 2026.
+   SOURCE UNIQUE : lib/domain/types.ts. Ne jamais recopier ces listes. */
+type HabitGoalKind = 'check'|'count'|'time'|'total'|'list'|'limit'|'exact';
+type GoalKind      = 'cumul'|'milestones'|'reduce';
 
 interface Habit {
   id: string;
   name: string;                     // ⚠ plus de champs fr/en sur le contenu utilisateur
   category: Category;
-  goal: { kind: GoalKind; target: number; step: number; unit: string };
-  mode: 'dow';                      // extensible : 'interval' | 'timesPerWeek'
+  goal: { kind: HabitGoalKind; target: number; step: number; unit: string };
+  mode: 'dow'|'every'|'week'|'month';
+  interval?: number;                // mode 'every' — intervalle en jours
+  pause?: { from: DateKey; to: DateKey };
   days: number[];                   // 0 = lundi … 6 = dimanche
   subItems: { label: string }[];    // pour kind = 'list'
   reminders: string[];              // 'HH:mm'
@@ -83,7 +97,9 @@ interface Task {
 }
 
 interface Goal {
-  id: string; name: string; kind: 'cumul'|'reduce';
+  id: string; name: string; kind: GoalKind;          // cumul | milestones | reduce
+  milestones?: { label: string; done: boolean }[];   // kind = 'milestones'
+  window?: number;                                    // fenêtre en jours, kind = 'reduce'
   target: number; unit: string;
   sourceHabitId?: string;           // dérivation depuis une habitude
   category: Category; deadline: DateKey;
@@ -91,10 +107,15 @@ interface Goal {
 }
 
 interface Session { id: string; label: string; minutes: number; date: DateKey;
-                    habitId?: string; mode: 'pomo'|'stopwatch'|'countdown'|'interval'; }
+                    habitId?: string; mode: 'pomo'|'stopwatch'|'countdown'|'interval';
+                    createdAt: string; updatedAt: string; deletedAt?: string; }
 
 interface Note { id: string; kind: 'journal'|'habit'; date?: DateKey; habitId?: string;
-                 body: string; mood?: number; updatedAt: string; }
+                 body: string; mood?: number;
+                 createdAt: string; updatedAt: string; deletedAt?: string; }
+
+interface ShoppingItem { id: string; label: string; done: boolean;
+                         createdAt: string; updatedAt: string; deletedAt?: string; }
 
 interface Profile { id: string; name: string; handle: string; glyph: string; hue: number;
                     role: number; since: DateKey; }
@@ -121,7 +142,14 @@ interface Settings { lang: 'fr'|'en'; theme: 'neural'|'plasma'|'clinical';
 si habit.archived → faux
 si habit.start et dateKey < start → faux
 si habit.end et dateKey > end → faux
-mode 'dow' → habit.days contient dow(date)   // dow lundi=0
+si habit.pause et pause.from <= dateKey <= pause.to → faux
+mode 'dow'            → habit.days contient dow(date)   // dow lundi=0
+mode 'week'|'month'   → vrai
+mode 'every'          → origine = start, à défaut createdAt, à défaut 2020-01-01
+                        (JAMAIS « aujourd'hui − 182 j » : l'origine doit être
+                         STABLE, sinon la parité du cycle bascule chaque jour —
+                         défaut D16, corrigé le 6 août 2026)
+                        planifié si (date − origine) >= 0 et % max(1, interval||2) === 0
 ```
 
 ### Complétion — `isDone(habit, date, value)`
@@ -130,7 +158,9 @@ target = kind==='list' ? subItems.length||1 : kind==='total' ? step||1 : goal.ta
 kind==='limit' : sémantique INVERSÉE — réussi si value <= target,
                  MAIS si date >= aujourd'hui et aucune entrée de journal → non réussi
                  (on ne peut pas déclarer réussi un plafond avant la fin de la journée)
-sinon : value >= target
+kind==='exact' : réussi si value === target
+kind==='total' : réussi si value > 0
+sinon ('check', 'count', 'time', 'list') : réussi si value >= target
 ```
 Ce cas `limit` est la subtilité la plus facile à casser : **le couvrir par des tests d'abord.**
 

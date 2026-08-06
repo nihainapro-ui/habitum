@@ -22,7 +22,7 @@ spécification est exécutable.
 | Migrations de schéma `v<2` … `v<5` | écrites **et testées** |
 | Export / import JSON avec validation et rapport | complet, aller-retour vérifié |
 | Sauvegarde automatique avant import et réinitialisation | complet |
-| 11 vues, 3 thèmes, FR/EN intégral (308 clés symétriques) | complet |
+| 11 vues, 3 thèmes, FR/EN intégral (311 clés symétriques) | complet |
 | Calendrier mois/semaine/jour/agenda, glisser-déposer, redimensionnement | complet |
 | Timer 4 modes, ancré sur l'horloge murale, persistant, repris en pause | complet |
 | Palette ⌘K, mode zen, piège de focus, `prefers-reduced-motion` | complet |
@@ -31,7 +31,7 @@ spécification est exécutable.
 
 **Posé par cette restructuration** : structure Next.js 15 App Router, TypeScript strict,
 i18n next-intl, moteur métier porté et typé (`lib/domain/`), tests Vitest sur les règles
-les plus fragiles, Playwright, CI GitHub Actions, conventions d'éditeur, commandes Claude Code.
+les plus fragiles **et sur les 62 valeurs de référence**, Playwright, CI GitHub Actions, conventions d'éditeur, commandes Claude Code.
 
 ## 2. Partiellement terminé
 

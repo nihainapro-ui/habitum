@@ -102,11 +102,12 @@ Ordre imposé par les dépendances (chaque lot est livrable et testable) :
 
 ## Phase 6 — Synchronisation optionnelle et comptes (2–3 j) · P2
 
-Reste **facultatif** : l'app fonctionne à 100 % en local. Socle gratuit :
+Reste **facultatif** : l'app fonctionne à 100 % en local. Socle gratuit — **Neon**, décision
+projet du 6 août 2026 ; les versions antérieures de ce document prescrivaient Supabase :
 
 | # | Tâche | Module |
 |---|---|---|
-| 6.1 | Supabase (plan gratuit : Postgres 500 Mo, Auth incluse) — Auth par lien magique | `src/data/remote/` |
+| 6.1 | **Neon PostgreSQL** (plan gratuit) + **Auth.js** par lien magique | `lib/data/remote/` |
 | 6.2 | Schéma miroir + RLS par `user_id` | `supabase/migrations/` |
 | 6.3 | Synchronisation *local-first* : `updatedAt` + `deletedAt` (tombstones), dernier écrivain gagne par champ, journal `ov` en table append-only | `src/data/sync.ts` |
 | 6.4 | Écran d'état de synchronisation + résolution manuelle des conflits rares | `src/features/sync/` |
@@ -160,8 +161,8 @@ Estimation totale v1.0 : **16 à 21 jours-personne**, dont ~30 % sur les phases 
 |---|---|---|
 | Hébergement | Vercel Hobby | 0 € |
 | Base locale | IndexedDB (Dexie, Apache-2.0) | 0 € |
-| Base distante (opt.) | Supabase plan gratuit | 0 € |
-| Auth (opt.) | Supabase Auth | 0 € |
+| Base distante (opt.) | Neon plan gratuit | 0 € |
+| Auth (opt.) | Auth.js auto-hébergé | 0 € |
 | CI | GitHub Actions (dépôt public) | 0 € |
 | Erreurs | Sentry plan gratuit | 0 € |
 | Analytique | Vercel Web Analytics / Umami | 0 € |

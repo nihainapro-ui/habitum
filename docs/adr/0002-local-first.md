@@ -4,7 +4,8 @@
 
 ## Décision
 
-Toutes les données vivent dans le `localStorage` du navigateur. Aucune authentification, aucun
+Toutes les données vivent sur l'appareil : `localStorage` dans le prototype, **IndexedDB
+(Dexie)** dans l'application portée. Aucune authentification, aucun
 appel réseau, aucune brique payante.
 
 ## Pourquoi

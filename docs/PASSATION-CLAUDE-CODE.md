@@ -17,7 +17,10 @@ référence de `tests/fixtures/golden.json` disent si le portage est fidèle.
 2. Ouvrir <http://localhost:3000/prototype/Habitum.dc.html> — le produit réel, complet.
 3. Ouvrir `public/prototype/tests/domain.test.html` — **six contrôles verts**. C'est le mètre étalon.
 4. Lire `CLAUDE.md` (les deux pièges déjà payés), puis `docs/ANALYSE-REPRISE.md`.
-5. `npm run verify` — doit être vert avant la première modification.
+5. `npm run verify` — **vert depuis la phase 0 de stabilisation (6 août 2026)**. Il était
+   rouge dans la version initiale du dépôt : une apostrophe non échappée dans
+   `components/shell/app-shell.tsx` cassait la compilation, et toutes les routes
+   auraient répondu en erreur. Voir `docs/AUDIT-PRODUCTION-2026-08-06.md`.
 
 ## Plan de finalisation, phase par phase
 

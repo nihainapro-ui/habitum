@@ -1,5 +1,83 @@
 # Journal des modifications
 
+## 2026-08-06 — Phase 0 : fondations du dépôt
+
+Aucune fonctionnalité ajoutée. Le dépôt ne compilait pas, n'était pas versionné, ses jetons de
+design ne correspondaient pas au prototype, et ses 62 valeurs de référence n'étaient comparées à
+rien côté TypeScript. Détail des constats : `docs/AUDIT-PRODUCTION-2026-08-06.md`.
+
+### Corrigé — bloquant
+
+- **Le dépôt ne compilait pas.** Une apostrophe droite non échappée dans
+  `components/shell/app-shell.tsx:6` (`'Aujourd'hui'`) cassait `typecheck`, `lint` et `build`.
+  `layout.tsx` important `AppShell`, **toutes les routes** auraient répondu en erreur 500. (D1)
+- **Les jetons de design étaient fabriqués.** `styles/tokens.css` déclarait `--fg`, `--fg-dim`,
+  `--accent`, `--accent-hi`, `--bg-2` avec des valeurs sans rapport avec le prototype, dont
+  l'en-tête affirmait pourtant qu'elles en étaient extraites. `--bg` valait `#08090d` au lieu de
+  `#04060d`, et sur les trois thèmes aucune valeur ne coïncidait. Sept jetons majeurs manquaient :
+  `--mut` (180 usages), `--acc2` (155), `--glow` (65), `--txt2` (54), `--panel2`, `--line2`,
+  `--acc3`. Rien ne le signalait — mais toute vue portée dessus aurait été visuellement fausse.
+  Le fichier est désormais **généré** par `scripts/extract-tokens.mjs`, et `tests/unit/tokens.test.ts`
+  rend la dérive impossible. (D3)
+- **Le document d'architecture reproduisait un piège déjà payé.** `03-ARCHITECTURE.md` § 3
+  déclarait quatre types d'objectif au lieu de sept — exactement le défaut qui avait fait
+  disparaître 4 habitudes sur 6 à l'import le 5 août. (D5)
+
+### Corrigé — moteur
+
+- **Mode `every` sans date de début.** L'origine du cycle valait « aujourd'hui − 182 jours » :
+  elle avançait d'un jour par jour, et une habitude « tous les 2 jours » changeait de jours
+  planifiés quotidiennement. Ancrée désormais sur `start`, à défaut `createdAt`, à défaut une
+  époque figée. Bug **hérité** du prototype et porté fidèlement ; corrigé des deux côtés et dans
+  `docs/handoff/reference/domain-logic-extract.js` (CLAUDE.md § 7). Les six contrôles de
+  `tests/domain.test.html` ont été rouverts dans un navigateur après la modification :
+  **62 / 62 mesures identiques**. Aucune habitude de démonstration n'utilise ce mode — c'est ce
+  qui avait laissé passer le défaut. (D16)
+
+### Ajouté
+
+- **Les 62 valeurs de référence sont vérifiées à chaque commit** — `tests/unit/golden.test.ts`,
+  67 assertions, alimentées par `tests/fixtures/demo-seed.ts` qui reconstitue le jeu de
+  démonstration de façon strictement déterministe. Elles n'étaient consommées que par le harnais
+  navigateur ; `tests/README.md` affirmait pourtant le contraire. L'oracle a été validé **par
+  mutation** : neutraliser la tolérance du jour courant dans `currentStreak` le fait échouer. (D4)
+- `startOfWeek(date, weekStart)` : `Settings.weekStart` devient implémentable. (D15)
+- `Profile`, `ShoppingItem`, `deletedAt` sur toutes les entités, `createdAt`/`updatedAt` sur
+  `Note` et `Session` — prérequis de synchronisation exigé « dès la phase 1 » par
+  `03-ARCHITECTURE.md` § 3.4. Sur `LogEntry`, `deletedAt` est une pierre tombale : elle distingue
+  « valeur effacée » de « jamais saisie », distinction vitale pour le type `limit`. (D14)
+- Dépôt Git, `.gitattributes` — le prototype est marqué non-texte : c'est une archive, et
+  `Habitum.dc.html` doit rester octet pour octet ce qu'il est. (D2)
+
+### Outillage
+
+- `npm run verify` couvre désormais **sept** contrôles — typecheck · lint · format · libellés ·
+  jetons · tests · build — conformément à `CLAUDE.md` § Définition de terminé. Il en omettait
+  trois. (D13)
+- ESLint ignore `next-env.d.ts`, régénéré par `next build` avec une référence triple-slash qui
+  rendait le lint local rouge après toute construction. (D18)
+- Convention `_` pour un identifiant délibérément inutilisé, reconnue par ESLint.
+- Prettier passé sur les fichiers de code ; la documentation en est exclue (elle reflue les
+  tableaux Markdown, et `domain-logic-extract.js` doit rester le miroir du prototype).
+
+### Documentation
+
+- `03-ARCHITECTURE.md` : sept types d'habitude et trois types d'objectif, `Goal` complété,
+  horodatages alignés sur le code, pseudo-code de `isScheduled` incluant les quatre modes,
+  arborescence réelle du dépôt. (D5, D14, D16, D21)
+- `02-ROADMAP.md` et `03-ARCHITECTURE.md` : phase 6 sur **Neon**, plus Supabase. (D20)
+- `06-BACKLOG.md` : 61 chemins `src/…` remplacés par l'arborescence réelle ; `T1.4` couvre les
+  sept types. (D21, D5)
+- `README.md` (311 clés, pas 308), `tests/README.md`, `PASSATION-CLAUDE-CODE.md`,
+  `ANALYSE-REPRISE.md`, `adr/0002-local-first.md` : affirmations contredites par le code. (D22)
+
+### Écarté du suivi Git
+
+Des fichiers personnels se trouvaient dans le dossier de travail (`Phase.docx`, `Photo/`). Le
+dépôt étant destiné à être public, ils sont exclus par `.gitignore` — et il reste préférable de
+les déplacer hors du projet.
+
+
 ## 2026-08-05 — Finalisation : plus aucune réserve côté design
 
 Objectif de cette passe : ne plus rien laisser d'ouvert qui relève du design. **Elle a trouvé trois
