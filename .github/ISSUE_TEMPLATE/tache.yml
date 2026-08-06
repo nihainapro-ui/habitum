@@ -1,0 +1,22 @@
+name: Tâche
+description: Une tâche du backlog ou un défaut de l'audit
+labels: ['type:tache']
+body:
+  - type: input
+    id: reference
+    attributes:
+      label: Référence
+      description: Identifiant du backlog (T3.2) ou de l'audit (D12).
+  - type: textarea
+    id: objectif
+    attributes: { label: Objectif }
+    validations: { required: true }
+  - type: textarea
+    id: resultat
+    attributes:
+      label: Résultat attendu
+      description: Vérifiable par une commande, si possible.
+    validations: { required: true }
+  - type: textarea
+    id: risques
+    attributes: { label: Risques et hypothèses }

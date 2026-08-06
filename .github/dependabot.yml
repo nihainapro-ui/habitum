@@ -1,0 +1,17 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule: { interval: weekly, day: monday }
+    open-pull-requests-limit: 5
+    groups:
+      # Grouper les mineures et correctifs : une PR par semaine plutôt que dix,
+      # et moins de minutes d'Actions consommées sur un dépôt privé.
+      mineures-et-correctifs:
+        update-types: [minor, patch]
+    labels: ['type:securite', 'prio:moyenne']
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule: { interval: weekly, day: monday }
+    labels: ['type:securite']

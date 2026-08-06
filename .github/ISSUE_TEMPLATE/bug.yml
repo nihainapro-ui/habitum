@@ -1,0 +1,38 @@
+name: Anomalie
+description: Signaler un comportement incorrect
+labels: ['type:defaut']
+body:
+  - type: textarea
+    id: constate
+    attributes: { label: Ce qui se passe }
+    validations: { required: true }
+  - type: textarea
+    id: attendu
+    attributes: { label: Ce qui devrait se passer }
+    validations: { required: true }
+  - type: textarea
+    id: repro
+    attributes:
+      label: Reproduction
+      placeholder: |
+        1. Ouvrir…
+        2. Cliquer…
+        3. Observer…
+    validations: { required: true }
+  - type: dropdown
+    id: vue
+    attributes:
+      label: Vue concernée
+      options:
+        [dash, today, habits, tasks, goals, calendar, stats, timer, notes, profile, settings, autre]
+  - type: dropdown
+    id: theme
+    attributes: { label: Thème, options: [neural, plasma, clinical] }
+  - type: dropdown
+    id: langue
+    attributes: { label: Langue, options: [fr, en] }
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: Visible dans Réglages → À propos.
