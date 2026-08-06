@@ -12,7 +12,15 @@ export type Category = 'health' | 'sport' | 'mind' | 'work' | 'home' | 'study';
 
 /** SEPT types, pas quatre. Toute liste blanche incomplète fait disparaître des
  *  données silencieusement — c'est arrivé à l'import (voir CHANGELOG 2026-08-05). */
-export const HABIT_GOAL_KINDS = ['check', 'count', 'time', 'total', 'list', 'limit', 'exact'] as const;
+export const HABIT_GOAL_KINDS = [
+  'check',
+  'count',
+  'time',
+  'total',
+  'list',
+  'limit',
+  'exact',
+] as const;
 export type HabitGoalKind = (typeof HABIT_GOAL_KINDS)[number];
 
 export const GOAL_KINDS = ['cumul', 'milestones', 'reduce'] as const;

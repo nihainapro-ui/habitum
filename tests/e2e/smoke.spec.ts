@@ -1,7 +1,19 @@
 import { expect, test } from '@playwright/test';
 
 test('les onze vues répondent', async ({ page }) => {
-  const routes = ['/', '/today', '/habits', '/tasks', '/goals', '/calendar', '/stats', '/timer', '/notes', '/profile', '/settings'];
+  const routes = [
+    '/',
+    '/today',
+    '/habits',
+    '/tasks',
+    '/goals',
+    '/calendar',
+    '/stats',
+    '/timer',
+    '/notes',
+    '/profile',
+    '/settings',
+  ];
   for (const route of routes) {
     const res = await page.goto(route);
     expect(res?.status(), route).toBeLessThan(400);

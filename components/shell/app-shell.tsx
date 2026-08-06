@@ -3,7 +3,7 @@ import Link from 'next/link';
 
 const NAV = [
   { href: '/', label: 'Tableau de bord' },
-  { href: '/today', label: 'Aujourd'hui' },
+  { href: '/today', label: "Aujourd'hui" },
   { href: '/habits', label: 'Habitudes' },
   { href: '/tasks', label: 'Tâches' },
   { href: '/goals', label: 'Objectifs' },
@@ -30,7 +30,9 @@ export function AppShell({ children }: { children: ReactNode }) {
           gap: 4,
         }}
       >
-        <strong style={{ fontSize: 18, letterSpacing: '-0.02em', marginBottom: 16 }}>Habitum</strong>
+        <strong style={{ fontSize: 18, letterSpacing: '-0.02em', marginBottom: 16 }}>
+          Habitum
+        </strong>
         {NAV.map((item) => (
           <Link
             key={item.href}

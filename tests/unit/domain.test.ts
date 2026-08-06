@@ -51,7 +51,7 @@ describe('isScheduled', () => {
     expect(isScheduled(habit({ archived: true }), NOW, NOW)).toBe(false);
   });
 
-  it("suit les jours de semaine (0 = lundi)", () => {
+  it('suit les jours de semaine (0 = lundi)', () => {
     const h = habit({ days: [0, 2, 4] });
     expect(isScheduled(h, NOW, NOW)).toBe(true); // mercredi = 2
     expect(isScheduled(h, addDays(NOW, 1), NOW)).toBe(false); // jeudi = 3

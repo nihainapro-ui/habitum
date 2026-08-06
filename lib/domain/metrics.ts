@@ -65,7 +65,12 @@ export function bestStreak(log: LogIndex, h: Habit, now: Date = today()): number
 }
 
 /** Taux de réussite sur une fenêtre glissante, en %. Jours futurs exclus. */
-export function completionRate(log: LogIndex, h: Habit, window: number, now: Date = today()): number {
+export function completionRate(
+  log: LogIndex,
+  h: Habit,
+  window: number,
+  now: Date = today(),
+): number {
   let scheduled = 0;
   let done = 0;
   let d = addDays(now, -window + 1);
@@ -125,7 +130,11 @@ export function dayRatio(
 
 /** Minutes de focus sur une fenêtre. Agrège les sessions RÉELLEMENT enregistrées :
  *  ne jamais réintroduire de génération (défaut E1 corrigé au lot 2). */
-export function focusMinutes(sessions: readonly Session[], window: number, now: Date = today()): number {
+export function focusMinutes(
+  sessions: readonly Session[],
+  window: number,
+  now: Date = today(),
+): number {
   let m = 0;
   const from = dateKey(addDays(now, -window + 1));
   const to = dateKey(now);

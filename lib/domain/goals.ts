@@ -28,7 +28,10 @@ export function goalElapsed(g: Goal, now: Date = today()): number {
   const start = parseKey(g.start);
   const due = parseKey(g.deadline);
   if (!start || !due || due <= start) return 0.5;
-  return Math.max(0, Math.min(1, (now.getTime() - start.getTime()) / (due.getTime() - start.getTime())));
+  return Math.max(
+    0,
+    Math.min(1, (now.getTime() - start.getTime()) / (due.getTime() - start.getTime())),
+  );
 }
 
 /** Avancement. Porté de objCalc() — 'reduce' compte les ÉCHECS, d'où le 1 - cur/tot. */

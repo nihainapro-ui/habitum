@@ -2,5 +2,14 @@
 node_modules
 public/prototype
 messages
-docs/references
 *.min.js
+
+# La documentation est de la prose, pas du code. Prettier reflue les tableaux
+# Markdown et les blocs alignés à la main : diff énorme, bénéfice nul, et
+# `docs/handoff/reference/domain-logic-extract.js` doit rester le miroir exact
+# du prototype (CLAUDE.md § 7). ESLint ignore déjà docs/** pour la même raison.
+docs
+*.md
+
+# Fichiers générés — leur mise en forme appartient à leur générateur.
+styles/tokens.css

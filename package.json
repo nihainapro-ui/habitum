@@ -19,7 +19,7 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "check:messages": "node scripts/check-messages.mjs",
-    "verify": "npm run typecheck && npm run lint && npm run check:messages && npm run test"
+    "verify": "npm run typecheck && npm run lint && npm run format:check && npm run check:messages && npm run test && npm run build"
   },
   "dependencies": {
     "next": "^15.3.0",
