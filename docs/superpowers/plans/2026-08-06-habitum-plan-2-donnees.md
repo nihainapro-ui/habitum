@@ -882,6 +882,13 @@ export function applyLegacyMigrations(input: LegacyState): LegacyState {
 npx vitest run tests/unit/data/migrations.test.ts
 ```
 
+> **Correction du 8 août 2026.** Le cas `v<2` écrit plus haut est faux : il fait porter la
+> migration sur `{id:'o4', kind:'cumul'}`, alors que la migration du prototype ne se déclenche
+> que si `id==='o4' && kind==='reduce' && target<12`. Tel quel, il n'aurait rien migré et aurait
+> poussé à « corriger » la migration — c'est-à-dire à la réécrire, ce que l'étape 3 interdit.
+> Le test livré porte sur `{id:'o4', kind:'reduce', target:6}` → `target === 12`, et un second
+> cas vérifie qu'un objectif ne remplissant pas les trois conditions n'est pas touché.
+
 Attendu : **PASS**, 9 tests. Un échec sur l'idempotence signale une migration qui s'applique deux fois — c'est exactement le défaut `SV=4` corrigé au lot 3 du prototype (`materialize()` relancé à chaque ouverture).
 
 - [ ] **Step 6: Commit**

@@ -1,5 +1,95 @@
 # Journal des modifications
 
+## 2026-08-08 — Phase 1 : couche de données
+
+Le produit avait un moteur métier testé et aucun endroit où ranger une donnée. Il a maintenant
+une base locale, des dépôts typés, un importeur qui rend compte de ce qu'il refuse, et deux
+amorces qu'on ne peut pas confondre. Aucune vue n'a bougé : cette phase ne se voit pas, elle se
+vérifie. Plan détaillé : `docs/superpowers/plans/2026-08-06-habitum-plan-2-donnees.md`.
+
+### Ajouté — persistance
+
+- **Schéma Dexie, neuf tables** (`lib/data/db.ts`). Le journal a pour clé primaire le couple
+  `[habitId+date]` : l'unicité « une valeur par habitude et par jour », que l'objet `ov` du
+  prototype garantissait implicitement, devient **structurelle**. Une fenêtre de journal se lit
+  par l'index composite, sans balayage complet. (T1.7)
+- **Dépôts typés** (`lib/data/repositories/`). `makeRepo()` centralise identifiant, horodatages
+  et suppression logique : aucune entité ne peut être écrite sans `updatedAt`, prérequis de
+  synchronisation exigé par `03-ARCHITECTURE.md` § 3.4. Neuf dépôts, dont `logs` qui ne passe pas
+  par la fabrique — il n'a pas d'identifiant propre. (T1.8)
+- **Index du journal en mémoire** (`lib/data/log-index.ts`) : le joint entre `lib/data` et
+  `lib/domain`. Le domaine ne reçoit qu'une `ReadonlyMap` et n'apprendra jamais qu'IndexedDB
+  existe. Une clé absente y rend `undefined`, **jamais 0** — sans quoi une habitude `limit`
+  serait réussie d'avance (CLAUDE.md § piège 2). 36 500 entrées indexées en moins de 100 ms.
+
+### Ajouté — entrées et sorties
+
+- **Importeur validé par zod** (`lib/data/import.ts`). Les listes blanches des **sept** types
+  d'habitude et des **trois** types d'objectif sont **importées** de `lib/domain/types.ts` —
+  jamais recopiées. C'est le défaut qui avait fait disparaître 4 habitudes sur 6 le 5 août.
+  Chaque entité est validée séparément : une entité refusée est **nommée dans le rapport**, elle
+  n'empêche pas les autres d'entrer et ne disparaît pas en silence. Le journal est filtré des
+  clés malformées et des entrées orphelines. L'écriture tient dans une seule transaction. (T1.10)
+- **Exportateur** (`lib/data/export.ts`) au format que l'importeur relit. Il porte les objectifs,
+  les sessions, la liste de courses, les notes, l'humeur et **les habitudes archivées** — tout ce
+  que `exportJSON()` du prototype perdait avant sa correction du lot 1.
+- **Le test d'aller-retour** recompare `currentStreak`, `bestStreak`, `completionRate` et
+  `sumValues` des six habitudes de démonstration après un cycle export → import complet, puis
+  vérifie qu'un second tour ne fait dériver ni les habitudes, ni le journal, ni les objectifs,
+  ni les notes. C'est le test qui aurait attrapé la perte du 5 août.
+- **Reprise d'un utilisateur du prototype** (`lib/data/legacy.ts`, `lib/data/migrations.ts`) :
+  les quatre migrations `v<2`…`v<5` sont transcrites **à l'identique** depuis
+  `public/prototype/Habitum.dc.html`, avec le cas « déjà à jour, ne rien faire » — celui qui
+  relançait la génération de l'historique à chaque ouverture quand `SV` valait 4. Un stockage qui
+  refuse d'être lu (navigation privée iOS) ne fait pas échouer l'ouverture. `migrateFromLegacy`
+  passe par le **même** importeur qu'un fichier de sauvegarde : un seul chemin d'entrée dans la
+  base, donc une seule liste blanche à tenir à jour. (T1.9, B6)
+
+### Ajouté — démonstration et compte vierge, définitivement séparés
+
+- `seedEmpty()` est **le chemin par défaut** : un profil, des réglages, rien d'autre. Un compte
+  neuf affiche 0 minute de focus et des listes vides, parce que c'est la vérité. (T1.11, B4)
+- `seedDemo()` est explicite et drapeauté dans `meta`. Il pose les six habitudes, leurs **quatre**
+  entrées du jour, les huit tâches, les quatre sessions, les quatre objectifs et la liste de
+  courses — et **rien d'antérieur**. La reconstitution des 180 jours d'historique reste cantonnée
+  à `tests/fixtures/demo-seed.ts`, où elle sert à comparer aux 62 valeurs de référence.
+- Un test parcourt `lib/` et échoue si un générateur d'historique y réapparaît.
+- Les réglages d'un compte neuf posent `notifications`, `sound` et `vibrate` **à l'arrêt** :
+  la phase 5 ne les a pas encore implémentés, et un interrupteur allumé sans effet est un
+  mensonge de plus.
+
+### Supprimé
+
+- `lib/storage/legacy-import.ts` — ses quatre validateurs et `toLogRows` sont absorbés par
+  `lib/data/import.ts`. Deux importeurs, c'était deux listes blanches à tenir.
+
+### Outillage
+
+- `fake-indexeddb` (Apache-2.0) amorcé pour Vitest, `@vitest/coverage-v8` (MIT) pour mesurer.
+- ESLint interdit désormais `@/lib/data` et `dexie` dans `lib/domain` : la règle G2 n'était
+  imposée que dans un sens. Et `lib/data` n'importe ni React ni Next — la persistance ne rend rien.
+- **170 tests** (contre 118 à la fin de la phase 0), dont 64 sur la couche de données.
+  Couverture de `lib/data` : **100 % des lignes**, 92,7 % des branches.
+
+### Corrigé — documentation
+
+- `02-ROADMAP.md` : les chemins `src/…` n'ont jamais existé dans ce dépôt — un repreneur qui les
+  suivait créait une arborescence parallèle. Corrigés (`lib/domain/`, `lib/data/`, `components/`…),
+  comme l'avait été `06-BACKLOG.md` en phase 0. La ligne 1.2 annonçait encore `date-fns`, retirée
+  depuis (ADR-0006).
+- `PASSATION-CLAUDE-CODE.md` et `README.md` : `lib/storage/` ne porte plus l'importeur.
+- Le plan de la phase contenait un test faux pour la migration `v<2` — il portait sur un objectif
+  `kind:'cumul'`, que la migration réelle ne touche pas. Corrigé et daté dans le document ; c'est
+  le test qui a changé, pas la migration.
+
+### Inchangé (ligne rouge respectée)
+
+Les clés persistées `habitum.state`, `habitum.state.big`, `habitum.state.bak`, `habitum.best` et
+les champs `ov`, `obj`, `occ`, `tt`, `mat`, `cfg` ; `public/prototype/` ; les 62 valeurs de
+référence ; `lib/domain/`, qui n'a pas été touché de la phase.
+
+---
+
 ## 2026-08-06 — Phase 0 : fondations du dépôt
 
 Aucune fonctionnalité ajoutée. Le dépôt ne compilait pas, n'était pas versionné, ses jetons de

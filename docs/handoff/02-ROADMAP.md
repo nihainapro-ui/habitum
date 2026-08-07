@@ -29,15 +29,15 @@ C'est ici que se trouve la valeur. **Aucune UI dans cette phase.**
 
 | # | Tâche | Module |
 |---|---|---|
-| 1.1 | Types du domaine : `Habit`, `Task`, `Goal`, `LogEntry`, `Session`, `Note`, `Profile`, `Settings` | `src/domain/types.ts` |
-| 1.2 | Utilitaires de date (remplacer les helpers maison par `date-fns`, garder `dateKey()`) | `src/domain/date.ts` |
-| 1.3 | Porter `sched_`, `isDone_`, `tgt` (4 types d'objectif dont `limit` inversé) | `src/domain/schedule.ts` |
-| 1.4 | Porter `streak_`, `best_`, `pct_`, `sumVal_`, `dayRatio_`, score d'habitude, journées parfaites | `src/domain/stats.ts` |
-| 1.5 | **Tests unitaires exhaustifs** sur 1.3/1.4 (cas limites : `limit` futur, jour courant, archivé, bornes `start`/`end`) | `src/domain/*.test.ts` |
-| 1.6 | Schéma Dexie (IndexedDB) : tables `habits`, `logs`, `tasks`, `goals`, `notes`, `sessions`, `profiles`, `meta` + index `[habitId+date]` | `src/data/db.ts` |
-| 1.7 | Migrations versionnées + **import du JSON exporté par le prototype** (`exportJSON`) | `src/data/migrations.ts` |
-| 1.8 | Séparer strictement **seed de démo** et **compte vierge** (corrige B4) ; supprimer `focusMin_()` et `journalSeed()` | `src/data/seed.ts` |
-| 1.9 | Cache de statistiques dérivées (recalcul incrémental par habitude/jour au lieu d'invalidation globale — corrige B3) | `src/domain/cache.ts` |
+| 1.1 | Types du domaine : `Habit`, `Task`, `Goal`, `LogEntry`, `Session`, `Note`, `Profile`, `Settings` | `lib/domain/types.ts` |
+| 1.2 | Utilitaires de date — helpers maison conservés, `date-fns` écartée (ADR-0006) | `lib/domain/date.ts` |
+| 1.3 | Porter `sched_`, `isDone_`, `tgt` (4 types d'objectif dont `limit` inversé) | `lib/domain/schedule.ts` |
+| 1.4 | Porter `streak_`, `best_`, `pct_`, `sumVal_`, `dayRatio_`, score d'habitude, journées parfaites | `lib/domain/metrics.ts` |
+| 1.5 | **Tests unitaires exhaustifs** sur 1.3/1.4 (cas limites : `limit` futur, jour courant, archivé, bornes `start`/`end`) | `lib/domain/*.test.ts` |
+| 1.6 | Schéma Dexie (IndexedDB) : tables `habits`, `logs`, `tasks`, `goals`, `notes`, `sessions`, `profiles`, `meta` + index `[habitId+date]` | `lib/data/db.ts` |
+| 1.7 | Migrations versionnées + **import du JSON exporté par le prototype** (`exportJSON`) | `lib/data/migrations.ts` |
+| 1.8 | Séparer strictement **seed de démo** et **compte vierge** (corrige B4) ; supprimer `focusMin_()` et `journalSeed()` | `lib/data/seed.ts` |
+| 1.9 | Cache de statistiques dérivées (recalcul incrémental par habitude/jour au lieu d'invalidation globale — corrige B3) | `lib/domain/cache.ts` |
 
 **Sortie attendue :** `pnpm test` vert, moteur utilisable sans écran.
 
@@ -47,13 +47,13 @@ C'est ici que se trouve la valeur. **Aucune UI dans cette phase.**
 
 | # | Tâche | Module |
 |---|---|---|
-| 2.1 | Tokens en variables CSS (cf. `04-DESIGN-TOKENS.md`), 3 thèmes via `[data-theme]` | `src/styles/tokens.css` |
-| 2.2 | Polices auto-hébergées via `next/font` (Space Grotesk, JetBrains Mono) — supprime la dépendance Google Fonts | `src/app/layout.tsx` |
-| 2.3 | Primitives : `Panel`, `Card`, `Chip`, `Switch`, `Field`, `Segmented`, `Sheet`, `Dialog`, `Toast`, `Tooltip` (base shadcn/ui, MIT) | `src/ui/` |
-| 2.4 | Coquille : rail de navigation, en-tête, mode zen, barre basse mobile | `src/components/shell/` |
-| 2.5 | i18n via `next-intl` : externaliser `L`, `EL`, `PL` en `messages/fr.json` + `en.json` ; **le contenu utilisateur cesse d'être bilingue** | `messages/`, `src/i18n/` |
-| 2.6 | Icônes Lucide (remplace les glyphes typographiques `✚ ▲ ◉` là où c'est un vrai icône) | `src/ui/icon.tsx` |
-| 2.7 | Toasts avec annulation (porter `snapshot()` / `notify()` en middleware de store) | `src/store/undo.ts` |
+| 2.1 | Tokens en variables CSS (cf. `04-DESIGN-TOKENS.md`), 3 thèmes via `[data-theme]` | `styles/tokens.css` |
+| 2.2 | Polices auto-hébergées via `next/font` (Space Grotesk, JetBrains Mono) — supprime la dépendance Google Fonts | `app/layout.tsx` |
+| 2.3 | Primitives : `Panel`, `Card`, `Chip`, `Switch`, `Field`, `Segmented`, `Sheet`, `Dialog`, `Toast`, `Tooltip` (base shadcn/ui, MIT) | `components/ui/` |
+| 2.4 | Coquille : rail de navigation, en-tête, mode zen, barre basse mobile | `components/shell/` |
+| 2.5 | i18n via `next-intl` : externaliser `L`, `EL`, `PL` en `messages/fr.json` + `en.json` ; **le contenu utilisateur cesse d'être bilingue** | `messages/`, `i18n/` |
+| 2.6 | Icônes Lucide (remplace les glyphes typographiques `✚ ▲ ◉` là où c'est un vrai icône) | `components/ui/icon.tsx` |
+| 2.7 | Toasts avec annulation (porter `snapshot()` / `notify()` en middleware de store) | `lib/store/undo.ts` |
 
 ---
 
@@ -79,13 +79,13 @@ Ordre imposé par les dépendances (chaque lot est livrable et testable) :
 
 | # | Tâche | Module |
 |---|---|---|
-| 4.1 | Statistiques de focus calculées sur les **sessions réelles** | `src/domain/stats.ts` |
-| 4.2 | Notifications réelles : `Notification API` + `showTrigger`/service worker pour les rappels d'habitude et la fin de pomodoro | `src/features/reminders/` |
-| 4.3 | Son (Web Audio, un bip synthétisé, zéro dépendance) et vibration (`navigator.vibrate`) | `src/features/feedback/` |
+| 4.1 | Statistiques de focus calculées sur les **sessions réelles** | `lib/domain/metrics.ts` |
+| 4.2 | Notifications réelles : `Notification API` + `showTrigger`/service worker pour les rappels d'habitude et la fin de pomodoro | `lib/features/reminders/` |
+| 4.3 | Son (Web Audio, un bip synthétisé, zéro dépendance) et vibration (`navigator.vibrate`) | `lib/features/feedback/` |
 | 4.4 | Renommer/clarifier le réglage `cloud` (persistance locale ≠ cloud) | `settings` |
 | 4.5 | États vides, chargement et erreur systématiques sur les 11 vues + `error.tsx` / `not-found.tsx` | toutes |
-| 4.6 | Onboarding 3 écrans : choix langue, thème, 3 habitudes suggérées ; **compte vierge par défaut** | `src/features/onboarding/` |
-| 4.7 | Récurrence de tâches propre (RRULE simplifiée + exceptions par occurrence) | `src/domain/recurrence.ts` |
+| 4.6 | Onboarding 3 écrans : choix langue, thème, 3 habitudes suggérées ; **compte vierge par défaut** | `lib/features/onboarding/` |
+| 4.7 | Récurrence de tâches propre (RRULE simplifiée + exceptions par occurrence) | `lib/domain/recurrence.ts` |
 
 ---
 
@@ -94,9 +94,9 @@ Ordre imposé par les dépendances (chaque lot est livrable et testable) :
 | # | Tâche | Module |
 |---|---|---|
 | 5.1 | Manifeste + icônes (192/512/maskable) + écran de démarrage | `public/` |
-| 5.2 | Service worker via **Serwist** (successeur MIT de next-pwa) : coquille en cache, offline total | `src/sw.ts` |
-| 5.3 | Sauvegarde/restauration JSON + rappel de sauvegarde périodique (garde-fou anti perte de données) | `src/features/backup/` |
-| 5.4 | Détection de reprise en ligne, file d'écritures | `src/data/queue.ts` |
+| 5.2 | Service worker via **Serwist** (successeur MIT de next-pwa) : coquille en cache, offline total | `app/sw.ts` |
+| 5.3 | Sauvegarde/restauration JSON + rappel de sauvegarde périodique (garde-fou anti perte de données) | `lib/features/backup/` |
+| 5.4 | Détection de reprise en ligne, file d'écritures | `lib/data/queue.ts` |
 
 ---
 
@@ -109,8 +109,8 @@ projet du 6 août 2026 ; les versions antérieures de ce document prescrivaient 
 |---|---|---|
 | 6.1 | **Neon PostgreSQL** (plan gratuit) + **Auth.js** par lien magique | `lib/data/remote/` |
 | 6.2 | Schéma miroir + RLS par `user_id` | `supabase/migrations/` |
-| 6.3 | Synchronisation *local-first* : `updatedAt` + `deletedAt` (tombstones), dernier écrivain gagne par champ, journal `ov` en table append-only | `src/data/sync.ts` |
-| 6.4 | Écran d'état de synchronisation + résolution manuelle des conflits rares | `src/features/sync/` |
+| 6.3 | Synchronisation *local-first* : `updatedAt` + `deletedAt` (tombstones), dernier écrivain gagne par champ, journal `ov` en table append-only | `lib/data/sync.ts` |
+| 6.4 | Écran d'état de synchronisation + résolution manuelle des conflits rares | `lib/features/sync/` |
 
 *Alternative 100 % sans serveur si l'on refuse tout compte : export/import de fichier + WebRTC ou
 File System Access API vers un dossier synchronisé par l'utilisateur.*

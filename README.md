@@ -39,7 +39,8 @@ Le prototype, lui, n'a besoin de rien : ouvrir
 | `app/` | routes App Router — une par vue (11) |
 | `components/` | composants React : `shell/` (coque), le reste à venir |
 | `lib/domain/` | **moteur métier pur** — jamais de React, jamais de Next, 100 % testable |
-| `lib/storage/` | clés persistées figées + importeur du format du prototype |
+| `lib/data/` | persistance : schéma Dexie, dépôts typés, import/export, amorces |
+| `lib/storage/` | clés persistées figées (`habitum.state`, `DB_NAME`…) |
 | `i18n/` | configuration next-intl (langue par cookie, pas par URL) |
 | `messages/` | `fr.json` / `en.json` — 311 clés, symétrie vérifiée en CI |
 | `styles/` | `globals.css` + `tokens.css` (thèmes) |

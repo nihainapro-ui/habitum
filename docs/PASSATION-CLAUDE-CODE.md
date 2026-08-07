@@ -31,7 +31,8 @@ Installer, faire passer `verify`, pousser sur GitHub, brancher Vercel.
 ### Phase 1 — données (2–3 jours) · corrige B4, B6, et le plafond de stockage
 Schéma Dexie (`habits`, `logs` indexée `[habitId+date]`, `tasks`, `goals`, `notes`,
 `sessions`, `profiles`, `meta`), migrations **numérotées** (plus de cascade `if v<n`),
-importeur du format d'export du prototype (`lib/storage/legacy-import.ts` en est l'amorce),
+importeur du format d'export du prototype (`lib/data/import.ts`, validé par zod — l'amorce
+`lib/storage/legacy-import.ts` y a été absorbée puis supprimée),
 et **séparation stricte du jeu de démonstration et d'un compte vierge** : deux chemins
 distincts à la première ouverture, jamais un mélange.
 **Critère d'arrêt** : un export du prototype se réimporte sans perte, et un compte vierge
