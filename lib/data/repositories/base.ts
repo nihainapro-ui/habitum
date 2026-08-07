@@ -1,0 +1,91 @@
+import type { EntityTable, Table } from 'dexie';
+
+/** Toute entité versionnée du modèle. */
+export interface Versioned {
+  id: string;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt?: string;
+}
+
+export const nowIso = (): string => new Date().toISOString();
+
+/** Identifiant opaque. `crypto.randomUUID` est disponible partout où l'app tourne
+ *  (navigateurs modernes, Node ≥ 19) ; le repli couvre les environnements de test
+ *  exotiques sans jamais produire de collision en usage réel. */
+export const newId = (): string =>
+  typeof crypto !== 'undefined' && 'randomUUID' in crypto
+    ? crypto.randomUUID()
+    : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+
+export type CreateInput<T extends Versioned> = Omit<
+  T,
+  'id' | 'createdAt' | 'updatedAt' | 'deletedAt'
+> &
+  Partial<Pick<T, 'id'>>;
+
+export type UpdatePatch<T extends Versioned> = Partial<Omit<T, 'id' | 'createdAt'>>;
+
+/** CRUD commun : identifiant, horodatages, suppression logique.
+ *  Aucune entité ne réimplémente cela — c'est ainsi qu'on garantit que
+ *  `updatedAt` est toujours renseigné, prérequis de synchronisation
+ *  (03-ARCHITECTURE.md § 3.4). */
+export function makeRepo<T extends Versioned>(entityTable: EntityTable<T, 'id'>) {
+  /* `EntityTable<T,'id'>` type sa clé primaire par `IDType<T,'id'>`, que TypeScript
+     ne peut pas réduire à `string` tant que `T` reste générique. La contrainte
+     `T extends Versioned` garantit pourtant `id: string` : la vue `Table<T, string>`
+     est exacte, et c'est la seule conversion du fichier. */
+  const table = entityTable as unknown as Table<T, string>;
+
+  return {
+    async list(): Promise<T[]> {
+      return (await table.toArray()).filter((r) => !r.deletedAt);
+    },
+
+    async listAll(): Promise<T[]> {
+      return table.toArray();
+    },
+
+    async get(id: string): Promise<T | undefined> {
+      const row = await table.get(id);
+      return row && !row.deletedAt ? row : undefined;
+    },
+
+    async create(input: CreateInput<T>): Promise<T> {
+      const at = nowIso();
+      const row = { ...input, id: input.id ?? newId(), createdAt: at, updatedAt: at } as T;
+      await table.put(row);
+      return row;
+    },
+
+    async update(id: string, patch: UpdatePatch<T>): Promise<T | undefined> {
+      const row = await table.get(id);
+      if (!row) return undefined;
+      const next = {
+        ...row,
+        ...patch,
+        id: row.id,
+        createdAt: row.createdAt,
+        updatedAt: nowIso(),
+      } as T;
+      await table.put(next);
+      return next;
+    },
+
+    /** Suppression LOGIQUE. La ligne reste : c'est ce qui permettra à deux
+     *  appareils de converger sans ressusciter une entité effacée. */
+    async softDelete(id: string): Promise<void> {
+      const at = nowIso();
+      await table.update(id, { deletedAt: at, updatedAt: at } as never);
+    },
+
+    async restore(id: string): Promise<void> {
+      const at = nowIso();
+      await table.update(id, { deletedAt: undefined, updatedAt: at } as never);
+    },
+
+    async count(): Promise<number> {
+      return (await this.list()).length;
+    },
+  };
+}
