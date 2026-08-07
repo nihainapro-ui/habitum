@@ -26,7 +26,7 @@ jobs:
           echo "code=$code" >> "$GITHUB_OUTPUT"
           [ "$code" = "200" ] || exit 1
       - if: failure()
-        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7
+        uses: actions/github-script@373c709c69115d41ff229c7e5df9f8788daa9553 # v9
         with:
           script: |
             const titre = `Production indisponible (HTTP ${{ steps.sonde.outputs.code }})`;
