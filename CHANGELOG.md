@@ -71,6 +71,33 @@ rien côté TypeScript. Détail des constats : `docs/AUDIT-PRODUCTION-2026-08-06
 - `README.md` (311 clés, pas 308), `tests/README.md`, `PASSATION-CLAUDE-CODE.md`,
   `ANALYSE-REPRISE.md`, `adr/0002-local-first.md` : affirmations contredites par le code. (D22)
 
+### Suivi de projet sur GitHub
+
+Dépôt `nihainapro-ui/habitum`, privé. Le prototype y arrive **intact à l'octet près**
+(336 613 octets) — c'est ce que `.gitattributes` protège en le marquant non-texte.
+
+- 17 étiquettes, 8 jalons alignés sur les phases du plan d'exécution
+- **28 issues**, une par défaut de l'audit, chacune portant sa priorité, sa phase et son jalon
+- **18 fermées immédiatement** : celles que cette phase a levées. L'historique porte ainsi la
+  trace du travail fait, pas seulement de ce qui reste.
+- 10 restent ouvertes, réparties sur les phases 2 à 7
+
+Le tout est reproductible : `scripts/github-bootstrap.sh`, idempotent.
+
+### Un point de la phase non tenu, et pourquoi
+
+- **Protection de la branche `main`** : impossible, et GitHub le dit lui-même —
+  *« Upgrade to GitHub Pro or make this repository public to enable this feature »* (HTTP 403).
+  Sur un dépôt **privé** en plan gratuit, les règles de protection de branche n'existent pas.
+  Le dépôt reste privé par décision du 6 août 2026. Conséquence assumée : la CI signale les
+  échecs mais ne bloque pas la fusion. À rouvrir si le dépôt passe un jour en public — la
+  protection redeviendrait alors gratuite, tout comme l'analyse CodeQL.
+- **Analyse CodeQL** : retirée pour la même raison. Un workflow qui échoue à chaque exécution
+  cesse d'être un signal et apprend à ignorer le rouge. Dependabot, `npm audit` et `gitleaks`
+  restent en place et fonctionnent en privé.
+Un seul point reste donc hors de portée : la protection de branche. Tout le reste de la phase
+est livré.
+
 ### Écarté du suivi Git
 
 Des fichiers personnels se trouvaient dans le dossier de travail (`Phase.docx`, `Photo/`). Le
