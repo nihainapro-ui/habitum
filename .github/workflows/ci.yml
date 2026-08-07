@@ -42,6 +42,19 @@ jobs:
         # Le seuil remonte à `high` dès que l'issue D11 est fermée.
         run: npm audit --audit-level=critical
 
+  secrets:
+    name: secrets
+    runs-on: ubuntu-latest
+    steps:
+      # `fetch-depth: 0` : gitleaks analyse l'HISTORIQUE, pas seulement l'état
+      # courant. Un secret retiré au commit suivant reste compromis — c'est
+      # tout l'intérêt du contrôle.
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with: { fetch-depth: 0 }
+      - uses: gitleaks/gitleaks-action@dcedce43c6f43de0b836d1fe38946645c9c638dc # v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
   e2e:
     needs: verify
     runs-on: ubuntu-latest
