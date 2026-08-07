@@ -90,8 +90,26 @@ Le tout est reproductible : `scripts/github-bootstrap.sh`, idempotent.
   *« Upgrade to GitHub Pro or make this repository public to enable this feature »* (HTTP 403).
   Sur un dépôt **privé** en plan gratuit, les règles de protection de branche n'existent pas.
   Le dépôt reste privé par décision du 6 août 2026. Conséquence assumée : la CI signale les
-  échecs mais ne bloque pas la fusion. À rouvrir si le dépôt passe un jour en public — la
-  protection redeviendrait alors gratuite, tout comme l'analyse CodeQL.
+  échecs mais ne bloque pas la fusion.
+
+**Décision du 7 août 2026 : le dépôt reste privé.** Les trois limites ci-dessus — protection de
+branche, contrôles obligatoires, analyse CodeQL — sont donc **assumées définitivement**, et non
+reportées. Elles ont toutes la même cause et se débloqueraient ensemble si le dépôt passait un
+jour en public ; ce n'est pas prévu.
+
+Ce qui les compense :
+
+- Le dépôt est **mono-contributeur**. La protection de branche existe pour empêcher *un tiers*
+  de fusionner du rouge : ce risque n'existe pas ici.
+- La chaîne de vérification **existe et tourne** — `verify` sur sept contrôles, 96 tests
+  unitaires, 22 parcours e2e sur desktop et mobile, en matrice Node 20 et 22. Elle signale.
+- `gitleaks` analyse l'historique complet, Dependabot surveille les dépendances, `npm audit`
+  tourne à chaque exécution, les en-têtes de sécurité sont vérifiés par test.
+- La règle de travail reste : **rien n'est poussé sans `npm run verify` vert**. Elle a tenu sur
+  les quinze commits de cette phase, y compris là où elle a rattrapé une erreur.
+
+Le garde-fou n'est pas le blocage de GitHub. C'est que la chaîne existe, qu'elle est verte, et
+qu'on ne pousse pas quand elle ne l'est pas.
 - **Analyse CodeQL** : retirée pour la même raison. Un workflow qui échoue à chaque exécution
   cesse d'être un signal et apprend à ignorer le rouge. Dependabot, `npm audit` et `gitleaks`
   restent en place et fonctionnent en privé.
