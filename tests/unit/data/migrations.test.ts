@@ -1,5 +1,8 @@
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { applyLegacyMigrations, readLegacyState } from '@/lib/data/legacy';
+import { migrateFromLegacy } from '@/lib/data/migrations';
+import { db } from '@/lib/data/db';
+import { habitsRepo, logsRepo } from '@/lib/data/repositories';
 
 /* B6 — les migrations du prototype étaient une cascade `if v<n` dans seed().
    Testées côté navigateur, jamais côté portage. Ici, chacune reçoit une charge
@@ -145,5 +148,63 @@ describe('applyLegacyMigrations', () => {
     const copie = structuredClone(source);
     applyLegacyMigrations(source);
     expect(source).toEqual(copie);
+  });
+});
+
+/* Reprise d'un utilisateur du prototype. Un seul chemin d'entrée dans la base :
+   celui de l'importeur — donc une seule liste blanche à tenir (G8). */
+describe('migrateFromLegacy', () => {
+  beforeEach(async () => {
+    if (db.isOpen()) db.close();
+    await db.delete();
+    await db.open();
+  });
+
+  const etatV4 = () =>
+    memStorage({
+      'habitum.state': JSON.stringify({
+        v: 4,
+        mat: 1,
+        habits: [
+          {
+            id: 'alc',
+            fr: "Ne pas boire d'alcool",
+            en: 'No alcohol',
+            cat: 'health',
+            g: { k: 'check', t: 1 },
+            mode: 'dow',
+            days: [0, 1, 2, 3, 4, 5, 6],
+            sub: [],
+            rem: [],
+          },
+        ],
+        tasks: [{ id: 't1', fr: 'Payer le loyer', cat: 'home', off: 0 }],
+        ov: { 'alc|2026-08-05': 1 },
+        notes: {},
+      }),
+    });
+
+  it('ne fait rien, et sans lever, quand aucun état hérité n’existe', async () => {
+    const rapport = await migrateFromLegacy(memStorage());
+    expect(rapport.read).toBe(0);
+    expect(rapport.kept).toBe(0);
+    expect(await habitsRepo.count()).toBe(0);
+  });
+
+  it('migre puis importe : les habitudes et leur journal arrivent en base', async () => {
+    const rapport = await migrateFromLegacy(etatV4());
+    expect(rapport.dropped).toEqual([]);
+    expect(await habitsRepo.count()).toBe(1);
+    expect(await logsRepo.all()).toHaveLength(1);
+    /* La migration v<5 a posé une date absolue sur la tâche sans `d`. */
+    const [tache] = await db.tasks.toArray();
+    expect(tache!.date).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+  });
+
+  it('rejouée deux fois, elle ne duplique rien', async () => {
+    await migrateFromLegacy(etatV4());
+    await migrateFromLegacy(etatV4());
+    expect(await habitsRepo.count()).toBe(1);
+    expect(await logsRepo.all()).toHaveLength(1);
   });
 });
