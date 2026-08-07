@@ -5,6 +5,7 @@ import {
   habitsRepo,
   logsRepo,
   metaRepo,
+  newId,
   notesRepo,
   profilesRepo,
   sessionsRepo,
@@ -201,6 +202,18 @@ describe('dépôts spécialisés — les requêtes métier filtrent les suppress
       { habitId: 'h3', date: '2026-08-05', value: 1, updatedAt: '2026-08-05T00:00:00.000Z' },
     ]);
     expect(await logsRepo.all()).toHaveLength(2);
+  });
+
+  /* `crypto.randomUUID` manque dans quelques environnements d'exécution
+     exotiques. Le repli doit produire un identifiant utilisable, pas planter. */
+  it('newId sait se passer de crypto.randomUUID', () => {
+    const vrai = globalThis.crypto;
+    try {
+      Object.defineProperty(globalThis, 'crypto', { value: {}, configurable: true });
+      expect(newId()).toMatch(/^[a-z0-9]+-[a-z0-9]+$/);
+    } finally {
+      Object.defineProperty(globalThis, 'crypto', { value: vrai, configurable: true });
+    }
   });
 
   it('metaRepo efface une clé', async () => {

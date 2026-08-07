@@ -410,4 +410,116 @@ describe("aller-retour — les entités que l'export du prototype avait perdues"
     expect(rapport.read).toBeGreaterThan(rapport.kept);
     expect(await db.notes.count()).toBe(0);
   });
+
+  it('écarte les valeurs de journal aberrantes en les nommant', async () => {
+    const rapport = await importFromJson({
+      app: 'Habitum',
+      habits: [
+        {
+          id: 'h1',
+          fr: 'A',
+          cat: 'health',
+          g: { k: 'count', t: 3 },
+          mode: 'dow',
+          days: [0],
+          sub: [],
+          rem: [],
+        },
+      ],
+      log: { 'h1|2026-08-05': -4, 'h1|2026-08-06': 0, 'h1|2026-08-07': 2 },
+    } as never);
+    /* La valeur 0 est une valeur SAISIE : elle entre. Seule la négative sort. */
+    expect(rapport.byEntity.logs).toEqual({ read: 3, kept: 2 });
+    expect(rapport.dropped.join(' ')).toContain('2026-08-05');
+  });
+
+  it('nomme chaque forme de note refusée', async () => {
+    const rapport = await importFromJson({
+      app: 'Habitum',
+      habits: [
+        {
+          id: 'h1',
+          fr: 'A',
+          cat: 'health',
+          g: { k: 'check', t: 1 },
+          mode: 'dow',
+          days: [0],
+          sub: [],
+          rem: [],
+        },
+      ],
+      notes: {
+        'j|pas-une-date': 'x',
+        'j|2026-08-05': 42,
+        'm|2026-08-05': 'humeur en toutes lettres',
+        'n|h1': 12,
+        'n|h1bis': 'orpheline',
+        bizarre: 'x',
+      },
+    } as never);
+    expect(rapport.byEntity.notes).toEqual({ read: 6, kept: 0 });
+    expect(rapport.dropped).toHaveLength(6);
+  });
+
+  it("n'écrit pas une note d'habitude vide", async () => {
+    await importFromJson({
+      app: 'Habitum',
+      habits: [
+        {
+          id: 'h1',
+          fr: 'A',
+          cat: 'health',
+          g: { k: 'check', t: 1 },
+          mode: 'dow',
+          days: [0],
+          sub: [],
+          rem: [],
+        },
+      ],
+      notes: { 'n|h1': '   ', 'j|2026-08-05': '  ' },
+    } as never);
+    expect(await db.notes.count()).toBe(0);
+  });
+
+  it('exporte une base minimale sans champ optionnel fantôme', async () => {
+    await importFromJson({
+      app: 'Habitum',
+      habits: [
+        {
+          id: 'h1',
+          fr: 'A',
+          cat: 'health',
+          g: { k: 'check', t: 1 },
+          mode: 'dow',
+          days: [0],
+          sub: [],
+          rem: [],
+        },
+      ],
+      tasks: [{ id: 't1', fr: 'T', cat: 'work', d: '2026-08-05' }],
+      obj: [{ id: 'o1', fr: 'O', kind: 'cumul', target: 5 }],
+      sessions: [{ label: 'S', min: 10, d: '2026-08-05' }],
+      shop: [{ fr: 'Pommes' }],
+      log: { 'h1|2026-08-05': 1 },
+    } as never);
+
+    /* Une entrée effacée porte une pierre tombale : elle ne doit pas sortir. */
+    await db.logs.put({
+      habitId: 'h1',
+      date: '2026-08-04',
+      value: 1,
+      updatedAt: '2026-08-05T00:00:00.000Z',
+      deletedAt: '2026-08-05T00:00:00.000Z',
+    });
+
+    const sortie = await exportToJson();
+    expect(Object.keys(sortie.log)).toEqual(['h1|2026-08-05']);
+    expect(sortie.tasks[0]).not.toHaveProperty('time');
+    expect(sortie.tasks[0]).not.toHaveProperty('rep');
+    expect(sortie.obj[0]).not.toHaveProperty('src');
+    expect(sortie.obj[0]!.ms).toEqual([]);
+    expect(sortie.sessions[0]).not.toHaveProperty('habitId');
+    expect(sortie.habits[0]).not.toHaveProperty('start');
+    expect(sortie.notes).toEqual({});
+  });
 });

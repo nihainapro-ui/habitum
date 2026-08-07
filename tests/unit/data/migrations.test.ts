@@ -207,4 +207,41 @@ describe('migrateFromLegacy', () => {
     expect(await habitsRepo.count()).toBe(1);
     expect(await logsRepo.all()).toHaveLength(1);
   });
+
+  it('accepte un état où tout est absent sauf les habitudes', async () => {
+    const rapport = await migrateFromLegacy(
+      memStorage({
+        'habitum.state': JSON.stringify({
+          v: 5,
+          habits: [
+            {
+              id: 'h1',
+              fr: 'A',
+              cat: 'health',
+              g: { k: 'check', t: 1 },
+              mode: 'dow',
+              days: [0],
+              sub: [],
+              rem: [],
+            },
+          ],
+        }),
+      }),
+    );
+    expect(rapport.dropped).toEqual([]);
+    expect(rapport.byEntity.tasks).toEqual({ read: 0, kept: 0 });
+    expect(await habitsRepo.count()).toBe(1);
+  });
+
+  /* Navigation privée sur iOS Safari : `localStorage.getItem` lève. On ne
+     migre rien, mais on ne casse pas non plus l'ouverture de l'application. */
+  it("ne lève pas quand le stockage lui-même refuse d'être lu", () => {
+    const hostile = {
+      ...memStorage(),
+      getItem: () => {
+        throw new Error('SecurityError');
+      },
+    } as Storage;
+    expect(readLegacyState(hostile)).toBeNull();
+  });
 });

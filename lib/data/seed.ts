@@ -272,8 +272,16 @@ const demoGoals = () => [
   },
 ];
 
-const DEMO_SHOPPING = ['Pommes', 'Pain', 'Céréales', 'Fromage', 'Poulet', 'Pâtes', 'Shampooing'];
-const DEMO_SHOPPING_DONE = [true, true, false, true, true, false, false];
+/** La liste de courses du jeu de démonstration, `shop` du prototype. */
+const DEMO_SHOPPING: { label: string; done: boolean }[] = [
+  { label: 'Pommes', done: true },
+  { label: 'Pain', done: true },
+  { label: 'Céréales', done: false },
+  { label: 'Fromage', done: true },
+  { label: 'Poulet', done: true },
+  { label: 'Pâtes', done: false },
+  { label: 'Shampooing', done: false },
+];
 
 /** Amorce de démonstration. Explicite, drapeautée, et sans passé inventé. */
 export async function seedDemo(): Promise<void> {
@@ -323,8 +331,8 @@ export async function seedDemo(): Promise<void> {
     });
   }
 
-  for (const [i, label] of DEMO_SHOPPING.entries()) {
-    await shoppingRepo.create({ label, done: DEMO_SHOPPING_DONE[i] ?? false });
+  for (const article of DEMO_SHOPPING) {
+    await shoppingRepo.create(article);
   }
 
   /* Les QUATRE entrées du jour de `demoData()` — le seul journal du jeu de
