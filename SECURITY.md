@@ -31,11 +31,16 @@ charge encore ses polices depuis `fonts.googleapis.com` : défaut connu, suivi s
 - **Aucune surface d'injection** : ni `innerHTML`, ni `eval`, ni `new Function`, ni
   `dangerouslySetInnerHTML` — vérifié par test automatique, y compris dans le prototype.
 - **Aucun appel réseau tiers** dans l'application.
-- **Veille** : Dependabot hebdomadaire (npm et actions), CodeQL, `npm audit` en intégration
-  continue, `gitleaks` sur les secrets.
+- **Veille** : Dependabot hebdomadaire (npm et actions), `npm audit` en intégration continue,
+  `gitleaks` sur les secrets.
 - **Chaîne de construction** : actions GitHub épinglées par SHA, `permissions: contents: read`.
 
 ## Limitations connues et assumées
+
+- **Pas d'analyse CodeQL.** Le dépôt est privé sur un plan GitHub gratuit : l'analyse de code
+  n'y est pas disponible (elle exige un dépôt public ou GitHub Advanced Security). Le workflow a
+  été retiré le 7 août 2026 plutôt que laissé rouge en permanence — une CI qui échoue toujours
+  n'est plus un signal. Il sera rétabli si le dépôt passe en public.
 
 - `script-src 'unsafe-inline'` dans la CSP : sans cette tolérance, Next.js ne s'hydrate pas. Le
   passage à un `nonce` est couplé à la décision sur le rendu statique (défaut `D12`) et sera
