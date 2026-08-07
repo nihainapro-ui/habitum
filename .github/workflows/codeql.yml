@@ -8,10 +8,23 @@ on:
 permissions:
   contents: read
   security-events: write
+  # Requis sur un dépôt PRIVÉ : sans cela, l'action échoue sur
+  # « Resource not accessible by integration » en interrogeant l'API des
+  # exécutions de workflow. Sur un dépôt public, la permission est implicite —
+  # d'où un oubli qui ne se voit qu'en privé.
+  actions: read
 
 jobs:
   analyse:
     runs-on: ubuntu-latest
+    # Les exécutions déclenchées par Dependabot reçoivent un GITHUB_TOKEN en
+    # LECTURE SEULE : CodeQL ne peut pas y publier ses résultats, quelles que
+    # soient les permissions déclarées ci-dessus. Ce n'est pas un défaut du
+    # code, c'est une protection de GitHub contre l'exécution de code non
+    # revu avec un jeton privilégié.
+    # Les mises à jour de dépendances restent analysées : le run sur `main`
+    # après fusion couvre le même code.
+    if: github.actor != 'dependabot[bot]'
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
       - uses: github/codeql-action/init@c3400c2f38909e0dcf3c3a41f2030a8217be5d3e # v3
