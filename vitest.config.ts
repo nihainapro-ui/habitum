@@ -6,6 +6,7 @@ export default defineConfig({
   test: {
     environment: 'node',
     include: ['tests/unit/**/*.test.ts'],
-    coverage: { include: ['lib/domain/**'], reporter: ['text'] },
+    setupFiles: ['tests/setup/indexeddb.ts'],
+    coverage: { include: ['lib/domain/**', 'lib/data/**'], reporter: ['text'] },
   },
 });

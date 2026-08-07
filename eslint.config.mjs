@@ -34,8 +34,36 @@ const config = [
         {
           patterns: [
             {
-              group: ['react', 'react-dom', 'next', 'next/*', '@/lib/storage', '@/lib/storage/*'],
+              group: [
+                'react',
+                'react-dom',
+                'next',
+                'next/*',
+                '@/lib/storage',
+                '@/lib/storage/*',
+                '@/lib/data',
+                '@/lib/data/*',
+                'dexie',
+              ],
               message: 'lib/domain doit rester pur — aucun import de React, Next ou persistance.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    // La persistance peut dépendre du domaine ; jamais l'inverse (bloqué au-dessus),
+    // et jamais de React dans la couche de données : elle ne rend rien.
+    files: ['lib/data/**/*.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['react', 'react-dom', 'next', 'next/*'],
+              message: 'lib/data reste sans React — la persistance ne rend rien.',
             },
           ],
         },
