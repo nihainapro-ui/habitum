@@ -1,7 +1,8 @@
 import type { Metadata, Viewport } from 'next';
 import type { ReactNode } from 'react';
-import { NextIntlClientProvider } from 'next-intl';
-import { getLocale, getMessages } from 'next-intl/server';
+import { getMessages } from 'next-intl/server';
+import { defaultLocale } from '@/i18n/config';
+import { LocaleProvider } from '@/components/shell/locale-provider';
 import { AppShell } from '@/components/shell/app-shell';
 import '@/styles/globals.css';
 
@@ -16,16 +17,18 @@ export const viewport: Viewport = {
   initialScale: 1,
 };
 
+/* Le serveur rend TOUJOURS la langue par défaut : c'est ce qui garde les douze
+   routes statiques (D12). `LocaleProvider` rattrape la préférence réelle à
+   l'hydratation, sans rechargement. */
 export default async function RootLayout({ children }: { children: ReactNode }) {
-  const locale = await getLocale();
   const messages = await getMessages();
 
   return (
-    <html lang={locale} data-theme="neural" suppressHydrationWarning>
+    <html lang={defaultLocale} data-theme="neural" suppressHydrationWarning>
       <body>
-        <NextIntlClientProvider messages={messages}>
+        <LocaleProvider defaultMessages={messages}>
           <AppShell>{children}</AppShell>
-        </NextIntlClientProvider>
+        </LocaleProvider>
       </body>
     </html>
   );

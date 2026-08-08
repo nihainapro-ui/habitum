@@ -72,6 +72,15 @@ const nextConfig = {
   eslint: { ignoreDuringBuilds: false },
   typescript: { ignoreBuildErrors: false },
 
+  /* ADR-0007 (décision G) — l'application vit sous /app, la racine est réservée
+     à la vitrine de la phase 6. En attendant, / mène à l'application.
+
+     `permanent: false` est délibéré : un 308 serait mis en cache par les
+     navigateurs, et la phase 6 devrait le déloger client par client. */
+  async redirects() {
+    return [{ source: '/', destination: '/app', permanent: false }];
+  },
+
   async headers() {
     return [
       { source: '/:path*', headers: SECURITE },

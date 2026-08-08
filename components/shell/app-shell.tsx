@@ -2,17 +2,17 @@ import type { ReactNode } from 'react';
 import Link from 'next/link';
 
 const NAV = [
-  { href: '/', label: 'Tableau de bord' },
-  { href: '/today', label: "Aujourd'hui" },
-  { href: '/habits', label: 'Habitudes' },
-  { href: '/tasks', label: 'Tâches' },
-  { href: '/goals', label: 'Objectifs' },
-  { href: '/calendar', label: 'Calendrier' },
-  { href: '/stats', label: 'Statistiques' },
-  { href: '/timer', label: 'Focus' },
-  { href: '/notes', label: 'Notes' },
-  { href: '/profile', label: 'Profil' },
-  { href: '/settings', label: 'Réglages' },
+  { href: '/app', label: 'Tableau de bord' },
+  { href: '/app/today', label: "Aujourd'hui" },
+  { href: '/app/habits', label: 'Habitudes' },
+  { href: '/app/tasks', label: 'Tâches' },
+  { href: '/app/goals', label: 'Objectifs' },
+  { href: '/app/calendar', label: 'Calendrier' },
+  { href: '/app/stats', label: 'Statistiques' },
+  { href: '/app/timer', label: 'Focus' },
+  { href: '/app/notes', label: 'Notes' },
+  { href: '/app/profile', label: 'Profil' },
+  { href: '/app/settings', label: 'Réglages' },
 ];
 
 /** Coque de navigation minimale. Le rail complet, le mode zen et la palette ⌘K

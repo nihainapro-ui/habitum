@@ -13,7 +13,7 @@ const ATTENDUS: Record<string, RegExp> = {
   'permissions-policy': /camera=\(\)/,
 };
 
-const ROUTES = ['/', '/today', '/habits', '/settings'];
+const ROUTES = ['/app', '/app/today', '/app/habits', '/app/settings'];
 
 for (const route of ROUTES) {
   test(`les en-têtes de sécurité sont servis sur ${route}`, async ({ request }) => {
@@ -26,7 +26,7 @@ for (const route of ROUTES) {
 }
 
 test("la CSP verrouille ce qui peut l'être aujourd'hui", async ({ request }) => {
-  const csp = (await request.get('/')).headers()['content-security-policy']!;
+  const csp = (await request.get('/app')).headers()['content-security-policy']!;
   expect(csp).not.toMatch(/unsafe-eval/);
   expect(csp).toMatch(/frame-ancestors 'none'/);
   expect(csp).toMatch(/object-src 'none'/);
@@ -44,7 +44,7 @@ test("la CSP verrouille ce qui peut l'être aujourd'hui", async ({ request }) =>
    voulu : il faudra alors le resserrer, et non le supprimer. Voir la note de
    next.config.mjs et le défaut D12. */
 test('la tolérance script-src est celle attendue, et rien de plus', async ({ request }) => {
-  const csp = (await request.get('/')).headers()['content-security-policy']!;
+  const csp = (await request.get('/app')).headers()['content-security-policy']!;
   const scriptSrc = csp
     .split(';')
     .find((d) => d.trim().startsWith('script-src'))!

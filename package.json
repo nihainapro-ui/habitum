@@ -19,7 +19,7 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "check:messages": "node scripts/check-messages.mjs",
-    "verify": "npm run typecheck && npm run lint && npm run format:check && npm run check:messages && npm run check:tokens && npm run test && npm run build",
+    "verify": "npm run typecheck && npm run lint && npm run format:check && npm run check:messages && npm run check:tokens && npm run build && npm run test",
     "check:tokens": "node scripts/extract-tokens.mjs --check"
   },
   "dependencies": {
