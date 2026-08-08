@@ -53,6 +53,32 @@ const config = [
     },
   },
   {
+    // Le store passe par les DÉPÔTS, jamais par la base directement, et jamais
+    // par localStorage : c'est la fabrique de dépôt qui garantit `updatedAt` et
+    // la suppression logique. Une tranche qui écrit dans Dexie contourne tout ça.
+    files: ['lib/store/**/*.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['dexie', '@/lib/data/db', '@/lib/storage', '@/lib/storage/*'],
+              message: 'Le store passe par les dépôts de lib/data, jamais par la base.',
+            },
+          ],
+        },
+      ],
+      'no-restricted-globals': [
+        'error',
+        {
+          name: 'localStorage',
+          message: 'La persistance passe par lib/data — jamais localStorage depuis le store.',
+        },
+      ],
+    },
+  },
+  {
     // La persistance peut dépendre du domaine ; jamais l'inverse (bloqué au-dessus),
     // et jamais de React dans la couche de données : elle ne rend rien.
     files: ['lib/data/**/*.ts'],

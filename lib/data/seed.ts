@@ -34,6 +34,9 @@ export const META_KEYS = {
   demo: 'demo',
   settings: 'settings',
   seeded: 'seeded',
+  /** Profil courant — `pid` dans le prototype. Nouvelle table, nouveau nom :
+   *  aucune clé persistée existante n'est renommée (G1). */
+  activeProfile: 'activeProfile',
 } as const;
 
 /** Réglages d'un compte neuf. `notifications`, `sound` et `vibrate` sont à
