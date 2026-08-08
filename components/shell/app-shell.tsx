@@ -1,49 +1,79 @@
-import type { ReactNode } from 'react';
-import Link from 'next/link';
+'use client';
 
-const NAV = [
-  { href: '/app', label: 'Tableau de bord' },
-  { href: '/app/today', label: "Aujourd'hui" },
-  { href: '/app/habits', label: 'Habitudes' },
-  { href: '/app/tasks', label: 'Tâches' },
-  { href: '/app/goals', label: 'Objectifs' },
-  { href: '/app/calendar', label: 'Calendrier' },
-  { href: '/app/stats', label: 'Statistiques' },
-  { href: '/app/timer', label: 'Focus' },
-  { href: '/app/notes', label: 'Notes' },
-  { href: '/app/profile', label: 'Profil' },
-  { href: '/app/settings', label: 'Réglages' },
-];
+import { useEffect, useState, type ReactNode } from 'react';
+import { useStore } from '@/lib/store';
+import { seedEmpty } from '@/lib/data';
+import { traiterFrappe } from '@/lib/keyboard/shortcuts';
+import { CommandPalette } from '@/components/command/command-palette';
+import { BottomBar } from './bottom-bar';
+import { Header } from './header';
+import { LiveRegion } from './live-region';
+import { Rail } from './rail';
+import { ID_CONTENU, SkipLink } from './skip-link';
 
-/** Coque de navigation minimale. Le rail complet, le mode zen et la palette ⌘K
- *  sont spécifiés dans docs/handoff/05-SPEC-VUES.md et restent à porter. */
+/* Coque applicative : rail, en-tête, contenu, barre basse, palette.
+
+   C'est aussi le seul endroit qui amorce la base et charge l'état — une fois,
+   au montage. B4 : le chemin par défaut est le COMPTE VIERGE. La démonstration
+   ne s'obtient que par un geste explicite (onboarding, phase 5). */
+
 export function AppShell({ children }: { children: ReactNode }) {
+  const zen = useStore((s) => s.ui.zen);
+
+  /* Marqueur d'interactivité. Les pages sont prérendues (D12) : le HTML arrive
+     avant que le moindre raccourci soit écouté. Sans ce repère, un test — ou un
+     script — ne peut pas distinguer « la page est là » de « la page répond ». */
+  const [pret, setPret] = useState(false);
+
+  useEffect(() => {
+    void (async () => {
+      await seedEmpty();
+      await useStore.getState().hydrate();
+      setPret(true);
+    })();
+  }, []);
+
+  useEffect(() => {
+    const surFrappe = (e: KeyboardEvent) => {
+      const s = useStore.getState();
+      const consomme = traiterFrappe(e, {
+        ouvrirPalette: () => s.setCommandOpen(true),
+        basculerZen: () => s.toggleZen(),
+        /* Escape ferme ce qui est ouvert, du plus superficiel au plus profond.
+           La palette gère elle-même sa fermeture pour pouvoir rendre le focus
+           à son déclencheur : ici on ne s'occupe que du reste. */
+        echapper: () => {
+          if (s.ui.commandOpen) return;
+          if (s.ui.editor) s.closeEditor();
+          else if (s.ui.toast) s.dismissToast();
+        },
+      });
+      if (consomme) e.preventDefault();
+    };
+
+    window.addEventListener('keydown', surFrappe);
+    return () => window.removeEventListener('keydown', surFrappe);
+  }, []);
+
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '220px 1fr', minHeight: '100vh' }}>
-      <nav
-        aria-label="Navigation principale"
-        style={{
-          borderRight: '1px solid var(--line)',
-          padding: '24px 16px',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 4,
-        }}
-      >
-        <strong style={{ fontSize: 18, letterSpacing: '-0.02em', marginBottom: 16 }}>
-          Habitum
-        </strong>
-        {NAV.map((item) => (
-          <Link
-            key={item.href}
-            href={item.href}
-            style={{ color: 'var(--mut)', padding: '8px 10px', borderRadius: 8, fontSize: 14 }}
-          >
-            {item.label}
-          </Link>
-        ))}
-      </nav>
-      <main style={{ padding: 40 }}>{children}</main>
+    <div className="flex min-h-screen" data-hydrated={pret ? 'true' : 'false'}>
+      <SkipLink />
+      <Rail zen={zen} />
+
+      <div className="flex min-w-0 flex-1 flex-col">
+        <Header />
+        <main
+          id={ID_CONTENU}
+          tabIndex={-1}
+          className="min-w-0 flex-1 px-4 py-8 pb-24 outline-none md:px-10 md:pb-8"
+        >
+          {children}
+        </main>
+      </div>
+
+      <BottomBar zen={zen} />
+      <LiveRegion />
+      <CommandPalette />
     </div>
   );
 }

@@ -33,11 +33,20 @@ const withNextIntl = createNextIntlPlugin('./i18n/request.ts');
 
    `img-src data: blob:` sert aux avatars OKLCH générés côté client et aux
    exports téléchargés en mémoire. */
+/* Fast Refresh évalue du code en chaîne : `next dev` ne s'hydrate pas sous une
+   CSP sans `unsafe-eval`, et l'application reste un rendu mort — constaté le
+   8 août 2026, en montant la coque applicative. La tolérance est donc posée
+   POUR LE DÉVELOPPEMENT SEUL. La production n'est pas touchée, et le test
+   e2e des en-têtes tourne sur le build de production : il verrouille bien ce
+   qui est servi aux utilisateurs. */
+const DEV = process.env.NODE_ENV === 'development';
+
 const CSP = [
   "default-src 'self'",
-  // TODO(D12/2.6) — remplacer par un nonce ou des empreintes, en même temps
-  // que la décision sur le rendu statique. Ne pas traiter séparément.
-  "script-src 'self' 'unsafe-inline'",
+  /* ADR-0007 — la question du nonce est tranchée : le rendu statique gagne, un
+     nonce imposerait une invocation serveur par affichage. La sortie propre
+     pour le script de thème (phase 3) est une EMPREINTE SHA-256, pas un nonce. */
+  `script-src 'self' 'unsafe-inline'${DEV ? " 'unsafe-eval'" : ''}`,
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob:",
   "font-src 'self'",

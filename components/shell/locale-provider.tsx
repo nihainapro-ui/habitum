@@ -82,9 +82,17 @@ export function LocaleProvider({
 
   const valeur = useMemo(() => ({ locale, setLocale }), [locale, setLocale]);
 
+  /* Le serveur prérend en UTC pour être déterministe (`i18n/request.ts`). Le
+     fuseau réel n'existe que dans le navigateur : on l'applique après le
+     montage, sinon le rendu client et le rendu serveur divergeraient. */
+  const [timeZone, setTimeZone] = useState('UTC');
+  useEffect(() => {
+    setTimeZone(Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC');
+  }, []);
+
   return (
     <Contexte.Provider value={valeur}>
-      <NextIntlClientProvider locale={locale} messages={messages}>
+      <NextIntlClientProvider locale={locale} messages={messages} timeZone={timeZone}>
         {children}
       </NextIntlClientProvider>
     </Contexte.Provider>
