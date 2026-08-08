@@ -43,6 +43,18 @@ describe('buildLogIndex', () => {
     expect(idx.has(logKey('h1', '2026-08-01'))).toBe(true);
     expect(idx.get(logKey('h1', '2026-08-01'))).toBe(0);
   });
+
+  /* Le symétrique : une entrée EFFACÉE doit sortir de l'index, pas y rester à
+     0. Sans cela, supprimer l'entrée d'une habitude `limit` la rendrait
+     réussie — une suppression ne doit jamais valoir un succès. */
+  it('écarte une entrée portant une pierre tombale', () => {
+    const idx = buildLogIndex([
+      { ...row('h1', '2026-08-01', 3), deletedAt: '2026-08-05T00:00:00.000Z' },
+      row('h1', '2026-08-02', 4),
+    ]);
+    expect(idx.has(logKey('h1', '2026-08-01'))).toBe(false);
+    expect(idx.get(logKey('h1', '2026-08-02'))).toBe(4);
+  });
 });
 
 describe('lecture depuis la base', () => {

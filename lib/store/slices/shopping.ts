@@ -1,5 +1,6 @@
 import type { StateCreator } from 'zustand';
 import { shoppingRepo } from '@/lib/data';
+import { withUndo } from '../undo';
 import type { AppState, ShoppingActions } from '../types';
 
 export const createShoppingSlice: StateCreator<AppState, [], [], ShoppingActions> = (set, get) => ({
@@ -19,7 +20,11 @@ export const createShoppingSlice: StateCreator<AppState, [], [], ShoppingActions
   },
 
   async deleteShoppingItem(id) {
-    await shoppingRepo.softDelete(id);
-    set((s) => ({ shopping: s.shopping.filter((x) => x.id !== id) }));
+    const item = get().shopping.find((x) => x.id === id);
+    if (!item) return;
+    await withUndo(set, get, { messageKey: 'app.shopDeleted', label: item.label }, async () => {
+      await shoppingRepo.softDelete(id);
+      set((s) => ({ shopping: s.shopping.filter((x) => x.id !== id) }));
+    });
   },
 });

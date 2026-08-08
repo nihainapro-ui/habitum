@@ -23,7 +23,12 @@ import type { CreateInput, UpdatePatch } from '@/lib/data';
 export type Range = 7 | 30 | 90 | 365;
 
 export interface ToastState {
+  /** Nom de l'entité concernée. C'est du CONTENU UTILISATEUR : il ne se traduit
+   *  pas, il s'affiche tel quel. */
   label: string;
+  /** Clé de libellé (`messages/*.json`), composée avec `label` par le composant
+   *  Toast. Le texte du toast n'est donc jamais écrit en dur dans une tranche. */
+  messageKey: string;
   /** Présente uniquement si l'action est réversible (`withUndo`). */
   undo?: () => Promise<void>;
 }

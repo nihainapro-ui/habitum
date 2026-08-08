@@ -1,6 +1,7 @@
 import type { StateCreator } from 'zustand';
 import { dailyTarget, isDone, logKey, parseKey, type LogIndex } from '@/lib/domain';
-import { habitsRepo, logsRepo } from '@/lib/data';
+import { goalsRepo, habitsRepo, logsRepo, notesRepo } from '@/lib/data';
+import { withUndo } from '../undo';
 import type { AppState, HabitsActions } from '../types';
 
 /* Toute action écrit D'ABORD au dépôt, ensuite au store. Jamais l'inverse :
@@ -33,9 +34,41 @@ export const createHabitsSlice: StateCreator<AppState, [], [], HabitsActions> = 
     set((s) => ({ habits: s.habits.map((h) => (h.id === id ? suivant : h)) }));
   },
 
+  /* Supprimer une habitude emporte ses dépendances :
+     - son JOURNAL reçoit des pierres tombales — le laisser en place ferait
+       ressortir des chiffres d'une habitude qui n'existe plus ;
+     - ses NOTES d'habitude partent avec elle ;
+     - les OBJECTIFS qui la référencent SURVIVENT ; seul le lien vers la source
+       disparaît. Un objectif appartient à l'utilisateur, pas à l'habitude, et
+       le supprimer serait une décision qu'il n'a pas prise.
+     L'instantané de `withUndo` couvre les quatre : sans cela, l'annulation
+     rendrait l'habitude et perdrait son historique. */
   async deleteHabit(id) {
-    await habitsRepo.softDelete(id);
-    set((s) => ({ habits: s.habits.filter((h) => h.id !== id) }));
+    const h = get().habits.find((x) => x.id === id);
+    if (!h) return;
+
+    await withUndo(set, get, { messageKey: 'app.hDeleted', label: h.name }, async () => {
+      const prefixe = `${id}|`;
+      for (const cle of get().logIndex.keys()) {
+        if (cle.startsWith(prefixe)) await logsRepo.tombstone(id, cle.slice(prefixe.length));
+      }
+      for (const n of get().notes.filter((x) => x.kind === 'habit' && x.habitId === id)) {
+        await notesRepo.softDelete(n.id);
+      }
+      for (const g of get().goals.filter((x) => x.sourceHabitId === id)) {
+        await goalsRepo.update(g.id, { sourceHabitId: undefined });
+      }
+      await habitsRepo.softDelete(id);
+
+      set((s) => ({
+        habits: s.habits.filter((x) => x.id !== id),
+        notes: s.notes.filter((n) => !(n.kind === 'habit' && n.habitId === id)),
+        goals: s.goals.map((g) =>
+          g.sourceHabitId === id ? { ...g, sourceHabitId: undefined } : g,
+        ),
+        logIndex: new Map([...s.logIndex].filter(([cle]) => !cle.startsWith(prefixe))),
+      }));
+    });
   },
 
   async archiveHabit(id, archived) {

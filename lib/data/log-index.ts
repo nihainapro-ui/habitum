@@ -9,7 +9,14 @@ import { logsRepo } from './repositories';
 
 export function buildLogIndex(rows: readonly LogEntry[]): LogIndex {
   const m = new Map<string, number>();
-  for (const r of rows) m.set(logKey(r.habitId, r.date), r.value);
+  for (const r of rows) {
+    /* Pierre tombale : `deletedAt` distingue « valeur effacée » de « jamais
+       saisie » (lib/domain/types.ts). Une valeur effacée doit donc être ABSENTE
+       de l'index, pas présente à 0 — sinon une habitude `limit` redeviendrait
+       réussie par la seule suppression de son entrée (G9). */
+    if (r.deletedAt) continue;
+    m.set(logKey(r.habitId, r.date), r.value);
+  }
   return m;
 }
 

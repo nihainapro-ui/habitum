@@ -30,6 +30,17 @@ export const logsRepo = {
     await db.logs.delete([habitId, date]);
   },
 
+  /** Efface une valeur en gardant la trace de l'effacement.
+   *  `deletedAt` distingue « valeur effacée » de « jamais saisie » — la
+   *  distinction est vitale pour le type `limit` (G9), et c'est ce qui
+   *  permettra à deux appareils de converger sans ressusciter l'entrée. */
+  async tombstone(habitId: string, date: DateKey): Promise<void> {
+    const at = nowIso();
+    const ligne = await db.logs.get([habitId, date]);
+    if (!ligne) return;
+    await db.logs.put({ ...ligne, deletedAt: at, updatedAt: at });
+  },
+
   /** Journal complet d'une habitude — utilisé à la suppression définitive. */
   async deleteForHabit(habitId: string): Promise<void> {
     await db.logs.where('habitId').equals(habitId).delete();

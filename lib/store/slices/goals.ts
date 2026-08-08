@@ -1,8 +1,9 @@
 import type { StateCreator } from 'zustand';
 import { goalsRepo } from '@/lib/data';
+import { withUndo } from '../undo';
 import type { AppState, GoalsActions } from '../types';
 
-export const createGoalsSlice: StateCreator<AppState, [], [], GoalsActions> = (set) => ({
+export const createGoalsSlice: StateCreator<AppState, [], [], GoalsActions> = (set, get) => ({
   async createGoal(input) {
     const g = await goalsRepo.create(input);
     set((s) => ({ goals: [...s.goals, g] }));
@@ -15,7 +16,11 @@ export const createGoalsSlice: StateCreator<AppState, [], [], GoalsActions> = (s
   },
 
   async deleteGoal(id) {
-    await goalsRepo.softDelete(id);
-    set((s) => ({ goals: s.goals.filter((g) => g.id !== id) }));
+    const g = get().goals.find((x) => x.id === id);
+    if (!g) return;
+    await withUndo(set, get, { messageKey: 'app.objDeleted', label: g.name }, async () => {
+      await goalsRepo.softDelete(id);
+      set((s) => ({ goals: s.goals.filter((x) => x.id !== id) }));
+    });
   },
 });
