@@ -37,12 +37,14 @@ Le prototype, lui, n'a besoin de rien : ouvrir
 | Dossier | Rôle |
 |---|---|
 | `app/` | routes App Router — une par vue (11) |
-| `components/` | composants React : `shell/` (coque), le reste à venir |
+| `components/` | composants React : `shell/` (coque), `command/` (palette ⌘K), les vues à venir |
 | `lib/domain/` | **moteur métier pur** — jamais de React, jamais de Next, 100 % testable |
 | `lib/data/` | persistance : schéma Dexie, dépôts typés, import/export, amorces |
+| `lib/store/` | état Zustand en tranches — écrit aux dépôts, jamais à la base |
+| `lib/keyboard/` | raccourcis globaux et piège de focus |
 | `lib/storage/` | clés persistées figées (`habitum.state`, `DB_NAME`…) |
-| `i18n/` | configuration next-intl (langue par cookie, pas par URL) |
-| `messages/` | `fr.json` / `en.json` — 311 clés, symétrie vérifiée en CI |
+| `i18n/` | next-intl : langue par cookie, lue côté client — pas de segment d'URL, pas de rendu dynamique |
+| `messages/` | `fr.json` / `en.json` — 326 clés, symétrie vérifiée en CI |
 | `styles/` | `globals.css` + `tokens.css` (thèmes) |
 | `types/` | alias public des types du domaine (`@/types`) |
 | `tests/` | `unit/` Vitest · `e2e/` Playwright · `fixtures/golden.json` |

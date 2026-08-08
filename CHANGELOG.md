@@ -1,5 +1,95 @@
 # Journal des modifications
 
+## 2026-08-08 — Phase 2 : état et coque applicative
+
+Les onze routes existaient et n'affichaient rien. Elles sont maintenant alimentées par IndexedDB,
+navigables au clavier, servies en statique, et l'application a une adresse à elle. Les vues
+elles-mêmes restent à porter — c'est la phase 4, et ce document ne prétend pas le contraire.
+
+### Décidé
+
+- **Décision G tranchée : l'application vit sous `/app`** (ADR-0007). La racine est réservée à la
+  vitrine de la phase 6, le seul actif indexable du projet. La redirection `/` → `/app` est
+  **temporaire** (307, jamais 308) : un 308 mis en cache serait à déloger navigateur par
+  navigateur le jour où la vitrine prend sa place.
+- **Conséquence tranchée dans le même mouvement** : `next.config.mjs` notait que le rendu statique
+  et le `nonce` de la CSP « doivent être tranchés ENSEMBLE ». Le rendu statique gagne — un nonce
+  impose une invocation serveur par affichage, sur un produit dont le modèle est 0 € d'infra. La
+  sortie propre pour le script de thème (phase 3) est donc une **empreinte SHA-256**, pas un nonce.
+
+### Ajouté
+
+- **Store Zustand en huit tranches** (`lib/store/`), une par domaine. Trois règles tenues par la
+  structure : écriture au **dépôt d'abord**, store ensuite ; aucune tranche ne calcule — les
+  sélecteurs dérivés appellent `lib/domain`, protégé par les 62 valeurs ; ESLint interdit `dexie`,
+  `@/lib/data/db`, `@/lib/storage` et `localStorage` dans `lib/store`. (T2.4)
+- **Annulation qui restaure l'entité ET ses dépendances** (`lib/store/undo.ts`). Supprimer une
+  habitude emporte son journal et ses notes ; les objectifs qui la référencent **survivent**, seul
+  le lien vers la source disparaît — un objectif appartient à l'utilisateur, pas à l'habitude.
+  L'annulation réécrit dans les **dépôts**, pas seulement dans le store : un test le vérifie en
+  réhydratant depuis la base. Un seul toast à la fois. (T2.5)
+- **Coque applicative** : rail à trois groupes (Espace / Suivi / Focus), en-tête, barre basse sous
+  768 px avec des cibles de 44 px, mode zen `⌘\`, lien d'évitement. Aucun débordement horizontal à
+  390 / 768 / 1060 / 1440 px. (T2.6)
+- **Palette `⌘K`** : recherche habitudes, tâches, objectifs et courses ; `↑`/`↓`/`Entrée` ;
+  `Escape` **rend le focus au déclencheur**. Une recherche infructueuse propose toujours la
+  création rapide — le prototype ne laisse jamais l'utilisateur dans un cul-de-sac. (T2.9)
+- **Raccourcis globaux neutralisés dans les champs de saisie**, `Escape` excepté. Piège de focus
+  dans la modale. (T2.10)
+- **Région annoncée** `aria-live="polite"` : une navigation côté client ne recharge pas la page,
+  rien ne dit donc à un lecteur d'écran que la vue a changé. Elle porte aussi les toasts.
+
+### Corrigé
+
+- **Les douze routes sont statiques** (`○`, plus aucune `ƒ`). `i18n/request.ts` lisait `cookies()`,
+  ce qui forçait tout l'arbre en rendu dynamique : une invocation serverless par affichage, sur une
+  application qui ne consulte aucun serveur. La préférence de langue se lit désormais dans le
+  navigateur et bascule sans rechargement. Sa nature n'a pas changé — elle reste une préférence de
+  profil, pas une propriété de la ressource ; on change **où** elle est lue. `tests/unit/build-output.test.ts`
+  échoue si une route redevient dynamique. (D12)
+- **La suite e2e testait le serveur de développement.** La tâche 0.12 annonçait l'inverse et le
+  workflow de CI le croyait, mais `playwright.config.ts` lançait `npm run dev`. Tant qu'aucune vue
+  n'avait besoin de JavaScript, l'écart ne se voyait pas ; il est apparu à la première interaction.
+  `next dev` charge Fast Refresh, qui **évalue du code en chaîne** et tombe sous notre propre CSP :
+  l'application restait un rendu mort. La configuration lance maintenant le build de production et
+  ne réutilise plus un serveur déjà ouvert — c'est cette réutilisation qui masquait le défaut.
+  `script-src 'unsafe-eval'` est toléré **en développement seulement**.
+- **next-intl levait `ENVIRONMENT_FALLBACK`** faute de `timeZone`, ce qui cassait le rendu. UTC est
+  figé côté serveur — un prérendu doit être déterministe — et le fuseau réel du navigateur est
+  appliqué à l'hydratation.
+- **`buildLogIndex` indexait les entrées effacées.** `deletedAt` sur `LogEntry` est une pierre
+  tombale : une valeur effacée doit être **absente** de l'index, pas présente. Sans cela, supprimer
+  l'entrée d'une habitude `limit` la rendait réussie. Défaut latent de la phase 1, sans effet
+  jusqu'ici parce que rien n'écrivait encore de pierre tombale. (G9)
+- **La barre basse portait le même nom accessible que le rail.** Deux repères de navigation
+  homonymes, c'est un défaut d'accessibilité, pas seulement un test qui hésite.
+- **La date de l'en-tête se calcule après le montage.** Les pages étant prérendues, une date rendue
+  côté serveur serait celle du *build* — un chiffre affiché qui ne correspond à rien (G3).
+
+### Supprimé
+
+- `i18n/actions.ts` — une action serveur pour poser un cookie est une invocation de plus dans une
+  application qui vise zéro.
+
+### Outillage
+
+- `npm run verify` **construit avant de tester** : le contrôle de la sortie de build en dépend.
+- 193 tests unitaires (170 → 193), 62 e2e verts sur desktop **et** mobile, sur le build de production.
+- 15 clés de libellé ajoutées dans les deux langues (326 au total, symétrie vérifiée en CI).
+
+### Écarts assumés au plan
+
+- Les tests de raccourcis du plan visaient une zone de texte de `/notes` et un bouton de `/habits`,
+  qui n'existeront qu'en phase 4. Le contrôle est exercé sur le champ et la modale de la palette —
+  même mécanisme, vérifiable aujourd'hui plutôt que reporté.
+- Le plan reconstruisait `logIndex` en relisant tout le journal après chaque écriture, soit
+  219 000 lignes à la charge visée en tâche 7.5 pour un objectif de « clic < 100 ms ». On recopie
+  la Map et on modifie l'entrée concernée : même immuabilité, sans le trajet en base.
+- `withUndo` reçoit `set` et `get` explicitement : sans cela le module importerait le store, que le
+  store importe déjà par ses tranches.
+
+---
+
 ## 2026-08-08 — Phase 1 : couche de données
 
 Le produit avait un moteur métier testé et aucun endroit où ranger une donnée. Il a maintenant

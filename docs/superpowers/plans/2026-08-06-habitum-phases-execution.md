@@ -369,7 +369,7 @@ npx @lhci/cli autorun                       # budget tenu
 |---|---:|---:|---|---:|
 | **0 · Fondations** | 7 j | 7 j | ✅ 7 août 2026 | 22 % → **31 %** |
 | **1 · Données** | 6,5 j | 13,5 j | ✅ 8 août 2026 | 31 % → **42 %** |
-| **2 · État & coque** | 4 j | 17,5 j | ⬜ | 42 % → **48 %** |
+| **2 · État & coque** | 4 j | 17,5 j | ✅ 8 août 2026 | 42 % → **48 %** |
 | **3 · Système visuel** | 5 j | 22,5 j | ⬜ | 48 % → **56 %** |
 | **4 · Les onze vues** | 15 j | 37,5 j | ⬜ | 56 % → **80 %** |
 | **5 · Fiabilisation & PWA** | 6 j | 43,5 j | ⬜ | 80 % → **91 %** |
