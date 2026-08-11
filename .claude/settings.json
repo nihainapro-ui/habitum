@@ -1,6 +1,13 @@
 {
   "permissions": {
-    "allow": ["Bash(npm run *)", "Bash(npx playwright *)", "Bash(git status)", "Bash(git diff*)"],
+    "allow": [
+      "Bash(npm run *)",
+      "Bash(npx playwright *)",
+      "Bash(git status)",
+      "Bash(git diff*)",
+      "Bash(git config *)",
+      "Bash(node -e \"console.log\\(JSON.stringify\\(require\\('./package.json'\\).scripts,null,1\\)\\)\")"
+    ],
     "deny": ["Bash(rm -rf *)", "Bash(git push --force*)"]
   }
 }

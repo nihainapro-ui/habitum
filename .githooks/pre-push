@@ -1,0 +1,53 @@
+#!/bin/sh
+# ---------------------------------------------------------------------------
+# Garde-fou de `main`, côté client.
+#
+# GitHub refuse la protection de branche sur un dépôt PRIVÉ en plan gratuit
+# (HTTP 403 : « Upgrade to GitHub Pro or make this repository public »). Le
+# dépôt reste privé par décision du 7 août 2026 ; la protection est donc posée
+# là où elle reste possible : avant que le code quitte la machine.
+#
+# Ce que ce hook fait, et que la protection serveur faisait :
+#   1. refuse un push sur `main` si `npm run verify` n'est pas vert ;
+#   2. refuse un push non fast-forward sur `main` (réécriture d'historique).
+#
+# Ce qu'il ne fait PAS, et il faut le savoir : il s'exécute chez celui qui
+# pousse, et `git push --no-verify` le contourne. Sur un dépôt
+# mono-contributeur, c'est un garde-fou, pas une barrière — et c'est écrit tel
+# quel dans SECURITY.md plutôt que sous-entendu.
+#
+# Installé par `scripts/install-hooks.mjs`, lui-même appelé par `npm install`.
+# ---------------------------------------------------------------------------
+
+set -e
+
+BRANCHE_PROTEGEE="refs/heads/main"
+ZERO="0000000000000000000000000000000000000000"
+
+while read -r _local_ref local_sha remote_ref remote_sha; do
+  [ "$remote_ref" = "$BRANCHE_PROTEGEE" ] || continue
+
+  # Suppression de la branche distante : jamais.
+  if [ "$local_sha" = "$ZERO" ]; then
+    echo "pre-push: suppression de main refusée." >&2
+    exit 1
+  fi
+
+  # Réécriture d'historique : le distant doit être un ancêtre du local.
+  if [ "$remote_sha" != "$ZERO" ]; then
+    if ! git merge-base --is-ancestor "$remote_sha" "$local_sha"; then
+      echo "pre-push: push non fast-forward sur main refusé (historique linéaire)." >&2
+      exit 1
+    fi
+  fi
+
+  echo "pre-push: vérification complète avant push sur main…"
+  if ! npm run verify; then
+    echo "" >&2
+    echo "pre-push: « npm run verify » a échoué — rien n'est poussé." >&2
+    exit 1
+  fi
+  echo "pre-push: chaîne verte, push autorisé."
+done
+
+exit 0

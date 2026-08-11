@@ -63,11 +63,11 @@ Source : `docs/AUDIT-PRODUCTION-2026-08-06.md` (défauts `D1`–`D28`) · `docs/
 | **0.6** | Bug `every` sans `start` | 0.4 | Ancrer sur `start` → `createdAt` → époque figée · reporter dans le prototype · régénérer `domain-logic-extract.js` (**G7**) | Planification déterministe | **Hypothèse :** aucune habitude de démo n'utilise `every` — c'est pourquoi les 62 valeurs ne bougent pas, et c'est la preuve de non-régression | 62 valeurs inchangées · 6 contrôles du prototype verts |
 | **0.7** | `date-fns` tranché | 0.3 | `npm uninstall date-fns` · écrire ADR-0006 | Dépendance retirée, décision tracée | **Décision B requise.** Si conservée, ne pas exécuter | `grep -rn date-fns` → aucun import |
 | **0.8** | Documentation corrigée | 0.2–0.7 | `03-ARCHITECTURE` (**7 types**, Neon, arborescence réelle) · `02-ROADMAP` (Neon) · `06-BACKLOG` (chemins sans `src/`) · README (311 clés) · `PASSATION` · ADR-0002 · CHANGELOG | 7 documents alignés sur le code | **Risque :** un repreneur qui suit `03-ARCHITECTURE §3` réintroduit le bug des 4 types au lieu de 7 | `grep -c "src/" 06-BACKLOG.md` → 0 · `grep -rn Supabase docs/handoff/` → vide |
-| **0.9** | Dépôt GitHub | 0.8 | `gh repo create --public` · protéger `main` (PR obligatoire, CI verte requise, pas de force-push, historique linéaire) | Dépôt distant protégé | **Décision A requise** (compte + visibilité). Public recommandé : Actions illimitées | Push direct sur `main` refusé (preuve enregistrée) |
+| **0.9** | Dépôt GitHub | 0.8 | `gh repo create` · protéger `main` (pas de force-push, historique linéaire, chaîne verte exigée) | Dépôt distant protégé | **Décision A tranchée le 7 août : dépôt PRIVÉ.** La protection côté serveur n'existe donc pas (plan gratuit). **Révision du 11 août :** elle est posée là où elle reste possible — `.githooks/pre-push` · alerte automatique sur `main` rouge | `npx vitest run tests/unit/hooks.test.ts` · une issue critique s'ouvre si `main` casse |
 | **0.10** | Issues, labels, jalons | 0.9 | Créer 17 labels · 8 jalons · 28 issues de défaut · fermer les 14 traitées en phase 0 | Backlog traçable | **Hypothèse :** les identifiants `D1`–`D28` et `T0.1`–`T8.6` restent stables | `gh issue list --state all` ≥ 28 |
 | **0.11** | CI durcie | 0.9 | `permissions: contents: read` · actions épinglées par SHA · `concurrency` · matrice Node 20/22 · `npm run verify` | `.github/workflows/ci.yml` | **Risque :** un workflow est du code exécuté avec un jeton. **Hypothèse :** SHA relevés à la date du jour | Une PR cassée est bloquée (preuve enregistrée) |
 | **0.12** | Job e2e | 0.11 | Job séparé, cache navigateurs Playwright, e2e **sur le build de production** | Contexte de statut `e2e` requis | **Risque :** `dev` et `start` ne se comportent pas pareil ; tester ce qui sera déployé | `npm run build && CI=1 npm run test:e2e` |
-| **0.13** | Veille de vulnérabilités | 0.11 | Dependabot (npm + actions) · CodeQL (hors `public/prototype`) · `npm audit` en CI | Veille automatique | **Blocage connu :** 4 vulnérabilités, correctifs = montées majeures. Seuil abaissé à `critical`, **daté et rattaché à l'issue D11** | Onglet Security actif |
+| **0.13** | Veille de vulnérabilités | 0.11 | Dependabot (npm + actions) · analyse statique · `npm audit` en CI | Veille automatique | **Blocage connu :** 4 vulnérabilités, correctifs = montées majeures. Seuil abaissé à `critical`, **daté et rattaché à l'issue D11**. **Révision du 11 août :** CodeQL exige un dépôt public — remplacé par `eslint-plugin-security` (Apache-2.0), en **erreur** dans `verify` | `npm run lint` échoue sur un `eval` · Onglet Security actif |
 | **0.14** | En-têtes de sécurité | 0.2 | CSP stricte, HSTS, `X-Frame-Options: DENY`, `Referrer-Policy`, `Permissions-Policy` dans `next.config.mjs` · dédoublonner `vercel.json` | En-têtes servis et testés | **Risque :** `style-src 'unsafe-inline'` reste nécessaire tant que des styles en ligne subsistent (ADR-0005) — il tombe en phase 3 | `npx playwright test tests/e2e/headers.spec.ts` |
 | **0.15** | Gouvernance | 0.9 | `SECURITY.md`, `CONTRIBUTING.md`, `CODEOWNERS`, gabarits d'issue, `gitleaks` en CI | Dépôt gouverné | **Hypothèse :** le prototype est **hors périmètre de sécurité** — c'est une archive `noindex` | `gitleaks` vert |
 | **0.16** | Sonde et releases | 0.11 | `healthcheck.yml` (cron, ouvre une issue si HTTP ≠ 200) · `release.yml` (tag → release) | Supervision et publication | **Hypothèse :** `vars.SITE_URL` renseignée après la phase 7 | `workflow_dispatch` manuel |
@@ -78,11 +78,17 @@ Source : `docs/AUDIT-PRODUCTION-2026-08-06.md` (défauts `D1`–`D28`) · `docs/
 
 ```bash
 npm run verify                            # 7 étapes vertes
-npx vitest run                            # 78 tests
+npx vitest run                            # tous verts, dont hooks.test.ts
 node scripts/extract-tokens.mjs --check   # tokens.css ≡ prototype
 grep -c "src/" docs/handoff/06-BACKLOG.md # → 0
 gh pr checks                              # verify (20), verify (22), e2e
 ```
+
+> **Révision du 11 août 2026.** Trois critères de cette phase supposaient un dépôt public :
+> protection de branche, contrôles obligatoires, CodeQL. La décision A ayant tranché pour le
+> **privé**, ils sont remplacés par des équivalents qui fonctionnent en privé — hook `pre-push`,
+> alerte automatique sur `main` rouge, `eslint-plugin-security`. Même objectif, obtenu là où
+> c'est possible ; ce que les équivalents ne couvrent pas est écrit dans `SECURITY.md`.
 
 **Avancement projet à la sortie : 22 % → 31 %**
 
@@ -367,7 +373,7 @@ npx @lhci/cli autorun                       # budget tenu
 
 | Phase | Charge | Cumul | État | Avancement à la sortie |
 |---|---:|---:|---|---:|
-| **0 · Fondations** | 7 j | 7 j | ✅ 7 août 2026 | 22 % → **31 %** |
+| **0 · Fondations** | 7 j | 7 j | ✅ 11 août 2026 | 22 % → **31 %** |
 | **1 · Données** | 6,5 j | 13,5 j | ✅ 8 août 2026 | 31 % → **42 %** |
 | **2 · État & coque** | 4 j | 17,5 j | ✅ 8 août 2026 | 42 % → **48 %** |
 | **3 · Système visuel** | 5 j | 22,5 j | ⬜ | 48 % → **56 %** |

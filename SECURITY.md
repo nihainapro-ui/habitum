@@ -33,14 +33,33 @@ charge encore ses polices depuis `fonts.googleapis.com` : défaut connu, suivi s
 - **Aucun appel réseau tiers** dans l'application.
 - **Veille** : Dependabot hebdomadaire (npm et actions), `npm audit` en intégration continue,
   `gitleaks` sur les secrets.
+- **Analyse de sécurité statique** : `eslint-plugin-security` (Apache-2.0) dans `npm run lint`,
+  donc dans `verify`, donc en CI sur chaque push et chaque PR. `eval`, `new Function`,
+  `child_process`, expressions régulières non littérales et lectures de fichier par chemin
+  construit sont des **erreurs**, pas des avertissements.
+- **Garde-fou de `main`** : `.githooks/pre-push` refuse un push sur `main` si `npm run verify`
+  n'est pas vert, et refuse toute réécriture d'historique. Installé par `npm install`,
+  vérifié par `tests/unit/hooks.test.ts`.
 - **Chaîne de construction** : actions GitHub épinglées par SHA, `permissions: contents: read`.
 
 ## Limitations connues et assumées
 
-- **Pas d'analyse CodeQL.** Le dépôt est privé sur un plan GitHub gratuit : l'analyse de code
-  n'y est pas disponible (elle exige un dépôt public ou GitHub Advanced Security). Le workflow a
-  été retiré le 7 août 2026 plutôt que laissé rouge en permanence — une CI qui échoue toujours
-  n'est plus un signal. Il sera rétabli si le dépôt passe en public.
+- **Pas de protection de branche côté serveur, pas de contrôles obligatoires, pas de CodeQL.**
+  Le dépôt est privé sur un plan GitHub gratuit : ces trois fonctions y sont indisponibles.
+  Elles ont été remplacées le 11 août 2026 par des équivalents qui, eux, fonctionnent en
+  privé — hook `pre-push`, alerte automatique sur `main` rouge, analyse statique par ESLint
+  (voir ci-dessus).
+
+  **Ce que les équivalents ne font pas, et il faut le savoir :**
+  - un hook s'exécute chez celui qui pousse : `git push --no-verify` le contourne. Sur un dépôt
+    mono-contributeur c'est un garde-fou, pas une barrière ;
+  - une fusion faite depuis l'interface web de GitHub ne passe par aucun hook. C'est là que
+    l'alerte sur `main` rouge prend le relais : elle ne bloque pas, elle rend l'échec impossible
+    à ne pas voir ;
+  - `eslint-plugin-security` reconnaît des motifs ; il ne fait pas l'analyse de flux
+    inter-procédurale de CodeQL.
+
+  Tout redeviendrait disponible si le dépôt passait en public. Ce n'est pas prévu.
 
 - `script-src 'unsafe-inline'` dans la CSP : sans cette tolérance, Next.js ne s'hydrate pas. Le
   passage à un `nonce` est couplé à la décision sur le rendu statique (défaut `D12`) et sera

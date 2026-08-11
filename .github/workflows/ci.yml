@@ -55,6 +55,43 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+  # Sur un dépôt privé en plan gratuit, GitHub ne peut pas EMPÊCHER une fusion
+  # rouge : les contrôles obligatoires n'existent pas. Ce qu'on peut faire, en
+  # revanche, c'est rendre l'échec impossible à ne pas voir. Un `main` rouge
+  # ouvre une issue critique — même mécanisme que la sonde de production, même
+  # raison : sans blocage, il reste le signal, et un signal qu'on peut manquer
+  # n'en est pas un.
+  alerte-main-rouge:
+    needs: [verify, e2e]
+    if: failure() && github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/github-script@373c709c69115d41ff229c7e5df9f8788daa9553 # v9
+        with:
+          script: |
+            const { data } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner, repo: context.repo.repo,
+              state: 'open', labels: 'prio:critique',
+            });
+            // Une issue par incident, pas une par exécution.
+            if (data.some((i) => i.title.startsWith('main est rouge'))) return;
+            await github.rest.issues.create({
+              owner: context.repo.owner, repo: context.repo.repo,
+              title: `main est rouge — ${context.sha.slice(0, 7)}`,
+              labels: ['type:defaut', 'prio:critique'],
+              body: [
+                `La chaîne de vérification a échoué sur \`main\`.`,
+                '',
+                `Exécution : ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+                '',
+                "Le dépôt étant privé sur un plan gratuit, GitHub ne peut pas bloquer une",
+                "fusion rouge. Le garde-fou est en amont (`.githooks/pre-push`) et ici, en aval.",
+              ].join('\n'),
+            });
+
   e2e:
     needs: verify
     runs-on: ubuntu-latest

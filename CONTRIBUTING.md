@@ -6,6 +6,8 @@
 npm install
 npm run dev        # http://localhost:3000
 npm run verify     # à passer AVANT toute PR — sept contrôles
+                   # `npm install` installe aussi le hook pre-push : un push
+                   # sur main sans verify vert est refusé (SECURITY.md)
 ```
 
 Le prototype de référence s'ouvre seul, sans rien installer :

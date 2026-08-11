@@ -1,5 +1,64 @@
 # Journal des modifications
 
+## 2026-08-11 — Les trois limites de la phase 0, remplacées plutôt qu'assumées
+
+Trois critères de la phase 0 étaient hors de portée : protection de la branche `main`, contrôles
+obligatoires sur les PR, analyse CodeQL. Même cause pour les trois — le dépôt est **privé sur un
+plan GitHub gratuit** — et la décision du 7 août de le garder privé tient toujours.
+
+Ils sont désormais remplacés par des équivalents qui fonctionnent en privé. Ce n'est pas un
+abaissement du niveau : c'est le même objectif — *rien de rouge n'atteint `main`, et le code est
+analysé* — obtenu là où c'est possible.
+
+### Ajouté
+
+- **`.githooks/pre-push`** — le garde-fou de `main`, côté client. Refuse un push sur `main` si
+  `npm run verify` n'est pas vert, refuse un push non fast-forward, refuse la suppression de la
+  branche. Installé par `npm install` (`scripts/install-hooks.mjs` pose `core.hooksPath`).
+  Les hooks vivent **dans le dépôt**, donc versionnés et relus, au lieu de `.git/hooks/`.
+- **`tests/unit/hooks.test.ts`** — cinq contrôles sur le garde-fou lui-même. Un hook mal installé
+  échoue **en silence** : Git l'ignore et on croit protégé ce qui ne l'est pas. Le test vérifie
+  notamment le mode `100755` **dans l'index Git** — pas celui du disque, que NTFS ne porte pas.
+- **Alerte `main` rouge** (`ci.yml`) — si la chaîne échoue sur `main`, une issue critique est
+  ouverte automatiquement, une par incident. GitHub ne peut pas bloquer une fusion rouge en
+  privé ; il reste le signal, et un signal qu'on peut manquer n'en est pas un. Même mécanisme
+  que la sonde de production, même raison.
+- **`eslint-plugin-security`** (Apache-2.0) — analyse de sécurité statique en remplacement de
+  CodeQL, dans `npm run lint`, donc dans `verify`, donc en CI sur chaque push et chaque PR.
+  `eval`, `new Function`, `child_process`, expressions régulières non littérales et lectures de
+  fichier par chemin construit sont des **erreurs**. Vérifié en écrivant un `eval` volontaire :
+  la chaîne passe au rouge.
+
+### Deux réglages assumés, pour que le signal reste un signal
+
+- `security/detect-object-injection` est **désactivée**. Elle signale tout accès `objet[clé]` —
+  l'index de journal, les sélecteurs, les libellés en sont faits. Active, elle produirait des
+  centaines d'avertissements et apprendrait à ignorer le rouge. Le risque qu'elle vise, la
+  pollution de prototype, est traité à sa vraie place : la validation zod de l'importeur et le
+  test dédié de la tâche 7.6.
+- Les règles de chemin de fichier et d'expression régulière sont neutralisées dans `scripts/` et
+  `tests/`, où les entrées viennent du dépôt et non d'un utilisateur. Elles restent en **erreur**
+  sur le code applicatif.
+
+### Ce que les équivalents ne font pas
+
+Écrit dans `SECURITY.md` plutôt que sous-entendu :
+
+- un hook s'exécute chez celui qui pousse — `git push --no-verify` le contourne ;
+- une fusion faite depuis l'interface web de GitHub ne passe par aucun hook. C'est là que
+  l'alerte sur `main` rouge prend le relais ;
+- `eslint-plugin-security` reconnaît des motifs ; il ne fait pas l'analyse de flux
+  inter-procédurale de CodeQL.
+
+### Conséquence
+
+**La phase 0 est close à 100 %** : ses sept critères de sortie sont tenus, trois par équivalence
+documentée. Les phases 0, 1 et 2 sont désormais complètes sans réserve.
+
+198 tests unitaires (193 → 198).
+
+---
+
 ## 2026-08-08 — Phase 2 : état et coque applicative
 
 Les onze routes existaient et n'affichaient rien. Elles sont maintenant alimentées par IndexedDB,

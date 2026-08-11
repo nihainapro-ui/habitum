@@ -1,5 +1,6 @@
 import { FlatCompat } from '@eslint/eslintrc';
 import prettier from 'eslint-config-prettier';
+import security from 'eslint-plugin-security';
 
 const compat = new FlatCompat({ baseDirectory: import.meta.dirname });
 
@@ -13,6 +14,50 @@ const config = [
   },
   ...compat.extends('next/core-web-vitals', 'next/typescript'),
   prettier,
+  {
+    /* Analyse de sécurité statique — remplace CodeQL, indisponible sur un dépôt
+       privé en plan gratuit. eslint-plugin-security (Apache-2.0) couvre ce qui
+       compte réellement ici : `eval`, `new Function`, `child_process`, les
+       expressions régulières construites dynamiquement, la lecture de fichier
+       par chemin non littéral. Il tourne dans `npm run lint`, donc dans
+       `verify`, donc en CI sur chaque push et chaque PR — là où CodeQL aurait
+       tourné, et plus tôt.
+
+       Ce qu'il ne remplace pas : l'analyse de flux inter-procédurale de CodeQL.
+       C'est écrit dans SECURITY.md plutôt que sous-entendu. */
+    files: ['**/*.{js,mjs,ts,tsx}'],
+    plugins: { security },
+    rules: {
+      ...security.configs.recommended.rules,
+      /* Ce qui compte vraiment, en ERREUR : le lint est dans `verify`, donc un
+         de ces motifs arrête la livraison au lieu de la commenter. */
+      'security/detect-eval-with-expression': 'error',
+      'security/detect-new-buffer': 'error',
+      'security/detect-child-process': 'error',
+      'security/detect-unsafe-regex': 'error',
+      'security/detect-non-literal-regexp': 'error',
+      'security/detect-non-literal-fs-filename': 'error',
+      /* `detect-object-injection` signale TOUT accès `objet[clé]`. Le produit
+         en est fait — index de journal, sélecteurs, libellés. Gardée active,
+         elle produirait des centaines d'avertissements et apprendrait à
+         ignorer le rouge. Le risque qu'elle vise (pollution de prototype) est
+         traité à sa vraie place : la validation zod de l'importeur, et le test
+         dédié de la tâche 7.6. */
+      'security/detect-object-injection': 'off',
+    },
+  },
+  {
+    /* Outillage local : `scripts/` et `tests/` lisent des chemins et composent
+       des expressions régulières à partir de constantes DU DÉPÔT, jamais d'une
+       entrée utilisateur — il n'y a pas d'attaquant à l'autre bout d'un script
+       de build. Laisser ces deux règles crier ici noierait les vrais signaux
+       du code applicatif, où elles restent en erreur. */
+    files: ['scripts/**/*.{js,mjs,ts}', 'tests/**/*.{ts,tsx}'],
+    rules: {
+      'security/detect-non-literal-fs-filename': 'off',
+      'security/detect-non-literal-regexp': 'off',
+    },
+  },
   {
     // Convention du dépôt : un identifiant préfixé `_` est délibérément
     // inutilisé. Cas d'usage : un paramètre conservé pour la stabilité d'une
