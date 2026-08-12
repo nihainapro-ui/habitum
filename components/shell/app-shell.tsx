@@ -5,6 +5,7 @@ import { useStore } from '@/lib/store';
 import { seedEmpty } from '@/lib/data';
 import { traiterFrappe } from '@/lib/keyboard/shortcuts';
 import { CommandPalette } from '@/components/command/command-palette';
+import { EditorSheet } from '@/components/editor/EditorSheet';
 import { BottomBar } from './bottom-bar';
 import { Header } from './header';
 import { LiveRegion } from './live-region';
@@ -75,6 +76,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <BottomBar zen={zen} />
       <LiveRegion />
       <ToastHost />
+      <EditorSheet />
       <CommandPalette />
     </div>
   );

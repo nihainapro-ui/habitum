@@ -290,7 +290,23 @@
     "tabDef": "Définition",
     "tabPlan": "Planning",
     "tabRem": "Rappels",
-    "unarch": "Réactiver"
+    "unarch": "Réactiver",
+    "err": {
+      "nameRequired": "Un nom est nécessaire.",
+      "nameTooLong": "Nom trop long.",
+      "targetMin": "La cible doit valoir au moins 1.",
+      "daysRequired": "Choisissez au moins un jour.",
+      "subItemsRequired": "Ajoutez au moins un sous-élément.",
+      "endBeforeStart": "La fin précède le début.",
+      "labelRequired": "Intitulé vide.",
+      "dateRequired": "Une date est nécessaire.",
+      "durationMin": "Durée minimale : 5 minutes."
+    },
+    "newG": "Nouvel objectif",
+    "editG": "Modifier l’objectif",
+    "fWindow": "Fenêtre (jours)",
+    "fMs": "Jalons",
+    "addMs": "Ajouter un jalon"
   },
   "profile": {
     "active": "Actif",

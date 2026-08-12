@@ -290,7 +290,23 @@
     "tabDef": "Definition",
     "tabPlan": "Schedule",
     "tabRem": "Reminders",
-    "unarch": "Restore"
+    "unarch": "Restore",
+    "err": {
+      "nameRequired": "A name is required.",
+      "nameTooLong": "Name too long.",
+      "targetMin": "The target must be at least 1.",
+      "daysRequired": "Pick at least one day.",
+      "subItemsRequired": "Add at least one sub-item.",
+      "endBeforeStart": "End date precedes start date.",
+      "labelRequired": "Empty label.",
+      "dateRequired": "A date is required.",
+      "durationMin": "Minimum duration: 5 minutes."
+    },
+    "newG": "New goal",
+    "editG": "Edit goal",
+    "fWindow": "Window (days)",
+    "fMs": "Milestones",
+    "addMs": "Add a milestone"
   },
   "profile": {
     "active": "Active",
