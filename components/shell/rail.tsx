@@ -17,6 +17,7 @@ export function Rail({ zen }: { zen: boolean }) {
 
   return (
     <nav
+      data-testid="rail"
       aria-label={t('mainNav')}
       className="hidden w-[228px] shrink-0 flex-col gap-1 overflow-y-auto border-r px-3 py-6 md:flex"
       style={{ borderColor: 'var(--line)' }}

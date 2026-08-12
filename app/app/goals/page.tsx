@@ -1,5 +1,5 @@
 import { PortStatus } from '@/components/port-status';
 
 export default function Page() {
-  return <PortStatus view="goals" title="Objectifs" />;
+  return <PortStatus view="goals" titleKey="navGoals" />;
 }

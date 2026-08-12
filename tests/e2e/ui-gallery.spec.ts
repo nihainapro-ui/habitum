@@ -79,7 +79,15 @@ test('la modale piège le focus et le rend au déclencheur', async ({ page }) =>
   await expect(declencheur).toBeFocused();
 });
 
-test("l'infobulle s'ouvre au FOCUS CLAVIER, pas seulement au survol", async ({ page }) => {
+test("l'infobulle s'ouvre au FOCUS CLAVIER, pas seulement au survol", async ({
+  page,
+  browserName,
+}, info) => {
+  /* Sur un appareil tactile émulé il n'y a ni survol ni tabulation : Radix n'y
+     ouvre pas l'infobulle, et c'est le bon comportement. Le contrôle porte donc
+     sur le poste de travail — là où le clavier est le mode de navigation. */
+  test.skip(info.project.name === 'mobile', 'ni survol ni clavier sur tactile');
+  void browserName;
   await page.goto('/dev/ui');
 
   /* On arrive au déclencheur par TABULATION, pas par `.focus()`.

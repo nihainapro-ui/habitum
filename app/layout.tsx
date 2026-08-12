@@ -31,6 +31,19 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
       className={`${spaceGrotesk.variable} ${jetbrainsMono.variable}`}
       suppressHydrationWarning
     >
+      <head>
+        {/* Pose `data-theme` AVANT la première peinture. Fichier statique et
+            non script en ligne : une empreinte SHA-256 ferait ignorer
+            `unsafe-inline`, dont Next a besoin pour s'hydrater (ADR-0007).
+
+            Le script est BLOQUANT, et c'est le but : « no-sync-scripts » met en
+            garde contre le coût d'un script synchrone, mais un anti-clignotement
+            différé ne sert à rien — la page aurait déjà été peinte dans le
+            mauvais thème. Le fichier fait moins d'un kilo-octet et vient du
+            même domaine. */}
+        {/* eslint-disable-next-line @next/next/no-sync-scripts */}
+        <script src="/theme.js" />
+      </head>
       <body>
         <LocaleProvider defaultMessages={messages}>
           <AppShell>{children}</AppShell>

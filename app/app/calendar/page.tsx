@@ -1,5 +1,5 @@
 import { PortStatus } from '@/components/port-status';
 
 export default function Page() {
-  return <PortStatus view="calendar" title="Calendrier" />;
+  return <PortStatus view="calendar" titleKey="navCal" />;
 }

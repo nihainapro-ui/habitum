@@ -71,6 +71,28 @@ const config = [
     },
   },
   {
+    /* D6 — 311 clés traduites et symétriques, aucune atteignable : les libellés
+       étaient écrits en français dans le JSX. Cette règle rend la rechute
+       impossible.
+
+       `app/dev/**` est exclu : la galerie des primitives n'est pas un écran
+       produit, ses libellés sont des noms de composants. */
+    files: ['app/**/*.tsx', 'components/**/*.tsx'],
+    ignores: ['app/dev/**'],
+    rules: {
+      'react/jsx-no-literals': [
+        'error',
+        {
+          noStrings: true,
+          /* Ponctuation, symboles et NOM DU PRODUIT : rien de tout cela ne se
+             traduit. « Habitum » est une marque, pas un libellé. */
+          allowedStrings: ['Habitum', '·', '—', '–', '/', ':', '%', '✕', '◉', '←', '→'],
+          ignoreProps: true,
+        },
+      ],
+    },
+  },
+  {
     // Le moteur métier reste pur : ni React, ni Next, ni persistance.
     files: ['lib/domain/**/*.ts'],
     rules: {
