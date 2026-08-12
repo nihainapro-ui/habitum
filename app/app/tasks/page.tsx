@@ -1,5 +1,5 @@
-import { PortStatus } from '@/components/port-status';
+import { TasksView } from '@/components/tasks/TasksView';
 
 export default function Page() {
-  return <PortStatus view="tasks" titleKey="navTasks" />;
+  return <TasksView />;
 }
