@@ -96,6 +96,7 @@ const demoHabits = () => [
     category: 'study' as const,
     goal: { kind: 'count' as const, target: 20, step: 1, unit: 'pages' },
     days: [0, 2, 3, 6],
+    reminders: ['13:30'],
   },
   {
     id: 'run',
@@ -103,6 +104,7 @@ const demoHabits = () => [
     category: 'sport' as const,
     goal: { kind: 'count' as const, target: 3, step: 1, unit: 'km' },
     days: [1, 2, 5, 6],
+    reminders: ['07:00'],
   },
   {
     id: 'med',
@@ -110,6 +112,7 @@ const demoHabits = () => [
     category: 'mind' as const,
     goal: { kind: 'time' as const, target: 15, step: 1, unit: 'min' },
     days: [0, 1, 2, 3, 4, 5, 6],
+    reminders: ['15:00'],
   },
   {
     id: 'film',
@@ -117,6 +120,7 @@ const demoHabits = () => [
     category: 'home' as const,
     goal: { kind: 'check' as const, target: 1, step: 1, unit: '' },
     days: [4, 5],
+    reminders: ['22:00'],
   },
 ];
 
@@ -295,12 +299,12 @@ export async function seedDemo(): Promise<void> {
 
   for (const h of demoHabits()) {
     await habitsRepo.create({
-      ...h,
       mode: 'dow',
       subItems: [],
       reminders: [],
       archived: false,
       note: '',
+      ...h,
     });
   }
 

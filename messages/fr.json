@@ -209,7 +209,14 @@
     "weekStart": "Début de semaine",
     "zen": "Mode zen",
     "zenOff": "Quitter le mode zen",
-    "zenOn": "Activer le mode zen"
+    "zenOn": "Activer le mode zen",
+    "queueT": "File d'exécution",
+    "markDone": "Marquer réussi",
+    "incr": "Augmenter",
+    "decr": "Diminuer",
+    "toggleSub": "Afficher le détail",
+    "futureLocked": "Jour à venir",
+    "dayOff": "Aucune occurrence ce jour-là"
   },
   "editor": {
     "addRem": "Ajouter un rappel",
@@ -362,5 +369,13 @@
     "saveFail": "Sauvegarde impossible : espace de stockage plein. Exportez vos données.",
     "srView": "Vue affichée :",
     "tmRestored": "Session de minuteur restaurée, en pause"
+  },
+  "cat": {
+    "health": "Santé",
+    "sport": "Sport",
+    "mind": "Esprit",
+    "work": "Travail",
+    "study": "Études",
+    "home": "Maison"
   }
 }

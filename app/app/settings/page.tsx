@@ -21,7 +21,7 @@ export default async function Page() {
         </div>
       </Panel>
 
-      <PortStatus view="settings" titleKey="navSettings" />
+      <PortStatus view="settings" titleKey="navSettings" asSection />
     </div>
   );
 }

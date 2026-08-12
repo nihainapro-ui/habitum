@@ -92,4 +92,20 @@ export const createHabitsSlice: StateCreator<AppState, [], [], HabitsActions> = 
     const fait = isDone(get().logIndex, h, jour);
     await get().setLogValue(habitId, date, fait ? 0 : dailyTarget(h));
   },
+
+  async bumpHabit(habitId, date, delta) {
+    const actuel = get().logIndex.get(logKey(habitId, date)) ?? 0;
+    await get().setLogValue(habitId, date, Math.max(0, actuel + delta));
+  },
+
+  /* « Passer » n'est pas « ne rien faire » : c'est un zéro ÉCRIT. Sans lui,
+     une habitude à plafond resterait indécidable sur le jour courant (G9), et
+     l'utilisateur ne pourrait pas dire « aujourd'hui, non ». */
+  async skipHabit(habitId, date) {
+    const h = get().habits.find((x) => x.id === habitId);
+    if (!h) return;
+    await withUndo(set, get, { messageKey: 'app.tSkipped', label: h.name }, async () => {
+      await get().setLogValue(habitId, date, 0);
+    });
+  },
 });

@@ -53,7 +53,7 @@ export const ouvrir = async (page: Page, route: string): Promise<void> => {
 /** Écrit des lignes dans la base Dexie déjà créée par l'application.
  *  On passe par l'API IndexedDB brute : importer Dexie dans le contexte de la
  *  page demanderait de l'y injecter, alors que les magasins existent déjà. */
-async function ecrireEnBase(page: Page, tables: Record<string, unknown[]>): Promise<void> {
+export async function ecrireEnBase(page: Page, tables: Record<string, unknown[]>): Promise<void> {
   await page.evaluate(
     ([nom, charge]) => {
       const donnees = charge as Record<string, unknown[]>;
@@ -80,16 +80,23 @@ async function ecrireEnBase(page: Page, tables: Record<string, unknown[]>): Prom
   );
 }
 
-const lignesJournal = (): LogEntry[] =>
-  [...demoLogIndex()].map(([cle, value]) => {
-    const i = cle.indexOf('|');
-    return {
-      habitId: cle.slice(0, i),
-      date: cle.slice(i + 1),
-      value,
-      updatedAt: DEMO_NOW.toISOString(),
-    };
-  });
+/** Lignes de journal du jeu de démonstration.
+ *
+ *  Sans `historique`, seules les QUATRE entrées du jour sont écrites — celles
+ *  que `seedDemo()` pose en production. L'historique de 180 jours ne sert qu'à
+ *  comparer les vues aux 62 valeurs de référence. */
+const lignesJournal = (historique: boolean): LogEntry[] =>
+  [...demoLogIndex()]
+    .map(([cle, value]) => {
+      const i = cle.indexOf('|');
+      return {
+        habitId: cle.slice(0, i),
+        date: cle.slice(i + 1),
+        value,
+        updatedAt: DEMO_NOW.toISOString(),
+      };
+    })
+    .filter((l) => historique || l.date === JOUR_FIGE);
 
 export interface OptionsSemis {
   /** Écrire les 180 jours d'historique de `materialize()`. Nécessaire dès
@@ -116,7 +123,7 @@ export async function ouvrirAvecDemo(
     sessions: demoSessions(),
     shopping: demoShopping(),
     meta: [{ key: 'demo', value: true, updatedAt: DEMO_NOW.toISOString() }],
-    ...(options.historique ? { logs: lignesJournal() } : {}),
+    logs: lignesJournal(options.historique === true),
   });
 
   await ouvrir(page, route);

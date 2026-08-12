@@ -10,6 +10,7 @@ import { Header } from './header';
 import { LiveRegion } from './live-region';
 import { Rail } from './rail';
 import { ID_CONTENU, SkipLink } from './skip-link';
+import { ToastHost } from './toast-host';
 
 /* Coque applicative : rail, en-tête, contenu, barre basse, palette.
 
@@ -73,6 +74,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       <BottomBar zen={zen} />
       <LiveRegion />
+      <ToastHost />
       <CommandPalette />
     </div>
   );

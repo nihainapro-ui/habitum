@@ -48,9 +48,14 @@ sous le seuil AA de 4,5 exigé par du texte de 9,5 px. Corrigé **à la source**
 | `health` | Santé | Health | `#2ee6a8` | ✚ |
 | `sport` | Sport | Sports | `#4d7cff` | ▲ |
 | `mind` | Esprit | Mind | `#b57cff` | ◉ |
-| `work` | Travail | Work | (voir `CAT` dans le prototype) | ■ |
-| `home` | Maison | Home | — | ◆ |
-| `study` | Études | Study | — | ● |
+| `work` | Travail | Work | `#22e0d0` | ■ |
+| `study` | Études | Study | `#ffb340` | ◆ |
+| `home` | Maison | Home | `#ff5fa8` | ● |
+
+> Corrigé au portage de la vue `today` : ce tableau annonçait `home ◆` et
+> `study ●`, soit l'inverse de `CAT` dans le prototype, et laissait trois
+> couleurs non renseignées. Source unique côté code :
+> `GLYPHES_CATEGORIE` et `COULEURS_CATEGORIE` dans `components/ui/Icon.tsx`.
 
 Teintes d'avatar (OKLCH, `HUES`) : `188, 214, 266, 318, 158, 32`.
 Avatar : `border-radius: taille × 0.3`, dégradé OKLCH sur la teinte, ombre

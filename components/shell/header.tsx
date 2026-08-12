@@ -46,15 +46,19 @@ export function Header() {
       {isDemo ? (
         <span
           title={t('system.demoTag')}
-          aria-label={t('system.demoTag')}
           className="shrink-0 rounded-full px-2 py-1 text-[11px] whitespace-nowrap"
           style={{ background: 'var(--panel2)', color: 'var(--txt2)' }}
         >
           {/* Sous 1200 px, le badge se réduit à sa marque : il ne doit pas
-              voler la place du reste de l'en-tête (CHANGELOG, lot 1). */}
+              voler la place du reste de l'en-tête (CHANGELOG, lot 1).
+
+              Le libellé accessible est un TEXTE masqué, pas un `aria-label` :
+              posé sur un `<span>` sans rôle, l'attribut est proscrit — les
+              lecteurs d'écran l'ignorent, et le badge redevenait muet. */}
           <span className="hidden min-[1200px]:inline">{t('system.demoTag')}</span>
-          <span className="min-[1200px]:hidden" aria-hidden="true">
-            ◉
+          <span className="min-[1200px]:hidden">
+            <span aria-hidden="true">◉</span>
+            <span className="sr-only">{t('system.demoTag')}</span>
           </span>
         </span>
       ) : null}

@@ -75,6 +75,11 @@ export interface HabitsActions {
   archiveHabit(id: string, archived: boolean): Promise<void>;
   setLogValue(habitId: string, date: DateKey, value: number): Promise<void>;
   toggleHabit(habitId: string, date: DateKey): Promise<void>;
+  /** Incrément relatif d'un compteur, borné à zéro. */
+  bumpHabit(habitId: string, date: DateKey, delta: number): Promise<void>;
+  /** Journalise explicitement un zéro : « passée », et non « jamais saisie ».
+   *  La distinction porte la sémantique de `limit` (G9). */
+  skipHabit(habitId: string, date: DateKey): Promise<void>;
 }
 
 export interface TasksActions {
@@ -82,6 +87,9 @@ export interface TasksActions {
   updateTask(id: string, patch: UpdatePatch<Task>): Promise<void>;
   deleteTask(id: string): Promise<void>;
   toggleTask(id: string): Promise<void>;
+  /** Reporte au lendemain, avec annulation. */
+  snoozeTask(id: string): Promise<void>;
+  toggleSubTask(id: string, index: number): Promise<void>;
 }
 
 export interface GoalsActions {

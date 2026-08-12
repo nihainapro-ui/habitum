@@ -1,5 +1,5 @@
-import { PortStatus } from '@/components/port-status';
+import { TodayView } from '@/components/today/TodayView';
 
 export default function Page() {
-  return <PortStatus view="today" titleKey="navToday" />;
+  return <TodayView />;
 }

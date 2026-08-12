@@ -93,6 +93,7 @@ export const demoHabits = (): Habit[] => [
     name: 'Lire au moins 20 pages',
     category: 'study',
     days: [0, 2, 3, 6],
+    reminders: ['13:30'],
     goal: { kind: 'count', target: 20, step: 1, unit: 'pages' },
   }),
   habit({
@@ -100,6 +101,7 @@ export const demoHabits = (): Habit[] => [
     name: 'Courir au moins 3 km',
     category: 'sport',
     days: [1, 2, 5, 6],
+    reminders: ['07:00'],
     goal: { kind: 'count', target: 3, step: 1, unit: 'km' },
   }),
   habit({
@@ -107,6 +109,7 @@ export const demoHabits = (): Habit[] => [
     name: 'Méditer',
     category: 'mind',
     days: [0, 1, 2, 3, 4, 5, 6],
+    reminders: ['15:00'],
     goal: { kind: 'time', target: 15, step: 1, unit: 'min' },
   }),
   habit({
@@ -114,6 +117,7 @@ export const demoHabits = (): Habit[] => [
     name: 'Regarder un film',
     category: 'home',
     days: [4, 5],
+    reminders: ['22:00'],
     goal: { kind: 'check', target: 1, step: 1, unit: '' },
   }),
 ];

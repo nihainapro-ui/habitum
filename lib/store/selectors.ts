@@ -1,13 +1,20 @@
+import { useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import {
+  addDays,
   bestStreak,
   completionRate,
   currentStreak,
+  dateKey,
+  dayAgenda,
   dayRatio,
+  parseKey,
   focusMinutes,
   isScheduled,
   sumValues,
+  today,
   type DayRatio,
+  type EntreeJour,
   type Habit,
   type Task,
 } from '@/lib/domain';
@@ -23,6 +30,41 @@ import { useStore } from './store';
    objet : Zustand 5 compare par `Object.is`, et une nouvelle référence à chaque
    rendu boucle indéfiniment. */
 
+/* ⚠ Un sélecteur ne doit JAMAIS construire un objet que `Object.is` ne
+   reconnaîtra pas au rendu suivant. `useShallow` ne sauve que les tableaux et
+   objets PLATS : dès que les éléments sont eux-mêmes des objets reconstruits,
+   la comparaison échoue à chaque appel et React boucle jusqu'à
+   « Maximum update depth exceeded ». Dans ces cas-là, on sélectionne les
+   entrées — stables, puisque le store ne les remplace qu'à l'écriture — et on
+   dérive dans un `useMemo`. */
+
+/** Jour affiché : `ui.day` est un DÉCALAGE en jours, comme `state.day` du
+ *  prototype. Le convertir ici, une fois, évite que chaque vue le refasse — et
+ *  qu'une vue oublie de le faire. */
+export const useJourAffiche = (): Date => {
+  const day = useStore((s) => s.ui.day);
+  return useMemo(() => addDays(today(), day), [day]);
+};
+
+/** File d'exécution de la journée affichée, filtrée par l'onglet courant.
+ *  Le filtre est un état d'interface : il s'applique ici, après le domaine. */
+export const useDayAgenda = (date: Date): EntreeJour[] => {
+  const logIndex = useStore((s) => s.logIndex);
+  const habits = useStore((s) => s.habits);
+  const tasks = useStore((s) => s.tasks);
+  const filter = useStore((s) => s.ui.filter);
+  const jour = dateKey(date);
+
+  return useMemo(() => {
+    const d = parseKey(jour);
+    if (!d) return [];
+    const entrees = dayAgenda(logIndex, habits, tasks, d);
+    if (filter === 'habits') return entrees.filter((e) => e.kind === 'habit');
+    if (filter === 'tasks') return entrees.filter((e) => e.kind === 'task');
+    return entrees;
+  }, [logIndex, habits, tasks, filter, jour]);
+};
+
 /** Habitudes planifiées ce jour-là, archivées exclues. */
 export const useHabitsOfDay = (date: Date): Habit[] =>
   useStore(useShallow((s) => s.habits.filter((h) => isScheduled(h, date))));
@@ -34,6 +76,26 @@ export const useTasksOfDay = (dateKey: string): Task[] =>
 /** Charge et avancement d'une journée — base de l'anneau et de la heatmap. */
 export const useDayRatio = (date: Date): DayRatio =>
   useStore(useShallow((s) => dayRatio(s.logIndex, s.habits, s.tasks, date)));
+
+/** Avancement de plusieurs journées — bandeau de dates, heatmap.
+ *
+ *  Rend un tableau de NOMBRES, pas d'objets : `useShallow` compare les
+ *  éléments par `Object.is`, et une liste d'objets reconstruits à chaque appel
+ *  ne serait jamais jugée égale — la comparaison échouerait à chaque rendu. */
+export const useDayRatios = (dates: readonly Date[]): number[] =>
+  useStore(useShallow((s) => dates.map((d) => dayRatio(s.logIndex, s.habits, s.tasks, d).ratio)));
+
+/** Série en cours d'une habitude, seule.
+ *
+ *  `useHabitMetrics` calcule aussi le record — 365 jours balayés. Une ligne de
+ *  la file d'exécution n'affiche que la série : lui faire payer le record
+ *  multiplierait le coût du rendu par le nombre de lignes, pour un chiffre
+ *  qu'elle ne montre pas. */
+export const useHabitStreak = (habitId: string): number =>
+  useStore((s) => {
+    const h = s.habits.find((x) => x.id === habitId);
+    return h ? currentStreak(s.logIndex, h) : 0;
+  });
 
 export interface HabitMetrics {
   streak: number;

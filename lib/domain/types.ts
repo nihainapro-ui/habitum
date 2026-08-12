@@ -15,7 +15,11 @@ import type { WeekStart } from './date';
 /** 'YYYY-MM-DD' — clé canonique. Jamais un Date sérialisé. */
 export type DateKey = string;
 
-export type Category = 'health' | 'sport' | 'mind' | 'work' | 'home' | 'study';
+/** Les six catégories, dans l'ordre d'affichage du prototype (`CAT`).
+ *  Déclarées une seule fois, comme les types d'objectif (G8) : une liste
+ *  recopiée dans un `<select>` est une liste qui finira par en oublier une. */
+export const CATEGORIES = ['health', 'sport', 'mind', 'work', 'study', 'home'] as const;
+export type Category = (typeof CATEGORIES)[number];
 
 /** SEPT types, pas quatre. Toute liste blanche incomplète fait disparaître des
  *  données silencieusement — c'est arrivé à l'import (voir CHANGELOG 2026-08-05). */

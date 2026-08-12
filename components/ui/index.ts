@@ -14,4 +14,4 @@ export { Dialog } from './Dialog';
 export { Toast } from './Toast';
 export { Tooltip } from './Tooltip';
 export { Ring } from './Ring';
-export { Icon, CategoryGlyph, GLYPHES_CATEGORIE, type IconName } from './Icon';
+export { Icon, CategoryGlyph, GLYPHES_CATEGORIE, COULEURS_CATEGORIE, type IconName } from './Icon';

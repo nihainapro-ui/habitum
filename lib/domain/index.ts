@@ -6,3 +6,4 @@ export * from './date';
 export * from './schedule';
 export * from './metrics';
 export * from './goals';
+export * from './agenda';

@@ -209,7 +209,14 @@
     "weekStart": "Week starts on",
     "zen": "Zen mode",
     "zenOff": "Leave zen mode",
-    "zenOn": "Enter zen mode"
+    "zenOn": "Enter zen mode",
+    "queueT": "Execution queue",
+    "markDone": "Mark as done",
+    "incr": "Increase",
+    "decr": "Decrease",
+    "toggleSub": "Show details",
+    "futureLocked": "Upcoming day",
+    "dayOff": "Not scheduled that day"
   },
   "editor": {
     "addRem": "Add a reminder",
@@ -362,5 +369,13 @@
     "saveFail": "Cannot save: storage is full. Export your data.",
     "srView": "Current view:",
     "tmRestored": "Timer session restored, paused"
+  },
+  "cat": {
+    "health": "Health",
+    "sport": "Sports",
+    "mind": "Mind",
+    "work": "Work",
+    "study": "Study",
+    "home": "Home"
   }
 }
