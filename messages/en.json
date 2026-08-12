@@ -216,7 +216,16 @@
     "decr": "Decrease",
     "toggleSub": "Show details",
     "futureLocked": "Upcoming day",
-    "dayOff": "Not scheduled that day"
+    "dayOff": "Not scheduled that day",
+    "freqDaily": "Every day",
+    "freqEvery": "Every {n} days",
+    "freqWeek": "{n} times a week",
+    "freqMonth": "Monthly",
+    "goalMax": "max {n} {unit}",
+    "goalItems": "{n} items",
+    "archived": "Archived",
+    "statsFor": "View statistics for {name}",
+    "editFor": "Edit {name}"
   },
   "editor": {
     "addRem": "Add a reminder",

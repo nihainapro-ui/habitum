@@ -216,7 +216,16 @@
     "decr": "Diminuer",
     "toggleSub": "Afficher le détail",
     "futureLocked": "Jour à venir",
-    "dayOff": "Aucune occurrence ce jour-là"
+    "dayOff": "Aucune occurrence ce jour-là",
+    "freqDaily": "Quotidiennement",
+    "freqEvery": "Tous les {n} jours",
+    "freqWeek": "{n} fois par semaine",
+    "freqMonth": "Chaque mois",
+    "goalMax": "max {n} {unit}",
+    "goalItems": "{n} éléments",
+    "archived": "Archivée",
+    "statsFor": "Voir les statistiques de {name}",
+    "editFor": "Modifier {name}"
   },
   "editor": {
     "addRem": "Ajouter un rappel",

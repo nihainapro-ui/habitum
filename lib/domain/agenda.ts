@@ -1,5 +1,5 @@
-import type { Habit, LogIndex, Task } from './types';
-import { dateKey, today } from './date';
+import type { DateKey, Habit, LogIndex, Task } from './types';
+import { addDays, dateKey, startOfWeek, today, type WeekStart } from './date';
 import { isDone, loggedValue } from './metrics';
 import { dailyTarget, isScheduled } from './schedule';
 
@@ -75,3 +75,37 @@ export function dayAgenda(
 /** Un jour à venir ne se coche pas : on ne peut pas avoir déjà fait demain.
  *  Le passé, lui, reste modifiable — c'est ainsi qu'on rattrape un oubli. */
 export const estCochable = (d: Date, now: Date = today()): boolean => d <= now;
+
+export interface JourSemaine {
+  date: Date;
+  key: DateKey;
+  /** L'habitude est-elle prévue ce jour-là ? */
+  scheduled: boolean;
+  done: boolean;
+  /** Un jour à venir : ni cochable, ni comptable comme manqué. */
+  future: boolean;
+}
+
+/** Les sept jours de la semaine courante pour une habitude — les pastilles de
+ *  la carte. La semaine commence où l'utilisateur l'a dit (`Settings.weekStart`) :
+ *  un lundi codé en dur ferait mentir la carte pour la moitié du monde. */
+export function habitWeek(
+  log: LogIndex,
+  h: Habit,
+  weekStart: WeekStart = 'mon',
+  now: Date = today(),
+): JourSemaine[] {
+  const debut = startOfWeek(now, weekStart);
+  const jours: JourSemaine[] = [];
+  for (let i = 0; i < 7; i++) {
+    const date = addDays(debut, i);
+    jours.push({
+      date,
+      key: dateKey(date),
+      scheduled: isScheduled(h, date, now),
+      done: isDone(log, h, date, now),
+      future: date > now,
+    });
+  }
+  return jours;
+}

@@ -4,6 +4,7 @@ import {
   dateKey,
   dayAgenda,
   estCochable,
+  habitWeek,
   habitTime,
   logKey,
   type Habit,
@@ -123,5 +124,33 @@ describe('estCochable', () => {
     expect(estCochable(addDays(NOW, 1), NOW)).toBe(false);
     expect(estCochable(NOW, NOW)).toBe(true);
     expect(estCochable(addDays(NOW, -1), NOW)).toBe(true);
+  });
+});
+
+describe('habitWeek', () => {
+  it('rend les sept jours de la semaine, du lundi au dimanche', () => {
+    const semaine = habitWeek(new Map(), habit({ id: 'h' }), 'mon', NOW);
+    expect(semaine).toHaveLength(7);
+    expect(semaine[0]?.key).toBe('2026-08-03'); // lundi
+    expect(semaine[6]?.key).toBe('2026-08-09'); // dimanche
+  });
+
+  it('respecte une semaine commençant le dimanche', () => {
+    const semaine = habitWeek(new Map(), habit({ id: 'h' }), 'sun', NOW);
+    expect(semaine[0]?.key).toBe('2026-08-02');
+    expect(semaine[6]?.key).toBe('2026-08-08');
+  });
+
+  /* Une pastille de jour non planifié ne se coche pas, et ne se lit pas comme
+     un échec : la distinction est portée par `scheduled`, pas par la couleur. */
+  it('distingue jour planifié, jour fait et jour à venir', () => {
+    const lundiMercredi = habit({ id: 'lm', days: [0, 2] });
+    const log: LogIndex = new Map([[logKey('lm', '2026-08-03'), 1]]);
+    const semaine = habitWeek(log, lundiMercredi, 'mon', NOW);
+
+    expect(semaine[0]).toMatchObject({ scheduled: true, done: true, future: false });
+    expect(semaine[1]).toMatchObject({ scheduled: false, done: false, future: false });
+    expect(semaine[2]).toMatchObject({ scheduled: true, done: false, future: false });
+    expect(semaine[3]).toMatchObject({ future: true });
   });
 });
