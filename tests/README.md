@@ -16,6 +16,8 @@
 | `unit/store/hydrate.test.ts` | Chargement de tout l'état en une passe, drapeaux et pannes | `npm test` |
 | `unit/store/undo.test.ts` | **L'annulation restaure l'entité ET ses dépendances, en base** | `npm test` |
 | `unit/build-output.test.ts` | **Aucune route dynamique** — exige un `npm run build` préalable | `npm test` |
+| `unit/contrast.test.ts` | **Contraste WCAG AA** — 15 paires × 3 thèmes, lues dans `tokens.css` | `npm test` |
+| `unit/hooks.test.ts` | Le garde-fou `pre-push` est installé et refuse ce qu'il doit refuser | `npm test` |
 | `e2e/` | Parcours, Playwright | `npm run test:e2e` |
 | `setup/indexeddb.ts` | Amorce `fake-indexeddb` — Dexie a besoin d'un IndexedDB en Vitest | chargé automatiquement |
 | `fixtures/golden.json` | Les 62 valeurs de référence du prototype — **ne jamais modifier** | lu par `unit/golden.test.ts` |

@@ -46,9 +46,17 @@ dynamique — c'est-à-dire une invocation serverless par affichage, sur un prod
 est « 0 € d'infrastructure ».
 
 Il en découle que la sortie propre pour le script anti-clignotement de thème (phase 3, tâche 3.5)
-n'est **pas** un `nonce` mais une **empreinte SHA-256** : le script est unique, court et connu à
-la compilation, donc son empreinte peut entrer dans la CSP sans rien rendre dynamique. Le plan de
-la phase 3 dit « avec nonce CSP » ; il est corrigé dans le même mouvement.
+n'est **pas** un `nonce`. Le plan de la phase 3 dit « avec nonce CSP » ; il est corrigé.
+
+> **Correction du 12 août 2026, à l'implémentation.** Cette ADR annonçait une **empreinte
+> SHA-256**. C'est faux, et pour une raison qui n'est pas un détail : dès qu'une empreinte ou un
+> `nonce` figure dans `script-src`, le navigateur **ignore `'unsafe-inline'`** — c'est la règle
+> CSP. Or Next en a encore besoin pour s'hydrater. Ajouter l'empreinte aurait donc cassé
+> l'application au lieu de la durcir.
+>
+> La sortie retenue est la seconde que le plan proposait : **un fichier statique servi depuis le
+> même domaine** (`public/theme.js`), chargé de façon bloquante. Il passe par `'self'` : aucune
+> tolérance à ajouter, aucune à retirer, et le rendu reste statique.
 
 Le risque résiduel de `'unsafe-inline'` reste celui déjà mesuré le 6 août : le produit ne rend
 aucun HTML d'origine utilisateur, n'utilise nulle part `dangerouslySetInnerHTML` et ne charge

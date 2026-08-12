@@ -1,5 +1,82 @@
 # Journal des modifications
 
+## 2026-08-12 — Phase 3 : système visuel
+
+Onze vues peuvent maintenant s'écrire sans réinventer une bordure. Douze primitives sur les jetons
+générés, polices auto-hébergées, produit réellement bilingue, trois thèmes qui basculent sans
+clignoter, contraste AA mesuré et vérifié à chaque commit.
+
+### Ajouté
+
+- **Douze primitives** (`components/ui/`) : `Panel`, `Card`, `Chip`, `Switch`, `Field`,
+  `Segmented`, `Sheet`, `Dialog`, `Toast`, `Tooltip`, `Ring`, `Icon`. Elles ne portent aucun
+  métier — ni calcul, ni dépôt, ni store. Radix (MIT) fournit le piège de focus, `Escape`, le
+  retour du focus au déclencheur et les rôles ARIA : les réécrire à la main, ce serait réécrire
+  les bogues qu'il a déjà corrigés. (T2.3)
+- **Galerie `/dev/ui`** — les douze primitives dans leurs états, contrôlées par e2e dans les trois
+  thèmes, erreurs de console comprises.
+- **Icônes Lucide en imports nommés** — jamais `import * as icons`, qui ferait entrer toute la
+  bibliothèque. Les glyphes typographiques de catégorie (`✚ ▲ ◉ ■ ◆ ●`) sont conservés tels
+  quels : ils portent l'identité visuelle. First Load JS partagé : **103 kB**, budget 150. (T2.8)
+- **Polices auto-hébergées** (OFL 1.1), avec leur texte de licence, extraites par
+  `scripts/extract-fonts.mjs`. `tests/e2e/fonts.spec.ts` verrouille la promesse produit : quatre
+  routes, **zéro requête hors du domaine**. (D7)
+- **Bascule de langue et de thème**, sans rechargement et sans segment d'URL. Le thème est posé
+  **avant la première peinture** par `public/theme.js`. (D6, D26)
+- **`tests/unit/contrast.test.ts`** — 15 paires de couleurs sur les trois thèmes, calculées depuis
+  `tokens.css`. **`tests/e2e/a11y.spec.ts`** — axe sur les onze routes, la galerie et les deux
+  thèmes alternatifs : zéro violation critique ou sérieuse.
+
+### Corrigé
+
+- **Le prototype chargeait Google Fonts** : chaque ouverture transmettait l'adresse IP du visiteur
+  à un tiers hors UE, sur un produit dont la promesse est que rien ne sort de l'appareil. Remplacé
+  par des `@font-face` locaux en chemin relatif — rendu identique, archive toujours autonome. Le
+  moteur n'est pas touché : `domain-logic-extract.js` n'avait pas à être régénéré. (D8)
+- **L'archive était servie MORTE depuis la tâche 0.14.** Next applique *toutes* les règles
+  d'en-têtes dont le motif correspond : `/:path*` attrapait aussi `/prototype`, qui recevait donc
+  la CSP stricte de l'application par-dessus son jeu réduit. Elle bloquait le chargement de son
+  moteur. HTTP 200, page vide, aucun signal — le test de fumée ne vérifiait que le code de statut.
+  Le motif exclut désormais l'archive, qui a son propre jeu complet, et le test exige qu'elle
+  **démarre**.
+- **`04-DESIGN-TOKENS.md` désignait le mauvais thème.** Il avertissait depuis l'audit que `--mut`
+  de `plasma` était sous WCAG AA, et le plan de la phase a repris l'erreur. Mesure faite :
+  `plasma` est conforme (4,85 / 4,72) ; c'est **`clinical`** qui échouait (3,73 / 3,47). Corrigé
+  **à la source** — `#6c7d95` → `#596a82`, soit 4,91 et 4,56 — puis `tokens.css` régénéré par
+  extraction. (T7.3)
+- **Aucune chaîne littérale dans `app/` et `components/`** : 311 clés traduites et symétriques,
+  aucune atteignable. `react/jsx-no-literals` rend la rechute impossible. Les onze pages tirent
+  leur titre d'une **clé**, plus d'une chaîne passée en prop — la règle ne voit pas les props, et
+  un titre en dur reste français quelle que soit la langue.
+
+### Deux décisions techniques, corrigées à l'implémentation
+
+- **Le script anti-clignotement ne peut pas porter d'empreinte SHA-256.** Dès qu'une empreinte ou
+  un `nonce` figure dans `script-src`, le navigateur **ignore `'unsafe-inline'`**, dont Next a
+  encore besoin pour s'hydrater : l'ajouter aurait cassé l'application au lieu de la durcir. La
+  sortie retenue est un **fichier statique** servi depuis le même domaine, chargé de façon
+  bloquante. ADR-0007 est corrigée en conséquence.
+- **La galerie reste servie en production**, en `noindex` et sans lien entrant. Le plan la
+  redirigeait ; les e2e tournant sur le build de production, elle y aurait été inatteignable et le
+  critère de sortie n° 1 serait devenu invérifiable. Un critère qu'on ne peut pas vérifier ne
+  protège rien.
+
+### Licences
+
+`eslint-plugin-security` (Apache-2.0), Radix (MIT), Lucide (ISC), polices (OFL 1.1) — conformes
+à **G5**. **`axe-core` est en MPL-2.0**, hors de la liste blanche : dépendance de développement,
+hors bundle, sans obligation sur le code du produit. L'écart est écrit dans le test.
+
+### Limite connue
+
+Le moteur de l'archive charge React depuis `unpkg` (avec contrôle d'intégrité) : elle ne s'ouvre
+donc pas hors ligne. Propriété héritée, pas régression. La corriger demande d'auto-héberger les
+deux fichiers UMD dans `public/prototype/vendor/`.
+
+**213 tests unitaires · 128 e2e verts sur desktop et mobile.**
+
+---
+
 ## 2026-08-11 — Les trois limites de la phase 0, remplacées plutôt qu'assumées
 
 Trois critères de la phase 0 étaient hors de portée : protection de la branche `main`, contrôles
