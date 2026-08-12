@@ -102,6 +102,17 @@ const nextConfig = {
          jours sans que ça se voie. */
       { source: '/((?!prototype/).*)', headers: SECURITE },
 
+      /* ÉCART ASSUMÉ AU PLAN — celui-ci redirigeait `/dev/*` en production.
+         Les tests e2e tournent sur le build de production : la galerie y
+         aurait été inatteignable, et le critère de sortie n° 1 de la phase
+         (« les 12 primitives, 3 thèmes, sans erreur console ») serait devenu
+         invérifiable. Un critère qu'on ne peut pas vérifier ne protège rien.
+
+         Elle reste donc servie, mais `noindex` et sans aucun lien entrant.
+         Elle n'affiche aucune donnée d'utilisateur et n'expose aucune action
+         privilégiée : c'est une page statique de composants. */
+      { source: '/dev/:path*', headers: [{ key: 'X-Robots-Tag', value: 'noindex, nofollow' }] },
+
       /* L'archive a son propre jeu, complet et explicite. Elle est hors
          périmètre de sécurité (tâche 0.15) : ce n'est pas une surface de
          production, c'est la référence exécutable des onze vues, et
