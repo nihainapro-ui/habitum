@@ -26,16 +26,21 @@ Extraits du `<style>` de `Habitum.dc.html`. Thème par attribut `[data-theme]` s
 --acc:#c264ff  --acc2:#ff5fa8  --acc3:#6fe3ff
 --ok:#3ce6b0  --warn:#ffb340  --bad:#ff4d6d  --glow:194,100,255
 ```
-⚠️ Contraste `--mut` sur `--bg` à revoir en phase 7 (sous WCAG AA).
+✅ Contraste vérifié le 12 août 2026 : `--mut` sur `--bg` = **4,85**, sur `--bg2` = **4,72**.
+L'avertissement porté ici jusqu'au 12 août 2026 — « `--mut` sous WCAG AA » — était **faux** :
+mesure faite, c'est `clinical` qui échouait, pas `plasma`. Voir `tests/unit/contrast.test.ts`.
 
 ### `clinical` (clair)
 ```css
 --bg:#eef2f8  --bg2:#e4eaf3  --panel:rgba(255,255,255,.74)  --panel2:rgba(20,60,120,.06)
 --line:rgba(20,60,120,.16)  --line2:rgba(20,60,120,.3)
---txt:#0d1725  --txt2:#3c4c63  --mut:#6c7d95
+--txt:#0d1725  --txt2:#3c4c63  --mut:#596a82
 --acc:#2b5bff  --acc2:#0aa9a0  --acc3:#7c3aed
 --ok:#0f9d64  --warn:#b26a00  --bad:#d32546  --glow:43,91,255
 ```
+⚠️ `--mut` valait `#6c7d95` jusqu'au 12 août 2026 : **3,73** sur `--bg` et **3,47** sur `--bg2`,
+sous le seuil AA de 4,5 exigé par du texte de 9,5 px. Corrigé **à la source** (prototype) en
+`#596a82` — 4,91 et 4,56 — puis `tokens.css` régénéré par extraction.
 
 ### Couleurs de catégorie (fixes, hors thème)
 | Clé | FR | EN | Couleur | Glyphe |

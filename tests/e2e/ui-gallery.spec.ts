@@ -95,10 +95,17 @@ test("l'infobulle s'ouvre au FOCUS CLAVIER, pas seulement au survol", async ({
      c'est délibéré : sinon elle s'ouvrirait aussi après un clic à la souris,
      là où l'utilisateur voit déjà l'élément. Un test qui appelle `.focus()`
      testerait donc autre chose que ce que vit un utilisateur au clavier. */
-  await page.getByRole('button', { name: /fermer/i }).focus();
-  await page.keyboard.press('Tab');
-
   const declencheur = page.getByRole('button', { name: /survoler ou tabuler/i });
+
+  /* On tabule jusqu'au déclencheur au lieu de compter les arrêts : l'ordre du
+     document changera au fil des primitives ajoutées, et un test qui dépend
+     d'un nombre exact de tabulations casse au premier réagencement. */
+  await page.locator('body').press('Tab');
+  for (let i = 0; i < 40; i++) {
+    if (await declencheur.evaluate((el) => el === document.activeElement)) break;
+    await page.keyboard.press('Tab');
+  }
+
   await expect(declencheur).toBeFocused();
   await expect(page.getByRole('tooltip')).toBeVisible();
 });

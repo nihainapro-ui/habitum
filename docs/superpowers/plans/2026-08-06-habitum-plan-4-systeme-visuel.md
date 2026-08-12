@@ -449,6 +449,13 @@ describe('contraste WCAG AA', () => {
 
 - [ ] **Step 2: Corriger `--mut` de `plasma`**
 
+> **Correction du 12 août 2026 — ce n'est pas `plasma`.** Mesure faite, `plasma` est conforme
+> (4,85 sur `--bg`, 4,72 sur `--bg2`). C'est **`clinical`** qui échouait : 3,73 et 3,47.
+> `04-DESIGN-TOKENS.md` désignait le mauvais thème, et le plan a repris l'erreur. La correction
+> porte donc sur `clinical` — `#6c7d95` → `#596a82`, à la source, puis régénération.
+> Le seuil retenu est **4,5 pour `--mut` aussi** : « texte large » au sens WCAG signifie 24 px
+> (ou 18,66 px en gras), et les micro-libellés du produit font 9,5 px.
+
 La correction porte sur `public/prototype/Habitum.dc.html` (source des jetons), puis
 `node scripts/extract-tokens.mjs` régénère `styles/tokens.css`. **Ne jamais éditer `tokens.css`
 directement** — le test `check:tokens` du Plan 1 le refuserait.
