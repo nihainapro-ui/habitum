@@ -6,7 +6,16 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   reporter: process.env.CI ? 'github' : 'list',
-  use: { baseURL: 'http://localhost:3000', trace: 'on-first-retry' },
+  /* Fuseau imposé : les vues affichent des dates-clés calculées en heure
+     LOCALE (`dateKey()` n'utilise jamais `toISOString`). Sans fuseau fixe, la
+     date figée du 5 août 2026 bascule d'un jour selon la machine, et les 62
+     valeurs de référence cessent d'être comparables. */
+  use: {
+    baseURL: 'http://localhost:3000',
+    trace: 'on-first-retry',
+    timezoneId: 'Europe/Paris',
+    locale: 'fr-FR',
+  },
   projects: [
     {
       name: 'desktop',

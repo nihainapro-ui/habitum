@@ -20,9 +20,11 @@ import {
   dateKey,
   isScheduled,
   logKey,
+  type Goal,
   type Habit,
   type LogIndex,
   type Session,
+  type ShoppingItem,
   type Task,
 } from '@/lib/domain';
 
@@ -202,3 +204,82 @@ export const demoLogIndex = (): LogIndex => {
   }
   return log;
 };
+
+/* Objectifs et liste de courses : mêmes valeurs que `lib/data/seed.ts`, mais
+   figées ici pour que les tests puissent les écrire directement en base sans
+   passer par l'amorçage de production. Les dates des objectifs sont absolues
+   dans le prototype comme dans le produit — elles ne dépendent pas de DEMO_NOW. */
+
+const goal = (over: Partial<Goal> & Pick<Goal, 'id' | 'name' | 'kind' | 'category'>): Goal => ({
+  target: 0,
+  unit: '',
+  current: 0,
+  createdAt: ISO,
+  updatedAt: ISO,
+  ...over,
+});
+
+/** Les quatre objectifs de `OBJ0`. */
+export const demoGoals = (): Goal[] => [
+  goal({
+    id: 'o1',
+    name: 'Semi-marathon en octobre',
+    kind: 'cumul',
+    target: 180,
+    unit: 'km',
+    sourceHabitId: 'run',
+    category: 'sport',
+    start: '2026-05-01',
+    deadline: '2026-10-11',
+  }),
+  goal({
+    id: 'o2',
+    name: '24 livres en 2026',
+    kind: 'cumul',
+    target: 24,
+    unit: 'livres',
+    category: 'study',
+    start: '2026-01-01',
+    deadline: '2026-12-31',
+    current: 13,
+  }),
+  goal({
+    id: 'o3',
+    name: 'Lancer le club de lecture',
+    kind: 'milestones',
+    category: 'work',
+    start: '2026-06-01',
+    deadline: '2026-09-15',
+    milestones: [
+      { label: 'Choisir le format', done: true },
+      { label: 'Réserver la salle', done: true },
+      { label: 'Inviter 10 personnes', done: false },
+      { label: 'Première séance', done: false },
+      { label: 'Programme du trimestre', done: false },
+    ],
+  }),
+  goal({
+    id: 'o4',
+    name: 'Moins de 12 écarts sur 90 jours',
+    kind: 'reduce',
+    target: 12,
+    unit: 'écarts',
+    sourceHabitId: 'alc',
+    category: 'health',
+    start: '2026-05-01',
+    deadline: '2026-09-30',
+    window: 90,
+  }),
+];
+
+/** La liste de courses du jeu de démonstration — `shop` du prototype. */
+export const demoShopping = (): ShoppingItem[] =>
+  [
+    { label: 'Pommes', done: true },
+    { label: 'Pain', done: true },
+    { label: 'Céréales', done: false },
+    { label: 'Fromage', done: true },
+    { label: 'Poulet', done: true },
+    { label: 'Pâtes', done: false },
+    { label: 'Shampooing', done: false },
+  ].map((a, i) => ({ id: `sh${i + 1}`, ...a, createdAt: ISO, updatedAt: ISO }));
