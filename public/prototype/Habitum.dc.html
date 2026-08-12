@@ -8,9 +8,21 @@
 <body>
 <x-dc>
 <helmet>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap">
+<!-- D8 - Google Fonts retire le 11 aout 2026. Chaque ouverture transmettait
+     l'adresse IP du visiteur a un tiers hors UE, sur un produit dont la
+     promesse est que rien ne sort de l'appareil (ADR-0002). Les memes fontes,
+     sous licence OFL 1.1, sont servies depuis ../fonts/ - chemin relatif, pour
+     que ce fichier continue de s'ouvrir seul dans un navigateur.
+     Le moteur n'est pas touche : domain-logic-extract.js n'a pas a etre
+     regenere (CLAUDE.md, regle 7). -->
 <style>
+@font-face{font-family:'Space Grotesk';font-style:normal;font-weight:400;font-display:swap;src:url(../fonts/SpaceGrotesk-Regular.woff2) format('woff2')}
+@font-face{font-family:'Space Grotesk';font-style:normal;font-weight:500;font-display:swap;src:url(../fonts/SpaceGrotesk-Medium.woff2) format('woff2')}
+@font-face{font-family:'Space Grotesk';font-style:normal;font-weight:600;font-display:swap;src:url(../fonts/SpaceGrotesk-SemiBold.woff2) format('woff2')}
+@font-face{font-family:'Space Grotesk';font-style:normal;font-weight:700;font-display:swap;src:url(../fonts/SpaceGrotesk-Bold.woff2) format('woff2')}
+@font-face{font-family:'JetBrains Mono';font-style:normal;font-weight:400;font-display:swap;src:url(../fonts/JetBrainsMono-Regular.woff2) format('woff2')}
+@font-face{font-family:'JetBrains Mono';font-style:normal;font-weight:500;font-display:swap;src:url(../fonts/JetBrainsMono-Medium.woff2) format('woff2')}
+@font-face{font-family:'JetBrains Mono';font-style:normal;font-weight:700;font-display:swap;src:url(../fonts/JetBrainsMono-Bold.woff2) format('woff2')}
 *{box-sizing:border-box}
 body{margin:0;background:#04060d;color:#eaf2ff}
 :root{--bg:#04060d;--bg2:#070c18;--panel:rgba(11,18,34,.66);--panel2:rgba(120,175,255,.075);--line:rgba(120,190,255,.16);--line2:rgba(120,190,255,.34);--txt:#eaf2ff;--txt2:#a9bdda;--mut:#69809f;--acc:#4d7cff;--acc2:#22e0d0;--acc3:#b57cff;--ok:#2ee6a8;--warn:#ffb340;--bad:#ff4d6d;--glow:77,124,255}

@@ -1,0 +1,38 @@
+/* Pont Tailwind v4 <- jetons CSS.
+
+   Tailwind CONSOMME les jetons, il ne les remplace pas. `04-DESIGN-TOKENS.md`
+   § Notes de portage : « ne pas les convertir en échelle Tailwind par défaut ».
+   Les valeurs vivent dans `tokens.css`, qui est GÉNÉRÉ depuis le prototype ;
+   ce fichier ne fait que les exposer à l'écriture utilitaire.
+
+   `@theme inline` et non `@theme` : les jetons changent avec `[data-theme]`,
+   donc Tailwind doit émettre `var(--bg)` et non la valeur figée au build. */
+@theme inline {
+  --color-bg: var(--bg);
+  --color-bg2: var(--bg2);
+  --color-panel: var(--panel);
+  --color-panel2: var(--panel2);
+  --color-line: var(--line);
+  --color-line2: var(--line2);
+  --color-txt: var(--txt);
+  --color-txt2: var(--txt2);
+  --color-mut: var(--mut);
+  --color-acc: var(--acc);
+  --color-acc2: var(--acc2);
+  --color-acc3: var(--acc3);
+  --color-ok: var(--ok);
+  --color-warn: var(--warn);
+  --color-bad: var(--bad);
+
+  /* Rayons du prototype : puces 5 · petits boutons 7 · boutons 9 ·
+     champs et cartes 11 · panneaux 16 · pastilles 99. */
+  --radius-chip: 5px;
+  --radius-btn-sm: 7px;
+  --radius-btn: 9px;
+  --radius-field: 11px;
+  --radius-panel: 16px;
+  --radius-pill: 99px;
+
+  --font-ui: var(--font-space-grotesk), system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, monospace;
+}

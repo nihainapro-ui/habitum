@@ -29,7 +29,13 @@ test('la racine mène à l’application, temporairement', async ({ page }) => {
   await expect(page).toHaveURL(/\/app$/);
 });
 
-test('le prototype reste servi tel quel', async ({ page }) => {
+test('le prototype reste servi tel quel — et DÉMARRE', async ({ page }) => {
+  /* Ce test ne vérifiait que le code de statut. L'archive a donc été servie
+     MORTE pendant six jours : la CSP de l'application, qui l'attrapait par
+     inadvertance, bloquait le chargement de son moteur. HTTP 200, page vide,
+     aucun signal. Un « servi tel quel » qui ne s'ouvre pas ne sert à rien. */
   const res = await page.goto('/prototype/Habitum.dc.html');
   expect(res?.status()).toBe(200);
+  await expect(page.locator('[data-app]')).toBeVisible();
+  await expect(page.locator('nav, [role="navigation"]').first()).toBeVisible();
 });

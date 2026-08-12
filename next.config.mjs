@@ -92,15 +92,44 @@ const nextConfig = {
 
   async headers() {
     return [
-      { source: '/:path*', headers: SECURITE },
-      /* Le prototype vit dans public/prototype/ : servi tel quel, jamais
-         compilé, jamais indexé. Il charge encore Google Fonts (défaut D8) et
-         ne peut donc pas vivre sous la CSP de l'application tant que ce n'est
-         pas corrigé — d'où un jeu d'en-têtes réduit mais explicite.
-         C'est une archive de référence, pas une surface de production. */
+      /* Le motif EXCLUT `/prototype` — et ce n'est pas un détail.
+         Next applique TOUTES les règles dont le motif correspond : `/:path*`
+         attrapait aussi l'archive, qui recevait donc la CSP stricte de
+         l'application EN PLUS de son jeu réduit. Son moteur charge React par
+         balise `<script>` externe ; `script-src 'self'` le bloquait, et
+         l'archive était servie MORTE depuis la tâche 0.14 — HTTP 200, page
+         vide. Le test de fumée ne vérifiait que le code de statut, d'où six
+         jours sans que ça se voie. */
+      { source: '/((?!prototype/).*)', headers: SECURITE },
+
+      /* L'archive a son propre jeu, complet et explicite. Elle est hors
+         périmètre de sécurité (tâche 0.15) : ce n'est pas une surface de
+         production, c'est la référence exécutable des onze vues, et
+         CLAUDE.md exige qu'elle « continue de s'ouvrir seule ».
+
+         LIMITE CONNUE : son moteur charge React depuis unpkg.com, avec
+         contrôle d'intégrité (SRI dans support.js). Elle ne s'ouvre donc pas
+         hors ligne. C'est une propriété héritée de l'archive, pas une
+         régression ; la corriger demande d'auto-héberger les deux fichiers
+         UMD dans public/prototype/vendor/ et d'ajuster support.js. */
       {
         source: '/prototype/:path*',
         headers: [
+          {
+            key: 'Content-Security-Policy',
+            value: [
+              "default-src 'self'",
+              "script-src 'self' 'unsafe-inline' https://unpkg.com",
+              "style-src 'self' 'unsafe-inline'",
+              "img-src 'self' data: blob:",
+              "font-src 'self'",
+              "connect-src 'self'",
+              "object-src 'none'",
+              "base-uri 'self'",
+              "form-action 'self'",
+              "frame-ancestors 'none'",
+            ].join('; '),
+          },
           { key: 'X-Robots-Tag', value: 'noindex, nofollow' },
           { key: 'X-Frame-Options', value: 'DENY' },
           { key: 'X-Content-Type-Options', value: 'nosniff' },

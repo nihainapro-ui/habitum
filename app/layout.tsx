@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import type { ReactNode } from 'react';
 import { getMessages } from 'next-intl/server';
 import { defaultLocale } from '@/i18n/config';
+import { jetbrainsMono, spaceGrotesk } from '@/lib/fonts';
 import { LocaleProvider } from '@/components/shell/locale-provider';
 import { AppShell } from '@/components/shell/app-shell';
 import '@/styles/globals.css';
@@ -24,7 +25,12 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   const messages = await getMessages();
 
   return (
-    <html lang={defaultLocale} data-theme="neural" suppressHydrationWarning>
+    <html
+      lang={defaultLocale}
+      data-theme="neural"
+      className={`${spaceGrotesk.variable} ${jetbrainsMono.variable}`}
+      suppressHydrationWarning
+    >
       <body>
         <LocaleProvider defaultMessages={messages}>
           <AppShell>{children}</AppShell>
