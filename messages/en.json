@@ -227,7 +227,10 @@
     "statsFor": "View statistics for {name}",
     "editFor": "Edit {name}",
     "overallScore": "Overall score",
-    "perfectDays": "Perfect days"
+    "perfectDays": "Perfect days",
+    "objAhead": "Ahead",
+    "objTrail": "Progress curve",
+    "objSince": "Since"
   },
   "editor": {
     "addRem": "Add a reminder",

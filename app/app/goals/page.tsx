@@ -1,5 +1,5 @@
-import { PortStatus } from '@/components/port-status';
+import { GoalsView } from '@/components/goals/GoalsView';
 
 export default function Page() {
-  return <PortStatus view="goals" titleKey="navGoals" />;
+  return <GoalsView />;
 }

@@ -227,7 +227,10 @@
     "statsFor": "Voir les statistiques de {name}",
     "editFor": "Modifier {name}",
     "overallScore": "Score global",
-    "perfectDays": "Jours parfaits"
+    "perfectDays": "Jours parfaits",
+    "objAhead": "En avance",
+    "objTrail": "Courbe d’avancement",
+    "objSince": "Depuis le"
   },
   "editor": {
     "addRem": "Ajouter un rappel",
