@@ -263,7 +263,11 @@ export function TimerView() {
             }
           >
             {duJour.length === 0 ? (
-              <p className="m-0 text-[12.5px]" style={{ color: 'var(--mut)' }}>
+              <p
+                data-testid="empty-state"
+                className="m-0 text-[12.5px]"
+                style={{ color: 'var(--mut)' }}
+              >
                 {t('noSessions')}
               </p>
             ) : (

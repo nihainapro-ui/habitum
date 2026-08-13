@@ -21,6 +21,7 @@ export function EmptyState({
 
   return (
     <section
+      data-testid="empty-state"
       className="rounded-panel flex flex-col items-center gap-2.5 border px-8 py-14 text-center"
       style={{ borderColor: 'var(--line)', background: 'var(--panel)' }}
     >

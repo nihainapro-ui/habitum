@@ -53,7 +53,11 @@ export function UnifiedList({ date, entrees }: { date: Date; entrees: EntreeJour
       </header>
 
       {entrees.length === 0 ? (
-        <p className="m-0 px-4 py-10 text-center text-[13px]" style={{ color: 'var(--mut)' }}>
+        <p
+          data-testid="empty-state"
+          className="m-0 px-4 py-10 text-center text-[13px]"
+          style={{ color: 'var(--mut)' }}
+        >
           {t('allClear')}
         </p>
       ) : (

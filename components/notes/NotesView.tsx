@@ -128,6 +128,7 @@ export function NotesView() {
           <Panel title={t('history')} padding={0}>
             {historique.length === 0 ? (
               <p
+                data-testid="empty-state"
                 className="m-0 px-4 py-8 text-center text-[12.5px]"
                 style={{ color: 'var(--mut)' }}
               >

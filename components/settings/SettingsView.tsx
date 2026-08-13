@@ -1,11 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { Download } from 'lucide-react';
 import { Panel, Segmented, Switch } from '@/components/ui';
 import type { WeekStart } from '@/lib/domain';
 import { useSettings, useStore } from '@/lib/store';
+import { clearErrorLog, readErrorLog, type ErreurJournalisee } from '@/lib/logger';
 import { ViewHeader } from '@/components/shell/view-header';
 import { LocaleSwitcher } from './LocaleSwitcher';
 import { ThemeSwitcher } from './ThemeSwitcher';
@@ -33,6 +34,17 @@ export function SettingsView() {
 
   const [confirme, setConfirme] = useState(false);
   const [erreurExport, setErreurExport] = useState(false);
+
+  /* Journal d'erreurs LOCAL (tâche 5.1, décision E). Il est lu ici et nulle
+     part ailleurs : c'est le seul endroit où l'utilisateur peut voir ce que
+     l'application a attrapé, et le seul d'où il peut l'effacer. */
+  const [erreurs, setErreurs] = useState<ErreurJournalisee[]>([]);
+  useEffect(() => {
+    void readErrorLog().then(setErreurs);
+  }, []);
+
+  /* Composé hors du JSX, que `jsx-no-literals` garde libre de tout gabarit. */
+  const origine = (e: ErreurJournalisee) => `${e.at} · ${e.where}`;
 
   /* L'export passe par un lien objet révoqué aussitôt : aucune donnée ne
      transite par un serveur, et le fichier ne reste pas en mémoire. */
@@ -177,6 +189,49 @@ export function SettingsView() {
               </button>
             )}
           </div>
+        </div>
+      </Panel>
+
+      <Panel title={ts('errLogT')}>
+        <div className="flex flex-col gap-3">
+          <span className="text-[11.5px]" style={{ color: 'var(--mut)' }}>
+            {ts('errLogHint')}
+          </span>
+
+          {erreurs.length === 0 ? (
+            <span
+              data-testid="empty-state"
+              className="text-[12.5px]"
+              style={{ color: 'var(--mut)' }}
+            >
+              {ts('errLogEmpty')}
+            </span>
+          ) : (
+            <>
+              <ul data-error-log className="m-0 flex list-none flex-col gap-2 p-0">
+                {erreurs.map((e) => (
+                  <li key={`${e.at}-${e.message}`} className="flex flex-col gap-0.5">
+                    <span className="font-mono text-[10.5px]" style={{ color: 'var(--mut)' }}>
+                      {origine(e)}
+                    </span>
+                    <span className="text-[12px]" style={{ color: 'var(--txt2)' }}>
+                      {e.message}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+              <button
+                type="button"
+                onClick={() => {
+                  void clearErrorLog().then(() => setErreurs([]));
+                }}
+                className="rounded-btn cursor-pointer self-start border px-4 py-2 text-[12.5px]"
+                style={{ borderColor: 'var(--line)', color: 'var(--txt2)' }}
+              >
+                {ts('errLogClear')}
+              </button>
+            </>
+          )}
         </div>
       </Panel>
 

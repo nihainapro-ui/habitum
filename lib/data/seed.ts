@@ -43,6 +43,14 @@ export const META_KEYS = {
   /** Date du dernier export, et refus du rappel de sauvegarde (D8). */
   lastExport: 'lastExport',
   nagDismissed: 'nagDismissed',
+  /** Journal d'erreurs LOCAL — `lib/logger.ts`, décision E. */
+  errors: 'errors',
+  /** Copie de secours prise avant import et avant réinitialisation.
+   *  Équivalent de `habitum.state.bak` du prototype, dans la table `meta`. */
+  backup: 'backup',
+  /** Onboarding franchi. Tant qu'elle est absente, la première ouverture mène
+   *  au parcours d'accueil et non au tableau de bord. */
+  onboarded: 'onboarded',
 } as const;
 
 /** Réglages d'un compte neuf. `notifications`, `sound` et `vibrate` sont à

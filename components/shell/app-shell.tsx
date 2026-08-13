@@ -5,6 +5,7 @@ import { useStore } from '@/lib/store';
 import { seedEmpty } from '@/lib/data';
 import { traiterFrappe } from '@/lib/keyboard/shortcuts';
 import { CommandPalette } from '@/components/command/command-palette';
+import { ForceError } from '@/components/dev/force-error';
 import { EditorSheet } from '@/components/editor/EditorSheet';
 import { BottomBar } from './bottom-bar';
 import { Header } from './header';
@@ -59,6 +60,9 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="flex min-h-screen" data-hydrated={pret ? 'true' : 'false'}>
+      {/* Trappe de recette du DERNIER filet : ce qui casse dans la coque ne
+          peut pas être rattrapé par `app/error.tsx`, qui vit dessous. */}
+      <ForceError scope="shell" />
       <SkipLink />
       <Rail zen={zen} />
 
