@@ -259,7 +259,17 @@
     "prefsSec": "Preferences",
     "profilesSec": "Profiles",
     "statsSec": "Personal statistics",
-    "newProfile": "New profile name"
+    "newProfile": "New profile name",
+    "calMonth": "Month",
+    "calWeek": "Week",
+    "calDay": "Day",
+    "calAgenda": "Agenda",
+    "calMode": "Display mode",
+    "calMoveOn": "Moving: arrows to change day or time, Enter to confirm, Escape to cancel",
+    "calMoveOff": "Move cancelled",
+    "calKeyHint": "Enter to move · Shift + arrows for duration",
+    "calAllDay": "All day",
+    "calToday": "Today"
   },
   "editor": {
     "addRem": "Add a reminder",

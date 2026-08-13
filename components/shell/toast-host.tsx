@@ -28,7 +28,10 @@ export function ToastHost() {
 
   return (
     <div className="pointer-events-none fixed inset-x-0 bottom-20 z-40 flex justify-center px-4 md:bottom-6">
-      <div className="pointer-events-auto w-full max-w-[440px]">
+      {/* `data-toast` : dnd-kit monte sa propre région `role="status"` pour
+          annoncer les déplacements. Sans repère, un test qui cherche « le »
+          statut en trouve deux. */}
+      <div data-toast className="pointer-events-auto w-full max-w-[440px]">
         <Toast
           message={message}
           actionLabel={toast.undo ? t('app.undo') : undefined}

@@ -96,6 +96,14 @@ export interface TasksActions {
   /** Reporte au lendemain, avec annulation. */
   snoozeTask(id: string): Promise<void>;
   toggleSubTask(id: string, index: number): Promise<void>;
+  /** Replanifie une tâche — nouveau jour, éventuellement nouvelle heure. */
+  moveTask(id: string, date: DateKey, time?: string): Promise<void>;
+  /** Change la durée, jamais sous le minimum du domaine. */
+  resizeTask(id: string, duration: number): Promise<void>;
+  /** Allonge ou raccourcit RELATIVEMENT, en lisant la durée courante dans le
+   *  store. Une suite rapide de raccourcis clavier calculerait sinon chaque pas
+   *  depuis une valeur périmée, et perdrait la moitié des frappes. */
+  nudgeTaskDuration(id: string, deltaMin: number): Promise<void>;
 }
 
 export interface GoalsActions {

@@ -31,6 +31,12 @@ d'actions** : *Marquer réussi · Passer · Reporter · Supprimer · Note*. Toas
 **But :** planification.
 **Modes :** `month` (grille 6×7, intensité = `dayRatio`), `week` (colonnes horaires),
 `day` (une colonne détaillée), `agenda` (liste chronologique).
+
+> **Corrigé au portage (phase 4).** Ce document annonçait quatre modes ; le prototype en a
+> **cinq** — `tests/RECETTE.md` § 6 disait vrai. Le cinquième, `orbit` (« projection orbitale du
+> mois »), est une variante **décorative** de la grille mensuelle : il n'affiche aucune information
+> que `month` ne donne pas. Il n'est **pas porté**, et ce choix est délibéré plutôt que subi.
+> Les quatre modes ci-dessus le sont, et retombent tous sur `agenda` sous 768 px (D6).
 **Interactions :** navigation par `calOff` (animation directionnelle `calDir`), **glisser-déposer**
 d'une tâche vers un autre jour/heure, **redimensionnement** modifiant `duration` (minimum 15 min),
 toast « déplacé/redimensionné » annulable. Clic sur un jour → `today` sur ce jour.

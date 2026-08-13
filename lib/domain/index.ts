@@ -11,3 +11,4 @@ export * from './tasks';
 export * from './stats';
 export * from './timer';
 export * from './backup';
+export * from './calendar';

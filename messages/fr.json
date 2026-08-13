@@ -259,7 +259,17 @@
     "prefsSec": "Préférences",
     "profilesSec": "Profils",
     "statsSec": "Statistiques personnelles",
-    "newProfile": "Nom du nouveau profil"
+    "newProfile": "Nom du nouveau profil",
+    "calMonth": "Mois",
+    "calWeek": "Semaine",
+    "calDay": "Jour",
+    "calAgenda": "Agenda",
+    "calMode": "Mode d’affichage",
+    "calMoveOn": "Déplacement : flèches pour changer de jour ou d’heure, Entrée pour valider, Échap pour annuler",
+    "calMoveOff": "Déplacement annulé",
+    "calKeyHint": "Entrée pour déplacer · Maj + flèches pour la durée",
+    "calAllDay": "Toute la journée",
+    "calToday": "Aujourd’hui"
   },
   "editor": {
     "addRem": "Ajouter un rappel",

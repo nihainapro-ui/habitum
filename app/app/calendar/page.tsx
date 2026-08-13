@@ -1,5 +1,5 @@
-import { PortStatus } from '@/components/port-status';
+import { CalendarView } from '@/components/calendar/CalendarView';
 
 export default function Page() {
-  return <PortStatus view="calendar" titleKey="navCal" />;
+  return <CalendarView />;
 }
