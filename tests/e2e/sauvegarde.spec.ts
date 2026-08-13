@@ -99,6 +99,11 @@ test('la réinitialisation laisse elle aussi une copie de secours', async ({ pag
   await expect(page.getByTestId('backup-at')).toBeVisible();
 
   await page.getByRole('button', { name: 'Restaurer' }).click();
+  /* On attend le RAPPORT avant de naviguer : la restauration écrit six
+     habitudes en base, et partir avant la fin de l'écriture ferait échouer le
+     test sur une course, pas sur un défaut. */
+  await expect(page.getByTestId('import-report')).toBeVisible();
+
   await ouvrirVierge(page, '/app/habits');
   await expect(page.getByRole('article')).toHaveCount(6);
 });

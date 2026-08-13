@@ -60,6 +60,7 @@ export function capturer(s: AppState): Snapshot {
     profiles: [...s.profiles],
     logIndex: new Map(s.logIndex),
     occurrences: new Set(s.occurrences),
+    logIndexComplete: s.logIndexComplete,
     settings: { ...s.settings },
     activeProfileId: s.activeProfileId,
     isDemo: s.isDemo,

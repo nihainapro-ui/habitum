@@ -77,6 +77,13 @@ test('aucune vue ne déborde, dans les trois thèmes', async ({ page }) => {
 });
 
 test('axe ne relève rien de sérieux sur les onze vues, compte peuplé', async ({ page }) => {
+  /* Onze audits axe dans un seul test, sur une machine qui en fait tourner huit
+     en parallèle : l'injection d'axe dépasse parfois le délai par défaut et le
+     test échoue sur une erreur d'outillage, pas sur une violation. Le budget est
+     triplé plutôt que le test découpé — découpé, il rouvrirait onze fois le jeu
+     de démonstration complet. */
+  test.slow();
+
   for (const vue of VUES) {
     await ouvrirAvecDemo(page, vue.route, { historique: true });
     const { violations } = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).analyze();

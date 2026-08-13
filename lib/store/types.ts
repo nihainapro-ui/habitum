@@ -66,6 +66,14 @@ export interface DataState {
   logIndex: LogIndex;
   /** Occurrences de tâches récurrentes accomplies — clés `taskId|date` (G1). */
   occurrences: ReadonlySet<string>;
+  /** L'index du journal contient-il TOUT l'historique ?
+   *
+   *  L'ouverture ne lit que les 420 derniers jours (tâche 5.10) ; le reste
+   *  arrive juste après. Tant que ce drapeau est faux, une date antérieure à la
+   *  fenêtre peut manquer — la coque l'expose (`data-journal`) pour que la
+   *  recette mesure la réactivité une fois l'application posée, et non pendant
+   *  qu'elle finit de charger. */
+  logIndexComplete: boolean;
   settings: Settings;
   profiles: Profile[];
   activeProfileId: string | null;

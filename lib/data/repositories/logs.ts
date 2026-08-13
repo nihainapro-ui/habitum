@@ -22,6 +22,15 @@ export const logsRepo = {
       .toArray();
   },
 
+  /** Fenêtre bornée TOUTES HABITUDES CONFONDUES, par l'index `date`.
+   *
+   *  C'est la lecture d'ouverture (tâche 5.10) : une seule requête de plage au
+   *  lieu d'une par habitude — avec 200 habitudes, la différence est de deux
+   *  cents allers-retours. */
+  async getWindowAll(from: DateKey, to: DateKey): Promise<LogEntry[]> {
+    return db.logs.where('date').between(from, to, true, true).toArray();
+  },
+
   async setValue(habitId: string, date: DateKey, value: number): Promise<void> {
     await db.logs.put({ habitId, date, value, updatedAt: nowIso() });
   },

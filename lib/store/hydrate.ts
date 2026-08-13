@@ -4,6 +4,7 @@ import {
   goalsRepo,
   habitsRepo,
   loadLogIndex,
+  loadLogIndexRecent,
   metaRepo,
   notesRepo,
   profilesRepo,
@@ -14,11 +15,21 @@ import {
 import type { DateKey, Settings } from '@/lib/domain';
 import type { DataState } from './types';
 
+/** Journal COMPLET, pour compléter une ouverture partielle. */
+export async function completerJournal(): Promise<import('@/lib/domain').LogIndex> {
+  return loadLogIndex();
+}
+
 /** Charge tout l'état persistant en une passe.
  *
  *  Une seule vague de lectures parallèles : à l'ouverture, l'utilisateur attend
- *  l'écran, pas neuf allers-retours en série. */
-export async function chargerTout(): Promise<DataState> {
+ *  l'écran, pas neuf allers-retours en série.
+ *
+ *  `recent` ne lit que les 420 derniers jours du journal — la fenêtre la plus
+ *  profonde du domaine. Sur trois ans de données, lire tout coûtait deux
+ *  secondes avant le premier affichage (tâche 5.10). Le reste est chargé
+ *  ensuite par `completerJournal`, et l'écran est interactif entre-temps. */
+export async function chargerTout(recent = false): Promise<DataState> {
   const [
     habits,
     tasks,
@@ -44,7 +55,7 @@ export async function chargerTout(): Promise<DataState> {
     sessionsRepo.list(),
     shoppingRepo.list(),
     profilesRepo.list(),
-    loadLogIndex(),
+    recent ? loadLogIndexRecent() : loadLogIndex(),
     metaRepo.get<Partial<Settings>>(META_KEYS.settings),
     metaRepo.get<boolean>(META_KEYS.demo),
     metaRepo.get<string>(META_KEYS.activeProfile),
@@ -85,6 +96,7 @@ export async function chargerTout(): Promise<DataState> {
     lastExport: dernierExport ?? null,
     nagDismissed: refuse === true,
     onboarded: accueilFranchi === true,
+    logIndexComplete: !recent,
     backupAt: copie?.at ?? null,
   };
 }

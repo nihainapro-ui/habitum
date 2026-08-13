@@ -27,6 +27,7 @@ import { UpdateBanner } from './update-banner';
 export function AppShell({ children }: { children: ReactNode }) {
   const zen = useStore((s) => s.ui.zen);
   const onboarded = useStore((s) => s.onboarded);
+  const journalComplet = useStore((s) => s.logIndexComplete);
   const router = useRouter();
   const chemin = usePathname() ?? '';
   /* Le parcours d'accueil n'est pas une vue : il n'a ni rail, ni en-tête, ni
@@ -95,7 +96,13 @@ export function AppShell({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className="flex min-h-screen" data-hydrated={pret ? 'true' : 'false'}>
+    <div
+      className="flex min-h-screen"
+      data-hydrated={pret ? 'true' : 'false'}
+      /* L'ouverture lit une fenêtre récente, puis complète en fond (5.10) :
+         ce marqueur dit lequel des deux états est atteint. */
+      data-journal={journalComplet ? 'complet' : 'partiel'}
+    >
       {/* Trappe de recette du DERNIER filet : ce qui casse dans la coque ne
           peut pas être rattrapé par `app/error.tsx`, qui vit dessous. */}
       <ForceError scope="shell" />
