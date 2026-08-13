@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, type ReactNode } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
 import { useStore } from '@/lib/store';
 import { seedEmpty } from '@/lib/data';
 import { useReminders } from '@/lib/features/reminders';
@@ -24,6 +25,13 @@ import { ToastHost } from './toast-host';
 
 export function AppShell({ children }: { children: ReactNode }) {
   const zen = useStore((s) => s.ui.zen);
+  const onboarded = useStore((s) => s.onboarded);
+  const router = useRouter();
+  const chemin = usePathname() ?? '';
+  /* Le parcours d'accueil n'est pas une vue : il n'a ni rail, ni en-tête, ni
+     barre basse. Il partage en revanche l'amorçage de la base — c'est là que le
+     compte se crée. */
+  const accueil = chemin.startsWith('/onboarding');
 
   /* Marqueur d'interactivité. Les pages sont prérendues (D12) : le HTML arrive
      avant que le moindre raccourci soit écouté. Sans ce repère, un test — ou un
@@ -44,6 +52,14 @@ export function AppShell({ children }: { children: ReactNode }) {
       setPret(true);
     })();
   }, []);
+
+  /* Première ouverture : on n'entre pas dans l'application avant d'être passé
+     par l'accueil. Le renvoi attend que la base ait parlé (`pret`) — renvoyer
+     sur un état non lu enverrait tout le monde à l'accueil au premier rendu. */
+  useEffect(() => {
+    if (!pret || accueil || onboarded || !chemin.startsWith('/app')) return;
+    router.replace('/onboarding');
+  }, [pret, accueil, onboarded, chemin, router]);
 
   useEffect(() => {
     const surFrappe = (e: KeyboardEvent) => {
@@ -66,6 +82,16 @@ export function AppShell({ children }: { children: ReactNode }) {
     window.addEventListener('keydown', surFrappe);
     return () => window.removeEventListener('keydown', surFrappe);
   }, []);
+
+  /* Cadre NU du parcours d'accueil. Le marqueur d'hydratation reste posé : la
+     recette a besoin de savoir que la base est prête, ici comme ailleurs. */
+  if (accueil) {
+    return (
+      <div className="min-h-screen" data-hydrated={pret ? 'true' : 'false'}>
+        {children}
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen" data-hydrated={pret ? 'true' : 'false'}>

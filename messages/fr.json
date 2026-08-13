@@ -271,7 +271,22 @@
     "grpWeek": "Cette semaine",
     "grpLater": "Plus tard",
     "grpDone": "Terminé",
-    "byCategory": "Répartition par catégorie"
+    "byCategory": "Répartition par catégorie",
+    "ob_lang_T": "Bienvenue dans Habitum",
+    "ob_lang_D": "Dans quelle langue voulez-vous l’utiliser ? Cela se change à tout moment dans les réglages.",
+    "ob_theme_T": "Choisissez votre thème",
+    "ob_theme_D": "Il s’applique immédiatement. Trois ambiances, aucune n’est définitive.",
+    "ob_habits_T": "Trois habitudes pour commencer",
+    "ob_habits_D": "Cochez celles qui vous parlent — ou aucune. Sans coche, votre compte reste vierge et vous créerez les vôtres.",
+    "obNext": "Continuer",
+    "obStart": "Commencer",
+    "obDemo": "Essayer avec des données de démonstration",
+    "obH1": "Boire 8 verres d’eau",
+    "obH2": "Marcher 20 minutes",
+    "obH3": "Lire 10 pages",
+    "obU1": "verres",
+    "obU2": "min",
+    "obU3": "pages"
   },
   "editor": {
     "addRem": "Ajouter un rappel",

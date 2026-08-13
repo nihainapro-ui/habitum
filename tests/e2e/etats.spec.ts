@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { ouvrirVierge } from './helpers/app';
+import { installer, ouvrirVierge } from './helpers/app';
 
 /* Tâche 5.1 — aucun écran blanc, aucune vue muette.
 
@@ -23,6 +23,7 @@ const VUES_VIDES = [
 ];
 
 test('une erreur de vue affiche un écran de reprise, pas un écran blanc', async ({ page }) => {
+  await installer(page);
   await page.goto('/app?forceError=1');
 
   const reprise = page.getByTestId('error-state');
@@ -37,6 +38,7 @@ test('une erreur de vue affiche un écran de reprise, pas un écran blanc', asyn
 test('une erreur de coque tombe sur le dernier filet, qui propose aussi l’export', async ({
   page,
 }) => {
+  await installer(page);
   await page.goto('/app?forceError=global');
 
   await expect(page.getByRole('heading', { level: 1 })).toContainText(/quelque chose/i);
@@ -44,6 +46,7 @@ test('une erreur de coque tombe sur le dernier filet, qui propose aussi l’expo
 });
 
 test('l’écran de reprise ramène à l’application', async ({ page }) => {
+  await installer(page);
   await page.goto('/app?forceError=1');
   await page
     .getByTestId('error-state')
@@ -65,6 +68,7 @@ test('chaque vue a un état vide explicite sur un compte vierge', async ({ page 
 test('une erreur attrapée est consignée localement et lisible dans les réglages', async ({
   page,
 }) => {
+  await installer(page);
   await page.goto('/app?forceError=1');
   await expect(page.getByTestId('error-state')).toBeVisible();
 

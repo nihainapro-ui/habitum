@@ -1,8 +1,16 @@
 import { expect, test } from '@playwright/test';
+import { installer } from './helpers/app';
 
 /* D6 — 311 clés traduites et symétriques, aucune atteignable : les libellés
    étaient écrits en français dans le JSX.
    D26 — trois thèmes livrés en CSS, `data-theme` figé sur `neural`. */
+
+/* Tâche 5.5 — une base sans `onboarded` renvoie au parcours d'accueil. Les
+   tests de ce fichier parlent de l'application installée : on pose donc un
+   compte accueilli avant chaque navigation. */
+test.beforeEach(async ({ page }) => {
+  await installer(page);
+});
 
 const pret = async (page: import('@playwright/test').Page, chemin: string) => {
   await page.goto(chemin);

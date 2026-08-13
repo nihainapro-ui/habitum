@@ -33,6 +33,7 @@ export async function chargerTout(): Promise<DataState> {
     actif,
     dernierExport,
     refuse,
+    accueilFranchi,
   ] = await Promise.all([
     habitsRepo.list(),
     tasksRepo.list(),
@@ -47,6 +48,7 @@ export async function chargerTout(): Promise<DataState> {
     metaRepo.get<string>(META_KEYS.activeProfile),
     metaRepo.get<DateKey>(META_KEYS.lastExport),
     metaRepo.get<boolean>(META_KEYS.nagDismissed),
+    metaRepo.get<boolean>(META_KEYS.onboarded),
   ]);
 
   /* Les réglages enregistrés priment, mais un réglage ajouté après coup ne doit
@@ -70,5 +72,6 @@ export async function chargerTout(): Promise<DataState> {
     isDemo: demo === true,
     lastExport: dernierExport ?? null,
     nagDismissed: refuse === true,
+    onboarded: accueilFranchi === true,
   };
 }

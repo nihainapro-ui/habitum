@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { installer } from './helpers/app';
 
 /* Critère de sortie n° 1 de la phase : les onze routes sont alimentées par
    IndexedDB.
@@ -26,6 +27,11 @@ const ouvrir = async (page: Page, chemin: string) => {
   await page.goto(chemin);
   await expect(page.locator('[data-hydrated="true"]')).toBeAttached();
 };
+
+/* Tâche 5.5 — compte accueilli, sinon les onze routes renvoient à l'accueil. */
+test.beforeEach(async ({ page }) => {
+  await installer(page);
+});
 
 test('une donnée écrite une fois se relit sur les onze routes', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 900 });

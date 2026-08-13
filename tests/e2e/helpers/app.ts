@@ -127,6 +127,27 @@ const poserHorloge = async (page: Page, pilotable: boolean): Promise<void> => {
   await page.clock.pauseAt(DATE_FIGEE);
 };
 
+/** Lignes `meta` d'un compte DÉJÀ accueilli.
+ *
+ *  Depuis la tâche 5.5, une base sans `onboarded` renvoie au parcours
+ *  d'accueil : c'est la règle B4, et elle vaut aussi en recette. Les tests de
+ *  vue ne parlent pas de la première ouverture — ils partent d'un compte
+ *  installé. Ceux qui éprouvent l'accueil lui-même ne passent pas par ces
+ *  helpers, et c'est précisément ce qui les rend probants. */
+const metaInstalle = (demo: boolean) => [
+  { key: 'onboarded', value: true, updatedAt: DEMO_NOW.toISOString() },
+  ...(demo ? [{ key: 'demo', value: true, updatedAt: DEMO_NOW.toISOString() }] : []),
+];
+
+/** Crée la base et marque le compte comme ACCUEILLI, sans rien ouvrir d'autre.
+ *
+ *  À appeler en `beforeEach` par les fichiers qui naviguent eux-mêmes : depuis
+ *  la tâche 5.5, une base sans `onboarded` renvoie au parcours d'accueil. */
+export async function installer(page: Page): Promise<void> {
+  await ouvrir(page, '/onboarding');
+  await ecrireEnBase(page, { meta: metaInstalle(false) });
+}
+
 /** Ouvre `route` avec le jeu de démonstration en base et l'horloge figée.
  *
  *  Deux passages sont nécessaires : le premier laisse l'application créer la
@@ -137,7 +158,9 @@ export async function ouvrirAvecDemo(
   options: OptionsSemis = {},
 ): Promise<void> {
   await poserHorloge(page, options.horlogePilotable === true);
-  await ouvrir(page, '/app');
+  /* Premier passage par l'ACCUEIL et non par `/app` : la base s'y crée de la
+     même façon, sans qu'un renvoi ne s'exécute pendant qu'on écrit dedans. */
+  await ouvrir(page, '/onboarding');
 
   await ecrireEnBase(page, {
     habits: demoHabits(),
@@ -145,7 +168,7 @@ export async function ouvrirAvecDemo(
     goals: demoGoals(),
     sessions: demoSessions(),
     shopping: demoShopping(),
-    meta: [{ key: 'demo', value: true, updatedAt: DEMO_NOW.toISOString() }],
+    meta: metaInstalle(true),
     logs: lignesJournal(options.historique === true),
   });
 
@@ -153,13 +176,18 @@ export async function ouvrirAvecDemo(
 }
 
 /** Ouvre `route` sur un compte vierge, horloge figée. L'état vide d'une vue est
- *  un livrable au même titre que son état plein (D1, tâche 6.1). */
+ *  un livrable au même titre que son état plein (D1, tâche 5.1).
+ *
+ *  Vierge, mais INSTALLÉ : la base est créée au premier passage, marquée
+ *  accueillie, puis relue. Sans ce détour, chaque test de vue atterrirait sur
+ *  le parcours d'accueil. */
 export async function ouvrirVierge(
   page: Page,
   route: string,
   options: OptionsSemis = {},
 ): Promise<void> {
   await poserHorloge(page, options.horlogePilotable === true);
+  await installer(page);
   await ouvrir(page, route);
 }
 

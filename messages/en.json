@@ -271,7 +271,22 @@
     "grpWeek": "This week",
     "grpLater": "Later",
     "grpDone": "Done",
-    "byCategory": "By category"
+    "byCategory": "By category",
+    "ob_lang_T": "Welcome to Habitum",
+    "ob_lang_D": "Which language would you like to use? You can change it any time in settings.",
+    "ob_theme_T": "Pick your theme",
+    "ob_theme_D": "It applies straight away. Three moods, none of them final.",
+    "ob_habits_T": "Three habits to start with",
+    "ob_habits_D": "Tick the ones that speak to you — or none. With none ticked, your account stays empty and you create your own.",
+    "obNext": "Continue",
+    "obStart": "Get started",
+    "obDemo": "Try it with demo data",
+    "obH1": "Drink 8 glasses of water",
+    "obH2": "Walk for 20 minutes",
+    "obH3": "Read 10 pages",
+    "obU1": "glasses",
+    "obU2": "min",
+    "obU3": "pages"
   },
   "editor": {
     "addRem": "Add a reminder",

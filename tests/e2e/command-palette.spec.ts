@@ -1,7 +1,11 @@
 import { expect, test, type Page } from '@playwright/test';
+import { installer } from './helpers/app';
 
 test.beforeEach(async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 900 });
+  /* Tâche 5.5 — sans compte accueilli, toute route applicative renvoie au
+     parcours d'accueil, où il n'y a pas de palette à ouvrir. */
+  await installer(page);
 });
 
 /* Les pages sont prérendues : le HTML arrive AVANT que les raccourcis soient

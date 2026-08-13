@@ -1,5 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
+import { installer } from './helpers/app';
 
 /* axe sur les onze routes, la galerie, et dans les trois thèmes.
  *
@@ -11,6 +12,12 @@ import { expect, test } from '@playwright/test';
  * On échoue sur `critical` et `serious` seulement : `moderate` et `minor`
  * contiennent des recommandations utiles mais discutables, et une chaîne qui
  * crie pour tout est une chaîne qu'on cesse de lire. */
+
+/* Tâche 5.5 — compte accueilli : c'est l'application installée qu'on audite,
+   pas le parcours de première ouverture (qui a son propre fichier). */
+test.beforeEach(async ({ page }) => {
+  await installer(page);
+});
 
 const ROUTES = [
   '/app',
@@ -52,6 +59,7 @@ for (const theme of ['plasma', 'clinical'] as const) {
   test(`axe — thème ${theme}`, async ({ page }) => {
     await page.goto('/app/settings');
     await expect(page.locator('[data-hydrated="true"]')).toBeAttached();
+
     await page.evaluate((t) => document.documentElement.setAttribute('data-theme', t), theme);
     expect(await violations(page)).toEqual([]);
   });

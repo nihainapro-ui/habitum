@@ -1,9 +1,17 @@
 import { expect, test } from '@playwright/test';
+import { installer } from './helpers/app';
 
 /* Ce fichier vaut plus que les polices : il VERROUILLE LA PROMESSE PRODUIT.
    « Rien ne sort de l'appareil » (ADR-0002) était une phrase ; c'est
    maintenant une condition de livraison. Toute régression qui réintroduirait
    un appel réseau casse la chaîne. */
+
+/* Tâche 5.5 — une base sans `onboarded` renvoie au parcours d'accueil. Les
+   tests de ce fichier parlent de l'application installée : on pose donc un
+   compte accueilli avant chaque navigation. */
+test.beforeEach(async ({ page }) => {
+  await installer(page);
+});
 
 const ROUTES = ['/app', '/app/today', '/app/habits', '/app/settings'];
 

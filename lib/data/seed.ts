@@ -379,6 +379,12 @@ export async function seedDemo(): Promise<void> {
  *  créées ne sait plus ce qui est à lui. Le libellé `app.resetD` est corrigé
  *  en conséquence, dans les deux langues. */
 export async function resetAll(): Promise<void> {
+  /* Le parcours d'accueil ne se REJOUE pas après une réinitialisation. Ce que
+     l'utilisateur a demandé, c'est d'effacer ses données — pas de refaire la
+     visite, ni de se voir reproposer le jeu de démonstration qu'il vient
+     peut-être d'effacer. Le drapeau est donc relevé avant, reposé après. */
+  const accueilFranchi = await metaRepo.get<boolean>(META_KEYS.onboarded);
+
   await db.transaction(
     'rw',
     [
@@ -407,4 +413,5 @@ export async function resetAll(): Promise<void> {
     },
   );
   await seedEmpty();
+  if (accueilFranchi) await metaRepo.set(META_KEYS.onboarded, true);
 }

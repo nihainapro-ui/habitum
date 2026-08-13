@@ -1,6 +1,14 @@
 import { expect, test } from '@playwright/test';
+import { installer } from './helpers/app';
 
 /* ADR-0007 : l'application vit sous /app. */
+
+/* Tâche 5.5 — une base sans `onboarded` renvoie au parcours d'accueil. Les
+   tests de ce fichier parlent de l'application installée : on pose donc un
+   compte accueilli avant chaque navigation. */
+test.beforeEach(async ({ page }) => {
+  await installer(page);
+});
 
 test('le rail marque la page courante', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 900 });

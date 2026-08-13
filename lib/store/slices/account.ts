@@ -7,6 +7,7 @@ import {
   metaRepo,
   profilesRepo,
   resetAll,
+  seedDemo,
   type ImportReport,
 } from '@/lib/data';
 import { chargerTout } from '../hydrate';
@@ -84,6 +85,23 @@ export const createAccountSlice: StateCreator<AppState, [], [], AccountActions> 
 
   async resetAccount(): Promise<void> {
     await resetAll();
+    set(await chargerTout());
+  },
+
+  /* Le parcours d'accueil se clôt SANS rien fabriquer : les habitudes cochées
+     ont déjà été créées une à une, et si aucune ne l'a été, le compte reste
+     exactement vide. C'est le chemin par défaut, et c'est le seul honnête. */
+  async completeOnboarding(): Promise<void> {
+    await metaRepo.set(META_KEYS.onboarded, true);
+    set({ onboarded: true });
+  },
+
+  /* B4 — la démonstration ne s'obtient QUE par ce geste. Elle marque `meta.demo`,
+     que l'en-tête affiche en permanence : un historique fabriqué doit se
+     reconnaître au premier coup d'œil, sinon plus aucun chiffre n'est croyable. */
+  async loadDemo(): Promise<void> {
+    await seedDemo();
+    await metaRepo.set(META_KEYS.onboarded, true);
     set(await chargerTout());
   },
 });

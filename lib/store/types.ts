@@ -69,6 +69,10 @@ export interface DataState {
   activeProfileId: string | null;
   /** Drapeau `meta.demo` — l'interface doit pouvoir le dire à l'utilisateur. */
   isDemo: boolean;
+  /** Parcours d'accueil franchi (`meta.onboarded`). Tant qu'il est faux, une
+   *  route applicative renvoie à l'accueil : c'est là que se choisit le compte
+   *  VIERGE, et c'est là seulement que la démonstration peut être demandée. */
+  onboarded: boolean;
   /** Dernier export, et refus du rappel de sauvegarde (D8). */
   lastExport: DateKey | null;
   nagDismissed: boolean;
@@ -176,6 +180,10 @@ export interface AccountActions {
   resetAccount(): Promise<void>;
   /** Refuse le rappel de sauvegarde. Il ne revient pas (D8). */
   dismissExportNag(): Promise<void>;
+  /** Clôt le parcours d'accueil. Le compte reste VIERGE. */
+  completeOnboarding(): Promise<void>;
+  /** Charge le jeu de démonstration. Geste EXPLICITE, jamais un défaut (B4). */
+  loadDemo(): Promise<void>;
 }
 
 export interface LifecycleActions {

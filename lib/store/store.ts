@@ -30,6 +30,9 @@ const donneesInitiales: DataState = {
   isDemo: false,
   lastExport: null,
   nagDismissed: false,
+  /* `true` tant que la base n'a pas parlé : on ne renvoie personne vers
+     l'accueil sur la foi d'un état non lu. La lecture, elle, dit la vérité. */
+  onboarded: true,
 };
 
 export const useStore = create<AppState>()((...a) => ({
