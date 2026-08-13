@@ -95,13 +95,24 @@ Chacun est écrit dans le code, à côté de la ligne qu'il explique, et report�
 restent **statiques**. Le poids par route monte à 213–228 kB, à surveiller au budget de
 performance du plan 8.
 
-### Limite connue
+### Limite connue — la comparaison visuelle
 
 La comparaison aux captures de `public/prototype/tests/visual/reference/` reste **manuelle** : la
-non-régression visuelle automatisée est la tâche 8.2, et elle demande un socle de captures de
-référence pris sur l'application, pas sur le prototype. Ce qui est automatisé aujourd'hui : les
-chiffres (contre `golden.json`), la structure, l'absence de débordement aux quatre paliers dans
-les trois thèmes, l'accessibilité, et l'absence d'erreur de console.
+non-régression visuelle automatisée est la tâche 8.2, et elle demande un socle de captures pris
+sur l'application, pas sur le prototype. `tests/e2e/captures.spec.ts` produit les onze images à la
+demande ; **cinq** ont été comparées à leur référence à la clôture (`dash`, `today`, `habits`,
+`stats`, `timer`).
+
+Ce que la comparaison montre, et qui vaut pour les onze : le **contenu** et les **chiffres**
+correspondent, la **coque** est plus sobre que le prototype. Le rail est une colonne de libellés
+là où le prototype a une bande d'icônes, et l'en-tête n'a ni avatar ni compteur décoratif. C'est
+un héritage de la **phase 3**, pas une dérive de celle-ci — les onze vues sont posées dans la
+coque telle qu'elle a été livrée. À trancher au moment de la recette visuelle (tâche 8.2) :
+soit la coque rejoint le prototype, soit la référence est refaite sur l'application.
+
+Ce qui est automatisé aujourd'hui : les chiffres (contre `golden.json`), la structure, l'absence
+de débordement aux quatre paliers dans les trois thèmes, l'accessibilité, et l'absence d'erreur
+de console.
 
 **409 libellés** traduits et symétriques.
 
