@@ -1,5 +1,5 @@
-import { PortStatus } from '@/components/port-status';
+import { TimerView } from '@/components/timer/TimerView';
 
 export default function Page() {
-  return <PortStatus view="timer" titleKey="navTimer" />;
+  return <TimerView />;
 }

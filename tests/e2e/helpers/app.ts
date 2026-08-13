@@ -102,7 +102,21 @@ export interface OptionsSemis {
   /** Écrire les 180 jours d'historique de `materialize()`. Nécessaire dès
    *  qu'une vue affiche une série, un record ou un taux. */
   historique?: boolean;
+  /** Horloge PILOTABLE au lieu de figée.
+   *
+   *  `setFixedTime` épingle `Date.now()` : le temps ne s'écoule plus du tout,
+   *  et `clock.runFor()` n'a aucun effet. C'est ce qu'il faut à dix vues sur
+   *  onze, et exactement ce qu'il ne faut pas au minuteur, dont on veut
+   *  éprouver le passage du temps. `install` part de la même date mais laisse
+   *  le test avancer l'horloge à la demande. */
+  horlogePilotable?: boolean;
 }
+
+/** Pose l'horloge du navigateur avant toute navigation. */
+const poserHorloge = async (page: Page, pilotable: boolean): Promise<void> => {
+  if (pilotable) await page.clock.install({ time: DATE_FIGEE });
+  else await page.clock.setFixedTime(DATE_FIGEE);
+};
 
 /** Ouvre `route` avec le jeu de démonstration en base et l'horloge figée.
  *
@@ -113,7 +127,7 @@ export async function ouvrirAvecDemo(
   route: string,
   options: OptionsSemis = {},
 ): Promise<void> {
-  await page.clock.setFixedTime(DATE_FIGEE);
+  await poserHorloge(page, options.horlogePilotable === true);
   await ouvrir(page, '/app');
 
   await ecrireEnBase(page, {
@@ -131,8 +145,12 @@ export async function ouvrirAvecDemo(
 
 /** Ouvre `route` sur un compte vierge, horloge figée. L'état vide d'une vue est
  *  un livrable au même titre que son état plein (D1, tâche 6.1). */
-export async function ouvrirVierge(page: Page, route: string): Promise<void> {
-  await page.clock.setFixedTime(DATE_FIGEE);
+export async function ouvrirVierge(
+  page: Page,
+  route: string,
+  options: OptionsSemis = {},
+): Promise<void> {
+  await poserHorloge(page, options.horlogePilotable === true);
   await ouvrir(page, route);
 }
 

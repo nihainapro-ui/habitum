@@ -9,3 +9,4 @@ export * from './goals';
 export * from './agenda';
 export * from './tasks';
 export * from './stats';
+export * from './timer';

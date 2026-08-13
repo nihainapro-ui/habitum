@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { DEFAULT_SETTINGS } from '@/lib/data';
+import { timerInitial } from '@/lib/domain';
 import { chargerTout } from './hydrate';
 import { createGoalsSlice } from './slices/goals';
 import { createHabitsSlice } from './slices/habits';
@@ -8,6 +9,7 @@ import { createSessionsSlice } from './slices/sessions';
 import { createSettingsSlice } from './slices/settings';
 import { createShoppingSlice } from './slices/shopping';
 import { createTasksSlice } from './slices/tasks';
+import { createTimerSlice } from './slices/timer';
 import { createUiSlice, uiInitial } from './slices/ui';
 import type { AppState, DataState } from './types';
 
@@ -30,6 +32,7 @@ const donneesInitiales: DataState = {
 export const useStore = create<AppState>()((...a) => ({
   ...donneesInitiales,
   ui: uiInitial,
+  timer: timerInitial,
 
   ...createHabitsSlice(...a),
   ...createTasksSlice(...a),
@@ -38,6 +41,7 @@ export const useStore = create<AppState>()((...a) => ({
   ...createSessionsSlice(...a),
   ...createShoppingSlice(...a),
   ...createSettingsSlice(...a),
+  ...createTimerSlice(...a),
   ...createUiSlice(...a),
 
   async hydrate() {

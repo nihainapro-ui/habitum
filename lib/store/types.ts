@@ -9,6 +9,9 @@ import type {
   Settings,
   ShoppingItem,
   Task,
+  TimerMode,
+  TimerState,
+  TimerTarget,
 } from '@/lib/domain';
 import type { CreateInput, UpdatePatch } from '@/lib/data';
 
@@ -133,16 +136,39 @@ export interface UiActions {
   dismissToast(): void;
 }
 
+export interface TimerActions {
+  setTimerMode(mode: TimerMode): void;
+  setTimerTarget(target: TimerTarget): void;
+  setCountdown(minutes: number): void;
+  startTimer(): void;
+  pauseTimer(): void;
+  resetTimer(): void;
+  /** Enregistre le temps écoulé en session et remet la phase à zéro. */
+  logTimerSession(): Promise<void>;
+  /** Écrit une session et crédite l'habitude visée, si elle compte du temps. */
+  creditSession(minutes: number, timer: TimerState): Promise<void>;
+  /** Constate le franchissement du seuil de phase. N'accumule rien. */
+  tickTimer(): Promise<void>;
+  /** Relit l'état persisté, toujours en pause. Rend `true` s'il y avait une
+   *  session à restaurer — la vue en informe alors l'utilisateur. */
+  restoreTimer(): Promise<boolean>;
+}
+
 export interface LifecycleActions {
   hydrate(): Promise<void>;
 }
 
-export type AppState = DataState & { ui: UiState } & HabitsActions &
+/* Le minuteur est HORS de `DataState`, à côté de `ui` : il ne fait partie ni
+   des instantanés d'annulation — annuler une suppression ne doit pas remettre
+   une session en marche — ni de l'hydratation générale, puisqu'il se restaure
+   toujours en pause (B5).  */
+export type AppState = DataState & { ui: UiState; timer: TimerState } & HabitsActions &
   TasksActions &
   GoalsActions &
   NotesActions &
   SessionsActions &
   ShoppingActions &
   SettingsActions &
+  TimerActions &
   UiActions &
   LifecycleActions;

@@ -37,6 +37,8 @@ export const META_KEYS = {
   /** Profil courant — `pid` dans le prototype. Nouvelle table, nouveau nom :
    *  aucune clé persistée existante n'est renommée (G1). */
   activeProfile: 'activeProfile',
+  /** État du minuteur — `startedAt` + `accumulatedMs` (B5). */
+  timer: 'timer',
 } as const;
 
 /** Réglages d'un compte neuf. `notifications`, `sound` et `vibrate` sont à

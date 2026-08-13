@@ -230,7 +230,21 @@
     "perfectDays": "Jours parfaits",
     "objAhead": "En avance",
     "objTrail": "Courbe d’avancement",
-    "objSince": "Depuis le"
+    "objSince": "Depuis le",
+    "tmFocus": "Concentration",
+    "tmBreak": "Pause",
+    "tmLongBreak": "Pause longue",
+    "tmCycle": "Cycle {n} / {total}",
+    "tmStart": "Démarrer",
+    "tmPause": "Mettre en pause",
+    "tmResume": "Reprendre",
+    "tmReset": "Réinitialiser",
+    "tmSave": "Enregistrer la session",
+    "tmStopwatch": "Chronomètre",
+    "tmCountdown": "Compte à rebours",
+    "tmIntervals": "Intervalles",
+    "tmMode": "Mode du minuteur",
+    "tmPomodoro": "Pomodoro"
   },
   "editor": {
     "addRem": "Ajouter un rappel",
