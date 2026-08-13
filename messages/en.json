@@ -314,6 +314,7 @@
     "fDue": "Due date",
     "fEnd": "End",
     "fEvery": "Interval (days)",
+    "fInterval": "Interval (1 = every time)",
     "fFreq": "Frequency",
     "fGoal": "Goal type",
     "fIcon": "Icon",

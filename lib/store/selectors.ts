@@ -52,17 +52,18 @@ export const useDayAgenda = (date: Date): EntreeJour[] => {
   const logIndex = useStore((s) => s.logIndex);
   const habits = useStore((s) => s.habits);
   const tasks = useStore((s) => s.tasks);
+  const occurrences = useStore((s) => s.occurrences);
   const filter = useStore((s) => s.ui.filter);
   const jour = dateKey(date);
 
   return useMemo(() => {
     const d = parseKey(jour);
     if (!d) return [];
-    const entrees = dayAgenda(logIndex, habits, tasks, d);
+    const entrees = dayAgenda(logIndex, habits, tasks, d, today(), occurrences);
     if (filter === 'habits') return entrees.filter((e) => e.kind === 'habit');
     if (filter === 'tasks') return entrees.filter((e) => e.kind === 'task');
     return entrees;
-  }, [logIndex, habits, tasks, filter, jour]);
+  }, [logIndex, habits, tasks, occurrences, filter, jour]);
 };
 
 /** Habitudes planifiées ce jour-là, archivées exclues. */
@@ -75,7 +76,9 @@ export const useTasksOfDay = (dateKey: string): Task[] =>
 
 /** Charge et avancement d'une journée — base de l'anneau et de la heatmap. */
 export const useDayRatio = (date: Date): DayRatio =>
-  useStore(useShallow((s) => dayRatio(s.logIndex, s.habits, s.tasks, date)));
+  useStore(
+    useShallow((s) => dayRatio(s.logIndex, s.habits, s.tasks, date, today(), s.occurrences)),
+  );
 
 /** Avancement de plusieurs journées — bandeau de dates, heatmap.
  *
@@ -83,7 +86,11 @@ export const useDayRatio = (date: Date): DayRatio =>
  *  éléments par `Object.is`, et une liste d'objets reconstruits à chaque appel
  *  ne serait jamais jugée égale — la comparaison échouerait à chaque rendu. */
 export const useDayRatios = (dates: readonly Date[]): number[] =>
-  useStore(useShallow((s) => dates.map((d) => dayRatio(s.logIndex, s.habits, s.tasks, d).ratio)));
+  useStore(
+    useShallow((s) =>
+      dates.map((d) => dayRatio(s.logIndex, s.habits, s.tasks, d, today(), s.occurrences).ratio),
+    ),
+  );
 
 /** Série en cours d'une habitude, seule.
  *

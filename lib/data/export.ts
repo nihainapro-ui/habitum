@@ -1,10 +1,12 @@
 import { LEGACY_SCHEMA_VERSION } from '@/lib/storage/keys';
-import { logKey } from '@/lib/domain';
+import { logKey, parseOccurrenceKey, type Frequence } from '@/lib/domain';
+import { META_KEYS } from './seed';
 import { nowIso } from './repositories/base';
 import {
   goalsRepo,
   habitsRepo,
   logsRepo,
+  metaRepo,
   notesRepo,
   sessionsRepo,
   shoppingRepo,
@@ -34,6 +36,10 @@ export interface HabitumExport {
   notes: Record<string, string | number>;
   sessions: ExportedSession[];
   shop: ExportedShoppingItem[];
+  /** Occurrences accomplies des tâches récurrentes — nom et format FIGÉS (G1).
+   *  Sans elles, une sauvegarde restituerait des séries mais perdrait ce qui a
+   *  été fait : la tâche reviendrait, l'historique non. */
+  occ: Record<string, number>;
 }
 
 export interface ExportedHabit {
@@ -66,7 +72,13 @@ export interface ExportedTask {
   done: boolean;
   sub: { fr: string; en: string; done: boolean }[];
   note: string;
-  rep?: 'daily' | 'monthly';
+  /* Répétition — `rep` porte la fréquence depuis le prototype (G1) ; les trois
+     champs suivants sont apparus avec la tâche 5.6 et restent optionnels, pour
+     qu'un export récent reste relisible par un lecteur ancien. */
+  rep?: Frequence;
+  repN?: number;
+  repD?: number[];
+  repDom?: number;
 }
 
 export interface ExportedGoal {
@@ -103,7 +115,7 @@ export interface ExportedShoppingItem {
 }
 
 export async function exportToJson(): Promise<HabitumExport> {
-  const [habits, tasks, goals, sessions, shopping, notes, logs] = await Promise.all([
+  const [habits, tasks, goals, sessions, shopping, notes, logs, occ] = await Promise.all([
     habitsRepo.list(),
     tasksRepo.list(),
     goalsRepo.list(),
@@ -111,7 +123,18 @@ export async function exportToJson(): Promise<HabitumExport> {
     shoppingRepo.list(),
     notesRepo.list(),
     logsRepo.all(),
+    metaRepo.get<Record<string, number>>(META_KEYS.occ),
   ]);
+
+  /* Les occurrences d'une tâche disparue ne sortent pas : elles ne se
+     rattacheraient à rien à la relecture, et l'import les écarterait une à une
+     dans le rapport — du bruit pour rien. */
+  const idsTaches = new Set(tasks.map((t) => t.id));
+  const occurrences: Record<string, number> = {};
+  for (const [cle, valeur] of Object.entries(occ ?? {})) {
+    const decoupee = parseOccurrenceKey(cle);
+    if (valeur && decoupee && idsTaches.has(decoupee.taskId)) occurrences[cle] = 1;
+  }
 
   const journal: Record<string, number> = {};
   for (const l of logs) {
@@ -168,7 +191,14 @@ export async function exportToJson(): Promise<HabitumExport> {
       done: t.done,
       sub: t.subTasks.map((s) => ({ fr: s.label, en: s.label, done: s.done })),
       note: t.note,
-      ...(t.recurrence ? { rep: t.recurrence.freq } : {}),
+      ...(t.recurrence
+        ? {
+            rep: t.recurrence.freq,
+            ...(t.recurrence.interval === undefined ? {} : { repN: t.recurrence.interval }),
+            ...(t.recurrence.days === undefined ? {} : { repD: t.recurrence.days }),
+            ...(t.recurrence.dayOfMonth === undefined ? {} : { repDom: t.recurrence.dayOfMonth }),
+          }
+        : {}),
     })),
     obj: goals.map((g) => ({
       id: g.id,
@@ -198,5 +228,6 @@ export async function exportToJson(): Promise<HabitumExport> {
       mode: s.mode,
     })),
     shop: shopping.map((s) => ({ id: s.id, fr: s.label, en: s.label, done: s.done })),
+    occ: occurrences,
   };
 }

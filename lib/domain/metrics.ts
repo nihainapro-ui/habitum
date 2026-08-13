@@ -1,6 +1,7 @@
 import type { Habit, LogIndex, Session, Task } from './types';
 import { logKey } from './types';
 import { addDays, dateKey, today } from './date';
+import { occurrenceKey } from './recurrence';
 import { dailyTarget, isScheduled } from './schedule';
 
 export const N_STREAK = 420;
@@ -108,6 +109,10 @@ export function dayRatio(
   tasks: readonly Task[],
   d: Date,
   now: Date = today(),
+  /** Occurrences de tâches récurrentes accomplies (`occ`, tâche 5.6) : sans
+   *  elles, une tâche quotidienne cochée quitterait la journée où elle a été
+   *  faite, et l'anneau du jour perdrait ce qu'on venait d'y mettre. */
+  occ: ReadonlySet<string> = new Set(),
 ): DayRatio {
   let scheduled = 0;
   let done = 0;
@@ -120,10 +125,10 @@ export function dayRatio(
     }
   }
   for (const t of tasks) {
-    if (t.date === k) {
-      scheduled++;
-      if (t.done) done++;
-    }
+    const accomplie = t.recurrence ? occ.has(occurrenceKey(t.id, k)) : false;
+    if (t.date !== k && !accomplie) continue;
+    scheduled++;
+    if (accomplie || t.done) done++;
   }
   return { scheduled, done, ratio: scheduled ? done / scheduled : 0 };
 }

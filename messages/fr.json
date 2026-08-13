@@ -314,6 +314,7 @@
     "fDue": "Échéance",
     "fEnd": "Fin",
     "fEvery": "Intervalle (jours)",
+    "fInterval": "Intervalle (1 = à chaque fois)",
     "fFreq": "Fréquence",
     "fGoal": "Type d’objectif",
     "fIcon": "Icône",

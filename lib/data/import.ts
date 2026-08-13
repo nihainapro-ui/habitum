@@ -33,7 +33,7 @@ import type { Goal, Habit, LogEntry, Note, Session, ShoppingItem, Task } from '@
    ========================================================================= */
 
 export type ImportEntity =
-  'habits' | 'tasks' | 'goals' | 'logs' | 'notes' | 'sessions' | 'shopping';
+  'habits' | 'tasks' | 'goals' | 'logs' | 'notes' | 'sessions' | 'shopping' | 'occurrences';
 
 export interface ImportReport {
   read: number;
@@ -54,6 +54,7 @@ export const emptyReport = (): ImportReport => ({
     notes: { read: 0, kept: 0 },
     sessions: { read: 0, kept: 0 },
     shopping: { read: 0, kept: 0 },
+    occurrences: { read: 0, kept: 0 },
   },
 });
 
@@ -155,7 +156,16 @@ export async function importFromJson(input: unknown): Promise<ImportReport> {
     done: t.done,
     subTasks: t.sub.map((s) => ({ label: texte(s.fr, s.en), done: s.done })),
     note: t.note,
-    ...(t.rep ? { recurrence: { freq: t.rep } } : {}),
+    ...(t.rep
+      ? {
+          recurrence: {
+            freq: t.rep,
+            ...(t.repN === undefined ? {} : { interval: t.repN }),
+            ...(t.repD === undefined ? {} : { days: t.repD }),
+            ...(t.repDom === undefined ? {} : { dayOfMonth: t.repDom }),
+          },
+        }
+      : {}),
     createdAt: at,
     updatedAt: at,
   }));
@@ -230,6 +240,27 @@ export async function importFromJson(input: unknown): Promise<ImportReport> {
   }
   rapport.byEntity.logs = { read: Object.keys(journal).length, kept: logs.length };
 
+  /* ---- occurrences de tâches récurrentes ---- */
+  const idsTaches = new Set(tasks.map((t) => t.id));
+  const occurrences: Record<string, number> = {};
+  let occLues = 0;
+  for (const [cle, valeur] of Object.entries(src.occ ?? {})) {
+    occLues++;
+    if (!LOG_KEY_RE.test(cle)) {
+      rapport.dropped.push(`occ « ${cle} » — clé malformée`);
+      continue;
+    }
+    if (!idsTaches.has(cle.slice(0, cle.indexOf('|')))) {
+      /* Même règle que pour le journal : une occurrence orpheline est
+         SIGNALÉE, jamais avalée en silence. */
+      rapport.dropped.push(`occ « ${cle} » — aucune tâche correspondante`);
+      continue;
+    }
+    if (valeur) occurrences[cle] = 1;
+  }
+
+  rapport.byEntity.occurrences = { read: occLues, kept: Object.keys(occurrences).length };
+
   /* ---- notes ---- */
   const notes = notesToRows(src.notes, at, habitIds, rapport.dropped);
   rapport.byEntity.notes = {
@@ -241,7 +272,7 @@ export async function importFromJson(input: unknown): Promise<ImportReport> {
      moitié peuplée. */
   await db.transaction(
     'rw',
-    [db.habits, db.tasks, db.goals, db.sessions, db.shopping, db.logs, db.notes],
+    [db.habits, db.tasks, db.goals, db.sessions, db.shopping, db.logs, db.notes, db.meta],
     async () => {
       await db.habits.bulkPut(habits);
       await db.tasks.bulkPut(tasks);
@@ -250,6 +281,10 @@ export async function importFromJson(input: unknown): Promise<ImportReport> {
       await db.shopping.bulkPut(shopping);
       await db.logs.bulkPut(logs);
       await db.notes.bulkPut(notes);
+      /* Les occurrences vivent dans `meta` sous la clé `occ` (G1). Écrites dans
+         la MÊME transaction que les tâches : une série restaurée sans son
+         historique d'accomplissement afficherait des tâches à refaire. */
+      await db.meta.put({ key: 'occ', value: occurrences, updatedAt: at });
     },
   );
 

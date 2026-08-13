@@ -43,6 +43,9 @@ export const META_KEYS = {
   /** Date du dernier export, et refus du rappel de sauvegarde (D8). */
   lastExport: 'lastExport',
   nagDismissed: 'nagDismissed',
+  /** Occurrences de tâches récurrentes accomplies. Nom et format FIGÉS (G1) :
+   *  `{ "taskId|YYYY-MM-DD": 1 }`, comme dans le prototype. */
+  occ: 'occ',
   /** Journal d'erreurs LOCAL — `lib/logger.ts`, décision E. */
   errors: 'errors',
   /** Copie de secours prise avant import et avant réinitialisation.

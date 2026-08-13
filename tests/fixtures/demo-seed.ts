@@ -134,6 +134,10 @@ const task = (
   priority: Task['priority'],
   done: boolean,
   subTasks: Task['subTasks'] = [],
+  /* La récurrence fait partie du jeu de démonstration de production
+     (`seedDemo`) : l'omettre ici rendait la recette plus pauvre que le produit,
+     et « ⟳ Quotidienne » n'y était jamais éprouvé (tâche 5.6). */
+  recurrence?: Task['recurrence'],
 ): Task => ({
   id,
   name,
@@ -145,6 +149,7 @@ const task = (
   done,
   subTasks,
   note: '',
+  ...(recurrence ? { recurrence } : {}),
   createdAt: ISO,
   updatedAt: ISO,
 });
@@ -153,14 +158,14 @@ const task = (
 export const demoTasks = (): Task[] => [
   task('t1', 'Réunion de travail', 'work', 0, '10:00', 3, true),
   task('t2', 'Cours de guitare', 'mind', 0, '16:00', 2, false),
-  task('t3', 'Promener le chien', 'home', 0, '20:00', 1, false),
+  task('t3', 'Promener le chien', 'home', 0, '20:00', 1, false, [], { freq: 'daily' }),
   task('t4', 'Préparer la revue trimestrielle', 'work', 2, '09:00', 3, false, [
     { label: 'Consolider les chiffres', done: true },
     { label: 'Relire le rapport', done: false },
     { label: 'Envoyer aux associés', done: false },
   ]),
   task('t5', 'Rendez-vous dentiste', 'health', 3, '09:15', 2, false),
-  task('t6', 'Payer le loyer', 'home', 5, '12:00', 3, false),
+  task('t6', 'Payer le loyer', 'home', 5, '12:00', 3, false, [], { freq: 'monthly' }),
   task('t7', 'Rédiger le chapitre 4', 'study', 1, '18:30', 2, false),
   task('t8', 'Sauvegarder les photos', 'home', -1, '21:00', 1, true),
 ];

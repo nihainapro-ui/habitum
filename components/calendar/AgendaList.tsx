@@ -23,14 +23,19 @@ export function AgendaList({ offset }: { offset: number }) {
   const habits = useStore((s) => s.habits);
   const tasks = useStore((s) => s.tasks);
   const logIndex = useStore((s) => s.logIndex);
+  const occurrences = useStore((s) => s.occurrences);
 
   const jours = useMemo(() => {
     const depart = addDays(today(), offset * ETENDUE);
     return Array.from({ length: ETENDUE }, (_, i) => {
       const date = addDays(depart, i);
-      return { date, key: dateKey(date), entrees: dayAgenda(logIndex, habits, tasks, date) };
+      return {
+        date,
+        key: dateKey(date),
+        entrees: dayAgenda(logIndex, habits, tasks, date, today(), occurrences),
+      };
     }).filter((j) => j.entrees.length > 0);
-  }, [offset, logIndex, habits, tasks]);
+  }, [offset, logIndex, habits, tasks, occurrences]);
 
   const format = useMemo(
     () => new Intl.DateTimeFormat(locale, { weekday: 'long', day: 'numeric', month: 'long' }),

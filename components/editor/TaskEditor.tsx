@@ -26,6 +26,7 @@ const versFormulaire = (t?: Task): TaskForm => ({
   duration: t?.duration ?? 60,
   priority: t?.priority ?? 2,
   recurrence: t?.recurrence?.freq ?? 'none',
+  interval: t?.recurrence?.interval ?? 1,
   subTasks: t?.subTasks ?? [],
   note: t?.note ?? '',
 });
@@ -67,10 +68,16 @@ export function TaskEditor({ id, onClose }: { id: string | null; onClose: () => 
       done: task?.done ?? false,
       subTasks: valeurs.subTasks,
       note: valeurs.note,
+      /* L'intervalle n'est écrit que s'il vaut quelque chose : `interval: 1`
+         est le défaut, et un champ qui répète le défaut alourdit l'export sans
+         rien dire de plus. */
       recurrence:
         valeurs.recurrence === 'none'
           ? undefined
-          : { freq: valeurs.recurrence as 'daily' | 'monthly' },
+          : {
+              freq: valeurs.recurrence,
+              ...(valeurs.interval > 1 ? { interval: valeurs.interval } : {}),
+            },
     };
 
     if (task) await updateTask(task.id, entree);
@@ -141,9 +148,20 @@ export function TaskEditor({ id, onClose }: { id: string | null; onClose: () => 
         options={[
           { value: 'none' as const, label: t('repNone') },
           { value: 'daily' as const, label: t('repDaily') },
+          { value: 'weekly' as const, label: t('repWeek') },
           { value: 'monthly' as const, label: t('repMonth') },
         ]}
       />
+
+      {/* L'intervalle n'apparaît que s'il y a une série à espacer. */}
+      {v.recurrence === 'none' ? null : (
+        <TextInput
+          label={t('fInterval')}
+          type="number"
+          value={String(v.interval)}
+          onChange={(x) => setValue('interval', Number(x) || 1)}
+        />
+      )}
     </>
   );
 

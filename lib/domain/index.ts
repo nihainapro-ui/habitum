@@ -14,4 +14,5 @@ export * from './backup';
 export * from './calendar';
 export * from './journal';
 export * from './reminders';
+export * from './recurrence';
 export * from './catalog';

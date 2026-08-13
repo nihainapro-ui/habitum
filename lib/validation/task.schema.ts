@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { CATEGORIES } from '@/lib/domain';
+import { CATEGORIES, FREQUENCES } from '@/lib/domain';
 import { dateKeyOuVide, heure } from './habit.schema';
 
 /* Validation du formulaire de tâche.
@@ -19,7 +19,12 @@ export const taskFormSchema = z.object({
     .min(5, 'durationMin')
     .max(24 * 60),
   priority: z.coerce.number().int().min(1).max(3),
-  recurrence: z.enum(['none', 'daily', 'monthly']),
+  /* La liste des fréquences est IMPORTÉE (G8) : recopiée ici, elle finirait
+     par en oublier une, et une tâche récurrente disparaîtrait à la validation. */
+  recurrence: z.enum(['none', ...FREQUENCES]),
+  /* Un sur N. Borné à 99 : au-delà, ce n'est plus une habitude de vie, et un
+     intervalle de 0 rendrait la série infiniment dense. */
+  interval: z.coerce.number().int().min(1).max(99),
   subTasks: z.array(
     z.object({ label: z.string().trim().min(1, 'labelRequired'), done: z.boolean() }),
   ),

@@ -39,6 +39,24 @@ export type GoalKind = (typeof GOAL_KINDS)[number];
 
 export type ScheduleMode = 'dow' | 'every' | 'week' | 'month';
 
+/** Fréquences de répétition d'une TÂCHE. Déclarées ici, avec les autres listes
+ *  blanches (G8) : une liste recopiée dans un validateur est une liste qui
+ *  finira par en oublier une — et par faire disparaître des données. */
+export const FREQUENCES = ['daily', 'weekly', 'monthly'] as const;
+export type Frequence = (typeof FREQUENCES)[number];
+
+/** RRULE simplifiée. Les règles d'expansion vivent dans `recurrence.ts`. */
+export interface Recurrence {
+  freq: Frequence;
+  /** Un sur `interval`. Défaut : 1. */
+  interval?: number;
+  /** `weekly` : jours retenus, au format `dow()` (0 = lundi). Vide ou absent,
+   *  c'est le jour de la date d'ancrage. */
+  days?: number[];
+  /** `monthly` : quantième visé. Absent, c'est celui de la date d'ancrage. */
+  dayOfMonth?: number;
+}
+
 export interface HabitGoal {
   kind: HabitGoalKind;
   target: number;
@@ -92,7 +110,9 @@ export interface Task {
   done: boolean;
   subTasks: { label: string; done: boolean }[];
   note: string;
-  recurrence?: { freq: 'daily' | 'monthly' };
+  /** Répétition simplifiée — `lib/domain/recurrence.ts`. Le champ reste
+   *  optionnel : la grande majorité des tâches ne se répète pas. */
+  recurrence?: Recurrence;
   createdAt: string;
   updatedAt: string;
   deletedAt?: string;

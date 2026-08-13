@@ -64,6 +64,8 @@ export interface DataState {
   sessions: Session[];
   shopping: ShoppingItem[];
   logIndex: LogIndex;
+  /** Occurrences de tâches récurrentes accomplies — clés `taskId|date` (G1). */
+  occurrences: ReadonlySet<string>;
   settings: Settings;
   profiles: Profile[];
   activeProfileId: string | null;
@@ -97,6 +99,12 @@ export interface TasksActions {
   updateTask(id: string, patch: UpdatePatch<Task>): Promise<void>;
   deleteTask(id: string): Promise<void>;
   toggleTask(id: string): Promise<void>;
+  /** Coche ou décoche une tâche POUR UN JOUR donné.
+   *
+   *  Une tâche récurrente n'est pas « faite » une fois pour toutes : elle est
+   *  faite CE JOUR-LÀ, et elle avance à son occurrence suivante. La distinction
+   *  n'existe pas pour une tâche unique, où l'action revient à `toggleTask`. */
+  toggleTaskOn(id: string, date: DateKey): Promise<void>;
   /** Reporte au lendemain, avec annulation. */
   snoozeTask(id: string): Promise<void>;
   toggleSubTask(id: string, index: number): Promise<void>;

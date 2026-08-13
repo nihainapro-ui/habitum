@@ -1,6 +1,7 @@
 import type { DateKey, Habit, LogIndex, Task } from './types';
 import { addDays, dateKey, startOfWeek, today, type WeekStart } from './date';
 import { isDone, loggedValue } from './metrics';
+import { occurrenceKey } from './recurrence';
 import { dailyTarget, isScheduled } from './schedule';
 
 /* Liste unifiée d'une journée — habitudes planifiées et tâches datées, triées
@@ -25,6 +26,10 @@ export interface EntreeTache {
   time: string | null;
   task: Task;
   done: boolean;
+  /** Jour de CETTE occurrence. Pour une tâche unique c'est `task.date` ; pour
+   *  une tâche récurrente, ce n'est pas la même chose — la tâche porte sa
+   *  prochaine échéance, l'entrée porte le jour affiché (tâche 5.6). */
+  date: DateKey;
 }
 
 export type EntreeJour = EntreeHabitude | EntreeTache;
@@ -47,6 +52,8 @@ export function dayAgenda(
   tasks: readonly Task[],
   d: Date,
   now: Date = today(),
+  /** Occurrences de tâches récurrentes déjà accomplies (`occ`, tâche 5.6). */
+  occ: ReadonlySet<string> = new Set(),
 ): EntreeJour[] {
   const k = dateKey(d);
   const entrees: EntreeJour[] = [];
@@ -64,9 +71,22 @@ export function dayAgenda(
     });
   }
 
+  /* Une tâche récurrente ne se dédouble pas : elle porte sa PROCHAINE échéance
+     et laisse derrière elle des occurrences accomplies. Le jour affiché montre
+     donc soit l'échéance en cours, soit la trace de ce qui a été fait ce
+     jour-là — sans quoi cocher une tâche quotidienne la ferait disparaître de
+     la journée où on vient de la faire. */
   for (const t of tasks) {
-    if (t.date !== k) continue;
-    entrees.push({ kind: 'task', id: t.id, time: t.time ?? null, task: t, done: t.done });
+    const accomplie = t.recurrence ? occ.has(occurrenceKey(t.id, k)) : false;
+    if (t.date !== k && !accomplie) continue;
+    entrees.push({
+      kind: 'task',
+      id: t.id,
+      time: t.time ?? null,
+      task: t,
+      done: accomplie || (t.date === k && t.done),
+      date: k,
+    });
   }
 
   return entrees.sort((a, b) => rang(a).localeCompare(rang(b)));

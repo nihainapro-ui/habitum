@@ -34,6 +34,7 @@ export async function chargerTout(): Promise<DataState> {
     dernierExport,
     refuse,
     accueilFranchi,
+    occurrences,
   ] = await Promise.all([
     habitsRepo.list(),
     tasksRepo.list(),
@@ -49,6 +50,7 @@ export async function chargerTout(): Promise<DataState> {
     metaRepo.get<DateKey>(META_KEYS.lastExport),
     metaRepo.get<boolean>(META_KEYS.nagDismissed),
     metaRepo.get<boolean>(META_KEYS.onboarded),
+    metaRepo.get<Record<string, number>>(META_KEYS.occ),
   ]);
 
   /* Les réglages enregistrés priment, mais un réglage ajouté après coup ne doit
@@ -67,6 +69,14 @@ export async function chargerTout(): Promise<DataState> {
     shopping,
     profiles,
     logIndex,
+    /* Le format persisté est un objet `{ clé: 1 }` (G1) ; l'interface, elle,
+       ne pose qu'une question — « cette occurrence est-elle faite ? ». D'où un
+       ensemble, où la réponse coûte un accès au lieu d'un balayage. */
+    occurrences: new Set(
+      Object.entries(occurrences ?? {})
+        .filter(([, v]) => Boolean(v))
+        .map(([k]) => k),
+    ),
     settings,
     activeProfileId,
     isDemo: demo === true,

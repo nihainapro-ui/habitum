@@ -24,6 +24,7 @@ const donneesInitiales: DataState = {
   sessions: [],
   shopping: [],
   logIndex: new Map(),
+  occurrences: new Set(),
   settings: DEFAULT_SETTINGS,
   profiles: [],
   activeProfileId: null,

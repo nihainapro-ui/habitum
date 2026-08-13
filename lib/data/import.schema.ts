@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { GOAL_KINDS, HABIT_GOAL_KINDS } from '@/lib/domain';
+import { FREQUENCES, GOAL_KINDS, HABIT_GOAL_KINDS } from '@/lib/domain';
 
 /* ⚠ PIÈGE DÉJÀ PAYÉ. Les listes blanches ci-dessous sont IMPORTÉES de
    lib/domain/types.ts. Les recopier, c'est reproduire le défaut qui a fait
@@ -63,7 +63,15 @@ export const legacyTask = z.object({
     )
     .default([]),
   note: z.string().default(''),
-  rep: z.enum(['daily', 'monthly']).optional(),
+  /* Liste blanche IMPORTÉE (G8). `weekly` est arrivé avec la tâche 5.6 ; un
+     export antérieur n'en contient pas, et un export récent ne doit pas voir
+     ses tâches hebdomadaires disparaître à la relecture. */
+  rep: z.enum(FREQUENCES).optional(),
+  /* Un sur N. Absent dans les exports antérieurs à la tâche 5.6. */
+  repN: z.number().int().min(1).max(99).optional(),
+  /* `weekly` : jours retenus ; `monthly` : quantième. */
+  repD: z.array(z.number().int().min(0).max(6)).optional(),
+  repDom: z.number().int().min(1).max(31).optional(),
 });
 
 export const legacyGoal = z.object({
@@ -124,6 +132,9 @@ export const habitumExport = z.object({
   obj: z.array(z.unknown()).default([]),
   sessions: z.array(z.unknown()).default([]),
   shop: z.array(z.unknown()).default([]),
+  /* Occurrences accomplies des tâches récurrentes. Nom FIGÉ (G1) : c'est celui
+     du prototype, et des sauvegardes réelles le portent. */
+  occ: z.record(z.string(), z.number()).optional(),
 });
 
 export const MAX_IMPORT_BYTES = 2 * 1024 * 1024;

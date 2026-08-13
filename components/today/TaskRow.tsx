@@ -18,16 +18,17 @@ export function TaskRow({ entree, cochable }: { entree: EntreeTache; cochable: b
   const tc = useTranslations('cat');
   const k = entree.task;
 
-  const toggleTask = useStore((s) => s.toggleTask);
+  /* Cocher une tâche, c'est la cocher POUR CE JOUR : une tâche récurrente
+     n'est pas terminée, elle est faite aujourd'hui (tâche 5.6). */
+  const toggleTaskOn = useStore((s) => s.toggleTaskOn);
   const toggleSubTask = useStore((s) => s.toggleSubTask);
   const snoozeTask = useStore((s) => s.snoozeTask);
   const deleteTask = useStore((s) => s.deleteTask);
   const updateTask = useStore((s) => s.updateTask);
 
   const sous = subTaskCount(k);
-  const repetition = k.recurrence
-    ? `⟳ ${k.recurrence.freq === 'daily' ? te('repDaily') : te('repMonth')}`
-    : '';
+  const CLES_FREQ = { daily: 'repDaily', weekly: 'repWeek', monthly: 'repMonth' } as const;
+  const repetition = k.recurrence ? `⟳ ${te(CLES_FREQ[k.recurrence.freq])}` : '';
 
   const meta = [
     tc(k.category),
@@ -42,7 +43,7 @@ export function TaskRow({ entree, cochable }: { entree: EntreeTache; cochable: b
     <RowShell
       category={k.category}
       name={k.name}
-      done={k.done}
+      done={entree.done}
       tag={t('task')}
       meta={meta || undefined}
       amount={sous ? `${sous.done}/${sous.total}` : undefined}
@@ -50,16 +51,16 @@ export function TaskRow({ entree, cochable }: { entree: EntreeTache; cochable: b
       check={
         <RowCheck
           name={k.name}
-          checked={k.done}
+          checked={entree.done}
           disabled={!cochable}
-          onToggle={() => void toggleTask(k.id)}
+          onToggle={() => void toggleTaskOn(k.id, entree.date)}
         />
       }
       drawer={
         <ActionDrawer
           name={k.name}
           actions={{
-            onComplete: () => void toggleTask(k.id),
+            onComplete: () => void toggleTaskOn(k.id, entree.date),
             onSnooze: () => void snoozeTask(k.id),
             onDelete: () => void deleteTask(k.id),
             note: k.note,

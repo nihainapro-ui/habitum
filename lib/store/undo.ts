@@ -58,6 +58,7 @@ export function capturer(s: AppState): Snapshot {
     shopping: [...s.shopping],
     profiles: [...s.profiles],
     logIndex: new Map(s.logIndex),
+    occurrences: new Set(s.occurrences),
     settings: { ...s.settings },
     activeProfileId: s.activeProfileId,
     isDemo: s.isDemo,

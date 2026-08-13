@@ -40,6 +40,7 @@ export function DashView() {
   const goals = useStore((s) => s.goals);
   const notes = useStore((s) => s.notes);
   const logIndex = useStore((s) => s.logIndex);
+  const occurrences = useStore((s) => s.occurrences);
   const lastExport = useStore((s) => s.lastExport);
   const nagDismissed = useStore((s) => s.nagDismissed);
   const toggleHabit = useStore((s) => s.toggleHabit);
@@ -52,8 +53,8 @@ export function DashView() {
   const { h, m } = splitHeuresMinutes(focus);
 
   const entrees = useMemo(
-    () => dayAgenda(logIndex, habits, tasks, today()),
-    [logIndex, habits, tasks],
+    () => dayAgenda(logIndex, habits, tasks, today(), today(), occurrences),
+    [logIndex, habits, tasks, occurrences],
   );
   const habitudesDuJour = entrees.filter((e) => e.kind === 'habit');
   const restantes = openTasksFrom(tasks, jour).length;
