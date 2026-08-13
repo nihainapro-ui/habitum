@@ -244,7 +244,12 @@
     "tmCountdown": "Countdown",
     "tmIntervals": "Intervals",
     "tmMode": "Timer mode",
-    "tmPomodoro": "Pomodoro"
+    "tmPomodoro": "Pomodoro",
+    "moodOf": "Mood: {n} of 5",
+    "journalOf": "Journal for {date}",
+    "searchHits": "{n} result(s)",
+    "saved": "Saved",
+    "habitNoteOf": "Note for {name}"
   },
   "editor": {
     "addRem": "Add a reminder",

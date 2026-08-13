@@ -244,7 +244,12 @@
     "tmCountdown": "Compte à rebours",
     "tmIntervals": "Intervalles",
     "tmMode": "Mode du minuteur",
-    "tmPomodoro": "Pomodoro"
+    "tmPomodoro": "Pomodoro",
+    "moodOf": "Humeur : {n} sur 5",
+    "journalOf": "Journal du {date}",
+    "searchHits": "{n} résultat(s)",
+    "saved": "Enregistré",
+    "habitNoteOf": "Note de {name}"
   },
   "editor": {
     "addRem": "Ajouter un rappel",

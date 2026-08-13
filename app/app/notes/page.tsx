@@ -1,5 +1,5 @@
-import { PortStatus } from '@/components/port-status';
+import { NotesView } from '@/components/notes/NotesView';
 
 export default function Page() {
-  return <PortStatus view="notes" titleKey="navNotes" />;
+  return <NotesView />;
 }
