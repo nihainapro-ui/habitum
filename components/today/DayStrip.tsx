@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { addDays, today } from '@/lib/domain';
 import { useDayRatios, useStore } from '@/lib/store';
@@ -12,6 +12,7 @@ import { useLocaleSwitcher } from '@/components/shell/locale-provider';
 
 const AVANT = 4;
 const APRES = 7;
+const LARGEUR = AVANT + APRES + 1;
 
 export function DayStrip() {
   const t = useTranslations('app');
@@ -19,15 +20,24 @@ export function DayStrip() {
   const day = useStore((s) => s.ui.day);
   const setDay = useStore((s) => s.setDay);
 
-  /* Le jour courant se lit au montage, pas au rendu serveur : les routes sont
-     prérendues (D12) et afficheraient sinon la date de la compilation. */
+  /* Les routes sont PRÉRENDUES à la compilation (D12) : une date calculée au
+     rendu serait celle du build, et React signalerait l'écart au moment de
+     l'hydratation (erreur #418). Le bandeau attend donc le montage — c'est
+     déjà ce que fait l'en-tête pour la date du jour. Le gabarit vide occupe la
+     place exacte des douze boutons, pour que rien ne saute. */
+  const [monte, setMonte] = useState(false);
+  useEffect(() => setMonte(true), []);
+
   const decalages = useMemo(() => {
     const liste: number[] = [];
     for (let i = -AVANT; i <= APRES; i++) liste.push(i);
     return liste;
   }, []);
 
-  const dates = useMemo(() => decalages.map((o) => addDays(today(), o)), [decalages]);
+  const dates = useMemo(
+    () => (monte ? decalages.map((o) => addDays(today(), o)) : []),
+    [decalages, monte],
+  );
   const ratios = useDayRatios(dates);
 
   const jourCourt = useMemo(() => new Intl.DateTimeFormat(locale, { weekday: 'short' }), [locale]);
@@ -35,6 +45,20 @@ export function DayStrip() {
     () => new Intl.DateTimeFormat(locale, { weekday: 'long', day: 'numeric', month: 'long' }),
     [locale],
   );
+
+  if (!monte) {
+    return (
+      <div className="flex gap-2 overflow-x-auto pt-1 pb-1.5" aria-hidden="true">
+        {Array.from({ length: LARGEUR }, (_, i) => (
+          <span
+            key={i}
+            className="rounded-field h-[68px] min-w-[62px] flex-none border"
+            style={{ borderColor: 'var(--line)' }}
+          />
+        ))}
+      </div>
+    );
+  }
 
   return (
     <div className="flex gap-2 overflow-x-auto pt-1 pb-1.5" role="group" aria-label={t('quickNav')}>

@@ -8,6 +8,7 @@ import {
   dailyTarget,
   dayRatio,
   focusMinutes,
+  perfectDays,
   isDone,
   isScheduled,
   sumValues,
@@ -90,10 +91,10 @@ describe('golden.json — mesures globales', () => {
     expect(rendu).toBe(reference['global.dayRatios30']);
   });
 
-  it('perfectDays30', () => {
-    const parfaites = ratios30.filter((r) => r.scheduled > 0 && r.ratio === 1).length;
-    expect(parfaites).toBe(reference['global.perfectDays30']);
-  });
+  /* Passe par la fonction du domaine plutôt que de recompter sur place : une
+     mesure calculée deux fois est une mesure qu'on peut casser d'un seul côté. */
+  it('perfectDays30', () =>
+    expect(perfectDays(log, habits, tasks, 30, DEMO_NOW)).toBe(reference['global.perfectDays30']));
 
   it('focusMin30', () =>
     expect(focusMinutes(sessions, 30, DEMO_NOW)).toBe(reference['global.focusMin30']));

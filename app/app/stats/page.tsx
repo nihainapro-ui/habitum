@@ -1,5 +1,5 @@
-import { PortStatus } from '@/components/port-status';
+import { StatsView } from '@/components/stats/StatsView';
 
 export default function Page() {
-  return <PortStatus view="stats" titleKey="navStats" />;
+  return <StatsView />;
 }

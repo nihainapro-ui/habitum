@@ -225,7 +225,9 @@
     "goalItems": "{n} items",
     "archived": "Archived",
     "statsFor": "View statistics for {name}",
-    "editFor": "Edit {name}"
+    "editFor": "Edit {name}",
+    "overallScore": "Overall score",
+    "perfectDays": "Perfect days"
   },
   "editor": {
     "addRem": "Add a reminder",

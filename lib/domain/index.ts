@@ -8,3 +8,4 @@ export * from './metrics';
 export * from './goals';
 export * from './agenda';
 export * from './tasks';
+export * from './stats';
