@@ -1,13 +1,19 @@
 'use client';
 
 import * as RadixSwitch from '@radix-ui/react-switch';
-import type { ReactNode } from 'react';
+import { useId, type ReactNode } from 'react';
 
 /* Interrupteur — `role="switch"` fourni par Radix, donc annoncé « activé /
    désactivé » et pilotable à la barre d'espace sans code de notre part.
 
    `reason` n'est pas décoratif : la phase 5 exige qu'aucun interrupteur ne
-   soit mort. Un interrupteur désactivé DOIT dire pourquoi (tâche 5.4). */
+   soit mort. Un interrupteur désactivé DOIT dire pourquoi (tâche 5.4) — et le
+   dire AUX LECTEURS D'ÉCRAN autant qu'à l'œil, d'où `aria-describedby`. Une
+   justification qu'on ne peut que voir ne justifie rien pour qui n'y voit pas.
+
+   `reason` s'affiche aussi sur un interrupteur ACTIF : c'est là que se disent
+   les limites d'un réglage qui fonctionne — « seulement quand Habitum est
+   ouvert » n'est pas une excuse, c'est le contrat. */
 export function Switch({
   checked,
   onChange,
@@ -21,14 +27,16 @@ export function Switch({
   disabled?: boolean;
   reason?: string;
 }) {
+  const idRaison = useId();
+
   return (
     <label className="flex items-center justify-between gap-3 py-1.5">
       <span className="flex min-w-0 flex-col">
         <span className="truncate text-[13px]" style={{ color: 'var(--txt)' }}>
           {label}
         </span>
-        {disabled && reason ? (
-          <span className="text-[11px]" style={{ color: 'var(--mut)' }}>
+        {reason ? (
+          <span id={idRaison} data-reason className="text-[11px]" style={{ color: 'var(--mut)' }}>
             {reason}
           </span>
         ) : null}
@@ -38,6 +46,7 @@ export function Switch({
         checked={checked}
         onCheckedChange={onChange}
         disabled={disabled}
+        aria-describedby={reason ? idRaison : undefined}
         className="rounded-pill relative shrink-0 border"
         style={{
           width: 38,

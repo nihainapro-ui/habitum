@@ -3,6 +3,8 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { useStore } from '@/lib/store';
 import { seedEmpty } from '@/lib/data';
+import { useReminders } from '@/lib/features/reminders';
+import { usePhaseFeedback } from '@/lib/features/feedback';
 import { traiterFrappe } from '@/lib/keyboard/shortcuts';
 import { CommandPalette } from '@/components/command/command-palette';
 import { ForceError } from '@/components/dev/force-error';
@@ -27,6 +29,13 @@ export function AppShell({ children }: { children: ReactNode }) {
      avant que le moindre raccourci soit écouté. Sans ce repère, un test — ou un
      script — ne peut pas distinguer « la page est là » de « la page répond ». */
   const [pret, setPret] = useState(false);
+
+  /* Rappels d'habitude (tâche 5.2). Armés ici et nulle part ailleurs : un
+     planificateur par vue en produirait autant que de vues visitées. */
+  useReminders();
+  /* Fin de phase du minuteur : elle doit se signaler même hors de la vue
+     « Focus ». C'est tout l'intérêt d'un minuteur ancré sur l'horloge murale. */
+  usePhaseFeedback();
 
   useEffect(() => {
     void (async () => {

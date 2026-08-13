@@ -12,6 +12,10 @@ import {
   type TimerTarget,
 } from '@/lib/domain';
 import { META_KEYS, metaRepo } from '@/lib/data';
+/* Import du MODULE, pas du baril : `lib/features/feedback/index.ts` réexporte
+   un hook qui lit le store, et le store est justement ici. Le cycle serait
+   silencieux jusqu'au jour où il ne le serait plus. */
+import { emettreFinDePhase } from '@/lib/features/feedback/events';
 import type { AppState, TimerActions } from '../types';
 
 /* Tranche du minuteur — corrige B5.
@@ -162,6 +166,10 @@ export const createTimerSlice: StateCreator<AppState, [], [], TimerActions> = (s
           await get().creditSession(sessionMinutes(elapsedMs(t, maintenant)), t);
         }
         majTimer(advancePhase(t, maintenant));
+        /* Le fait est constaté ICI, et nulle part ailleurs : c'est le seul
+           endroit qui sait qu'une phase vient de se terminer — y compris pour
+           un compte à rebours, qui ne change pas de phase mais s'arrête. */
+        emettreFinDePhase({ phase: t.phase, mode: t.mode });
       } finally {
         transitionEnCours = false;
       }

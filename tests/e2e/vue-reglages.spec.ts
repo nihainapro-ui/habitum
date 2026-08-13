@@ -16,17 +16,19 @@ test.describe('settings', () => {
     await expect(page.getByText('Sauvegarde locale sur cet appareil')).toBeVisible();
   });
 
-  /* Plan 6 § 6.4 — un interrupteur qui s'allume sans rien déclencher est un
-     mensonge d'interface. Les trois non branchés sont désactivés ET disent
-     pourquoi ; le seul qui agit reste actionnable. */
-  test('les interrupteurs non branchés sont désactivés et se justifient', async ({ page }) => {
+  /* Tâche 5.4 — plus aucun interrupteur en attente d'une phase future : les
+     trois canaux de rappel sont branchés (5.2, 5.3). Ce qui reste vérifié,
+     c'est qu'ils AGISSENT, et le test générique de `interrupteurs.spec.ts`
+     l'impose maintenant à tous, ceux à venir compris. */
+  test('les interrupteurs des rappels sont branchés, aucun n’attend « bientôt »', async ({
+    page,
+  }) => {
     await ouvrirVierge(page, ROUTE);
 
-    for (const nom of ['Notifications push', 'Son des rappels', 'Vibration']) {
-      await expect(page.getByRole('switch', { name: nom })).toBeDisabled();
+    await expect(page.getByText('Bientôt')).toHaveCount(0);
+    for (const nom of ['Notifications push', 'Son des rappels', 'Animation de réussite']) {
+      await expect(page.getByRole('switch', { name: nom })).toBeEnabled();
     }
-    await expect(page.getByText('Bientôt').first()).toBeVisible();
-    await expect(page.getByRole('switch', { name: 'Animation de réussite' })).toBeEnabled();
   });
 
   test('le début de semaine se règle et se conserve', async ({ page }) => {

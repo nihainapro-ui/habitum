@@ -19,7 +19,8 @@ import {
   today,
   type TimerMode,
 } from '@/lib/domain';
-import { useFocusMinutes, useStore } from '@/lib/store';
+import { useFocusMinutes, useSettings, useStore } from '@/lib/store';
+import { preparerAudio } from '@/lib/features/feedback';
 import { Panel } from '@/components/ui';
 import { ViewHeader } from '@/components/shell/view-header';
 import { TimerDial } from './TimerDial';
@@ -45,6 +46,7 @@ export function TimerView() {
   const t = useTranslations('app');
   const ts = useTranslations('system');
 
+  const reglages = useSettings();
   const timer = useStore((s) => s.timer);
   const sessions = useStore((s) => s.sessions);
   const habits = useStore((s) => s.habits);
@@ -175,7 +177,17 @@ export function TimerView() {
           <div className="flex flex-wrap items-center justify-center gap-2">
             <button
               type="button"
-              onClick={() => (enMarche ? pauseTimer() : startTimer())}
+              onClick={() => {
+                if (enMarche) {
+                  pauseTimer();
+                  return;
+                }
+                /* Le contexte audio se crée ICI, dans le geste : créé
+                   ailleurs, il démarre suspendu et le bip de fin de phase ne
+                   sonne jamais — sans erreur, sans avertissement. */
+                if (reglages.sound) preparerAudio();
+                startTimer();
+              }}
               className="rounded-btn flex cursor-pointer items-center gap-2 border-0 px-5 py-2.5 text-[12.5px] font-bold"
               style={{
                 background: 'linear-gradient(135deg, var(--acc), var(--acc2))',

@@ -8,6 +8,8 @@ import type { WeekStart } from '@/lib/domain';
 import { useSettings, useStore } from '@/lib/store';
 import { clearErrorLog, readErrorLog, type ErreurJournalisee } from '@/lib/logger';
 import { ViewHeader } from '@/components/shell/view-header';
+import { FeedbackSettings } from './FeedbackSettings';
+import { NotificationSetting } from './NotificationSetting';
 import { LocaleSwitcher } from './LocaleSwitcher';
 import { ThemeSwitcher } from './ThemeSwitcher';
 
@@ -92,27 +94,8 @@ export function SettingsView() {
 
       <Panel title={t('notifications')}>
         <div className="flex flex-col">
-          <Switch
-            label={t('notifLbl')}
-            checked={settings.notifications}
-            disabled
-            reason={t('soon')}
-            onChange={(v) => void setSetting('notifications', v)}
-          />
-          <Switch
-            label={t('soundLbl')}
-            checked={settings.sound}
-            disabled
-            reason={t('soon')}
-            onChange={(v) => void setSetting('sound', v)}
-          />
-          <Switch
-            label={t('vibrateLbl')}
-            checked={settings.vibrate}
-            disabled
-            reason={t('soon')}
-            onChange={(v) => void setSetting('vibrate', v)}
-          />
+          <NotificationSetting />
+          <FeedbackSettings />
           <Switch
             label={t('confettiLbl')}
             checked={settings.confetti}
