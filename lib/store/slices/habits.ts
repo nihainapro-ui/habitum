@@ -1,6 +1,7 @@
 import type { StateCreator } from 'zustand';
 import { dailyTarget, isDone, logKey, parseKey, type LogIndex } from '@/lib/domain';
 import { goalsRepo, habitsRepo, logsRepo, notesRepo } from '@/lib/data';
+import { cacheDerive } from '../derived';
 import { withUndo } from '../undo';
 import type { AppState, HabitsActions } from '../types';
 
@@ -28,9 +29,12 @@ export const createHabitsSlice: StateCreator<AppState, [], [], HabitsActions> = 
     set((s) => ({ habits: [...s.habits, h] }));
   },
 
+  /* Changer la DÉFINITION change les métriques : une habitude qui passe de
+     « tous les jours » à « le lundi » n'a plus la même série. */
   async updateHabit(id, patch) {
     const suivant = await habitsRepo.update(id, patch);
     if (!suivant) return;
+    cacheDerive.invalidateHabit(id);
     set((s) => ({ habits: s.habits.map((h) => (h.id === id ? suivant : h)) }));
   },
 
@@ -59,6 +63,7 @@ export const createHabitsSlice: StateCreator<AppState, [], [], HabitsActions> = 
         await goalsRepo.update(g.id, { sourceHabitId: undefined });
       }
       await habitsRepo.softDelete(id);
+      cacheDerive.invalidateHabit(id);
 
       set((s) => ({
         habits: s.habits.filter((x) => x.id !== id),
@@ -75,8 +80,12 @@ export const createHabitsSlice: StateCreator<AppState, [], [], HabitsActions> = 
     await get().updateHabit(id, { archived });
   },
 
+  /* ADR-0004 — l'invalidation est CIBLÉE : les métriques d'une habitude ne
+     dépendent que de son journal. Cocher `h1` ne recalcule pas `h2`. C'est
+     exactement le défaut B3 du prototype, qui vidait tout le cache. */
   async setLogValue(habitId, date, value) {
     await logsRepo.setValue(habitId, date, value);
+    cacheDerive.invalidateHabit(habitId);
     set((s) => ({ logIndex: avecEntree(s.logIndex, habitId, date, value) }));
   },
 

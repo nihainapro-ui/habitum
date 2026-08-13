@@ -17,6 +17,7 @@ import {
   shoppingRepo,
   tasksRepo,
 } from '@/lib/data';
+import { cacheDerive } from './derived';
 import type { AppState, DataState } from './types';
 
 /* ============================================================================
@@ -107,6 +108,10 @@ async function restaurerJournal(avant: LogIndex): Promise<void> {
 }
 
 async function restaurer(instantane: Snapshot, actuel: AppState): Promise<void> {
+  /* Une annulation réécrit journaux et définitions : le cache dérivé n'a plus
+     aucune raison d'être cru. On l'oublie en entier — c'est un geste rare, et
+     un cache incertain est un cache qu'on vide (tâche 5.9). */
+  cacheDerive.clear();
   await restaurerCollection<Habit>(habitsRepo, instantane.habits, actuel.habits);
   await restaurerCollection<Task>(tasksRepo, instantane.tasks, actuel.tasks);
   await restaurerCollection<Goal>(goalsRepo, instantane.goals, actuel.goals);

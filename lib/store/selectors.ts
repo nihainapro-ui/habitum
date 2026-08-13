@@ -11,6 +11,8 @@ import {
   parseKey,
   focusMinutes,
   isScheduled,
+  N_BEST,
+  N_STREAK,
   sumValues,
   today,
   type DayRatio,
@@ -18,6 +20,7 @@ import {
   type Habit,
   type Task,
 } from '@/lib/domain';
+import { cacheDerive } from './derived';
 import { useStore } from './store';
 
 /* Sélecteurs dérivés.
@@ -101,7 +104,8 @@ export const useDayRatios = (dates: readonly Date[]): number[] =>
 export const useHabitStreak = (habitId: string): number =>
   useStore((s) => {
     const h = s.habits.find((x) => x.id === habitId);
-    return h ? currentStreak(s.logIndex, h) : 0;
+    if (!h) return 0;
+    return cacheDerive.get(h.id, 'streak', N_STREAK, () => currentStreak(s.logIndex, h));
   });
 
 export interface HabitMetrics {
@@ -113,20 +117,27 @@ export interface HabitMetrics {
   sum30: number;
 }
 
-/** Les chiffres d'une carte d'habitude. `bestStreak` balaie 365 jours : c'est
- *  le candidat n° 1 du cache dérivé de la phase 5 (tâche 5.9, ADR-0004). */
+/** Les chiffres d'une carte d'habitude.
+ *
+ *  Passés par le CACHE DÉRIVÉ (tâche 5.9, ADR-0004) : `bestStreak` balaie 365
+ *  jours par habitude, et une liste de vingt habitudes le refaisait vingt fois
+ *  à chaque rendu, y compris quand rien de cette habitude-là n'avait changé.
+ *  L'invalidation est ciblée, dans les tranches qui écrivent — cocher `h1` ne
+ *  recalcule pas `h2`. */
 export const useHabitMetrics = (habitId: string): HabitMetrics | null =>
   useStore(
     useShallow((s) => {
       const h = s.habits.find((x) => x.id === habitId);
       if (!h) return null;
+      const memo = <T>(metric: string, window: number, compute: () => T): T =>
+        cacheDerive.get(h.id, metric, window, compute);
       return {
-        streak: currentStreak(s.logIndex, h),
-        best: bestStreak(s.logIndex, h),
-        pct7: completionRate(s.logIndex, h, 7),
-        pct30: completionRate(s.logIndex, h, 30),
-        pct90: completionRate(s.logIndex, h, 90),
-        sum30: sumValues(s.logIndex, h, 30),
+        streak: memo('streak', N_STREAK, () => currentStreak(s.logIndex, h)),
+        best: memo('best', N_BEST, () => bestStreak(s.logIndex, h)),
+        pct7: memo('pct', 7, () => completionRate(s.logIndex, h, 7)),
+        pct30: memo('pct', 30, () => completionRate(s.logIndex, h, 30)),
+        pct90: memo('pct', 90, () => completionRate(s.logIndex, h, 90)),
+        sum30: memo('sum', 30, () => sumValues(s.logIndex, h, 30)),
       };
     }),
   );

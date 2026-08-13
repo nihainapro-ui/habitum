@@ -15,4 +15,5 @@ export * from './calendar';
 export * from './journal';
 export * from './reminders';
 export * from './recurrence';
+export * from './cache';
 export * from './catalog';

@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { DEFAULT_SETTINGS } from '@/lib/data';
 import { timerInitial } from '@/lib/domain';
+import { cacheDerive } from './derived';
 import { chargerTout } from './hydrate';
 import { createAccountSlice } from './slices/account';
 import { createGoalsSlice } from './slices/goals';
@@ -56,6 +57,9 @@ export const useStore = create<AppState>()((...a) => ({
   async hydrate() {
     const [set] = a;
     set((s) => ({ ui: { ...s.ui, loading: true, error: null } }));
+    /* Relire la base, c'est repartir d'un état qu'on ne connaissait pas : rien
+       de ce qui était mémorisé ne peut être présumé vrai (tâche 5.9). */
+    cacheDerive.clear();
     try {
       const donnees = await chargerTout();
       set((s) => ({ ...donnees, ui: { ...s.ui, loading: false } }));

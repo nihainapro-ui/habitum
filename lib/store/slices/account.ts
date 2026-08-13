@@ -11,6 +11,7 @@ import {
   type ImportReport,
 } from '@/lib/data';
 import { construireCopie, ecrireCopie, lireCopie } from '@/lib/features/backup/snapshot';
+import { cacheDerive } from '../derived';
 import { chargerTout } from '../hydrate';
 import type { AccountActions, AppState } from '../types';
 
@@ -86,6 +87,7 @@ export const createAccountSlice: StateCreator<AppState, [], [], AccountActions> 
   async importJson(charge: string): Promise<ImportReport> {
     await ecrireCopie(await construireCopie());
     const rapport = await importFromJson(charge);
+    cacheDerive.clear();
     set(await chargerTout());
     return rapport;
   },
@@ -97,6 +99,7 @@ export const createAccountSlice: StateCreator<AppState, [], [], AccountActions> 
     const copie = await construireCopie();
     await resetAll();
     await ecrireCopie(copie);
+    cacheDerive.clear();
     set(await chargerTout());
   },
 
@@ -107,6 +110,7 @@ export const createAccountSlice: StateCreator<AppState, [], [], AccountActions> 
     const copie = await lireCopie();
     if (!copie) return null;
     const rapport = await importFromJson(JSON.stringify(copie.payload));
+    cacheDerive.clear();
     set(await chargerTout());
     return rapport;
   },
@@ -125,6 +129,7 @@ export const createAccountSlice: StateCreator<AppState, [], [], AccountActions> 
   async loadDemo(): Promise<void> {
     await seedDemo();
     await metaRepo.set(META_KEYS.onboarded, true);
+    cacheDerive.clear();
     set(await chargerTout());
   },
 });
