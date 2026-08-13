@@ -13,7 +13,7 @@ import type {
   TimerState,
   TimerTarget,
 } from '@/lib/domain';
-import type { CreateInput, UpdatePatch } from '@/lib/data';
+import type { CreateInput, ImportReport, UpdatePatch } from '@/lib/data';
 
 /* Types transverses des tranches.
 
@@ -154,6 +154,17 @@ export interface TimerActions {
   restoreTimer(): Promise<boolean>;
 }
 
+export interface AccountActions {
+  createProfile(name: string): Promise<void>;
+  updateProfile(id: string, patch: Partial<Profile>): Promise<void>;
+  deleteProfile(id: string): Promise<void>;
+  /** Rend la sauvegarde complète, prête à être écrite dans un fichier. */
+  exportJson(): Promise<string>;
+  importJson(charge: string): Promise<ImportReport>;
+  /** Efface tout et repart d'un compte VIERGE — jamais du jeu de démonstration. */
+  resetAccount(): Promise<void>;
+}
+
 export interface LifecycleActions {
   hydrate(): Promise<void>;
 }
@@ -170,5 +181,6 @@ export type AppState = DataState & { ui: UiState; timer: TimerState } & HabitsAc
   ShoppingActions &
   SettingsActions &
   TimerActions &
+  AccountActions &
   UiActions &
   LifecycleActions;

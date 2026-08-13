@@ -147,7 +147,7 @@
     "reminders": "Reminders",
     "reschedule": "Reschedule",
     "reset": "Reset",
-    "resetD": "Erases habits, tasks, goals, notes and logged sessions, then restores the demo set. This cannot be undone.",
+    "resetD": "Erases habits, tasks, goals, notes and recorded sessions, then starts from a blank account. Irreversible.",
     "resetDone": "Data reset",
     "resetT": "Reset data",
     "resetYes": "Yes, reset everything",
@@ -249,7 +249,17 @@
     "journalOf": "Journal for {date}",
     "searchHits": "{n} result(s)",
     "saved": "Saved",
-    "habitNoteOf": "Note for {name}"
+    "habitNoteOf": "Note for {name}",
+    "soon": "Soon — wired in the next phase",
+    "weekMon": "Monday",
+    "weekSun": "Sunday",
+    "localOnly": "Your data stays on this device, in this browser.",
+    "importDone": "Backup imported: {kept} of {read} entries",
+    "resetAsk": "Confirm reset",
+    "prefsSec": "Preferences",
+    "profilesSec": "Profiles",
+    "statsSec": "Personal statistics",
+    "newProfile": "New profile name"
   },
   "editor": {
     "addRem": "Add a reminder",

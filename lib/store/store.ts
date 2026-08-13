@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { DEFAULT_SETTINGS } from '@/lib/data';
 import { timerInitial } from '@/lib/domain';
 import { chargerTout } from './hydrate';
+import { createAccountSlice } from './slices/account';
 import { createGoalsSlice } from './slices/goals';
 import { createHabitsSlice } from './slices/habits';
 import { createNotesSlice } from './slices/notes';
@@ -42,6 +43,7 @@ export const useStore = create<AppState>()((...a) => ({
   ...createShoppingSlice(...a),
   ...createSettingsSlice(...a),
   ...createTimerSlice(...a),
+  ...createAccountSlice(...a),
   ...createUiSlice(...a),
 
   async hydrate() {

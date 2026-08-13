@@ -147,7 +147,7 @@
     "reminders": "Rappels",
     "reschedule": "Reprogrammer",
     "reset": "Réinitialiser",
-    "resetD": "Efface habitudes, tâches, objectifs, notes et sessions enregistrées, puis restaure le jeu de démonstration. Irréversible.",
+    "resetD": "Efface habitudes, tâches, objectifs, notes et sessions enregistrées, puis repart d’un compte vierge. Irréversible.",
     "resetDone": "Données réinitialisées",
     "resetT": "Réinitialiser les données",
     "resetYes": "Oui, tout réinitialiser",
@@ -249,7 +249,17 @@
     "journalOf": "Journal du {date}",
     "searchHits": "{n} résultat(s)",
     "saved": "Enregistré",
-    "habitNoteOf": "Note de {name}"
+    "habitNoteOf": "Note de {name}",
+    "soon": "Bientôt — branché à la phase suivante",
+    "weekMon": "Lundi",
+    "weekSun": "Dimanche",
+    "localOnly": "Vos données restent sur cet appareil, dans ce navigateur.",
+    "importDone": "Sauvegarde importée : {kept} entrées sur {read}",
+    "resetAsk": "Confirmer la réinitialisation",
+    "prefsSec": "Préférences",
+    "profilesSec": "Profils",
+    "statsSec": "Statistiques personnelles",
+    "newProfile": "Nom du nouveau profil"
   },
   "editor": {
     "addRem": "Ajouter un rappel",

@@ -1,4 +1,5 @@
 import { addDays, dateKey, today } from '@/lib/domain';
+import { db } from './db';
 import type { Settings, Task } from '@/lib/domain';
 import {
   goalsRepo,
@@ -357,4 +358,42 @@ export async function seedDemo(): Promise<void> {
   }
 
   await metaRepo.set(META_KEYS.demo, true);
+}
+
+/** Efface TOUT et repart d'un compte vierge.
+ *
+ *  Écart assumé au prototype : la réinitialisation n'y remettait pas un compte
+ *  vierge mais le jeu de démonstration. C'était cohérent d'une maquette, pas
+ *  d'un produit — B4 : un utilisateur qui retrouve six habitudes qu'il n'a pas
+ *  créées ne sait plus ce qui est à lui. Le libellé `app.resetD` est corrigé
+ *  en conséquence, dans les deux langues. */
+export async function resetAll(): Promise<void> {
+  await db.transaction(
+    'rw',
+    [
+      db.habits,
+      db.logs,
+      db.tasks,
+      db.goals,
+      db.notes,
+      db.sessions,
+      db.profiles,
+      db.shopping,
+      db.meta,
+    ],
+    async () => {
+      await Promise.all([
+        db.habits.clear(),
+        db.logs.clear(),
+        db.tasks.clear(),
+        db.goals.clear(),
+        db.notes.clear(),
+        db.sessions.clear(),
+        db.profiles.clear(),
+        db.shopping.clear(),
+        db.meta.clear(),
+      ]);
+    },
+  );
+  await seedEmpty();
 }
