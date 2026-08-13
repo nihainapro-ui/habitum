@@ -112,10 +112,19 @@ export interface OptionsSemis {
   horlogePilotable?: boolean;
 }
 
-/** Pose l'horloge du navigateur avant toute navigation. */
+/** Pose l'horloge du navigateur avant toute navigation.
+ *
+ *  En mode pilotable, `install` seul ne suffit pas : l'horloge simulée
+ *  CONTINUE d'avancer avec le temps réel, et une valeur lue après `runFor`
+ *  n'est déjà plus la même à l'assertion suivante — le test devient une course
+ *  perdue sous charge. `pauseAt` la fige : elle n'avance plus que sur ordre. */
 const poserHorloge = async (page: Page, pilotable: boolean): Promise<void> => {
-  if (pilotable) await page.clock.install({ time: DATE_FIGEE });
-  else await page.clock.setFixedTime(DATE_FIGEE);
+  if (!pilotable) {
+    await page.clock.setFixedTime(DATE_FIGEE);
+    return;
+  }
+  await page.clock.install({ time: DATE_FIGEE });
+  await page.clock.pauseAt(DATE_FIGEE);
 };
 
 /** Ouvre `route` avec le jeu de démonstration en base et l'horloge figée.
