@@ -17,17 +17,17 @@ test.describe('tasks', () => {
     await expect(
       page.getByRole('region', { name: "Aujourd'hui" }).locator('[data-task]'),
     ).toHaveCount(2);
-    await expect(
-      page.getByRole('region', { name: 'Jour suivant' }).locator('[data-task]'),
-    ).toHaveCount(1);
-    await expect(page.getByRole('region', { name: 'terminé' }).locator('[data-task]')).toHaveCount(
+    await expect(page.getByRole('region', { name: 'Demain' }).locator('[data-task]')).toHaveCount(
+      1,
+    );
+    await expect(page.getByRole('region', { name: 'Terminé' }).locator('[data-task]')).toHaveCount(
       2,
     );
   });
 
   test('cocher une tâche la fait passer dans « terminé »', async ({ page }) => {
     await ouvrirAvecDemo(page, ROUTE);
-    const termine = page.getByRole('region', { name: 'terminé' }).locator('[data-task]');
+    const termine = page.getByRole('region', { name: 'Terminé' }).locator('[data-task]');
     const avant = await termine.count();
 
     await page.getByRole('checkbox', { name: 'Cours de guitare' }).click();
@@ -70,9 +70,9 @@ test.describe('tasks', () => {
     await page.getByLabel('Échéance').fill('2026-08-06');
     await page.getByRole('button', { name: 'Enregistrer' }).click();
 
-    await expect(
-      page.getByRole('region', { name: 'Jour suivant' }).locator('[data-task]'),
-    ).toHaveCount(1);
+    await expect(page.getByRole('region', { name: 'Demain' }).locator('[data-task]')).toHaveCount(
+      1,
+    );
   });
 
   test('supprimer une tâche reste annulable', async ({ page }) => {

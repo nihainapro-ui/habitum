@@ -8,6 +8,9 @@ import { ouvrirAvecDemo } from './helpers/app';
  * automatisée est la tâche 8.2, et elle demande un socle de captures pris sur
  * l'application, pas sur le prototype.
  *
+ * Les images sortent dans `captures-recette/` (ignoré par git) et NON dans
+ * `test-results/`, que Playwright vide à chaque exécution.
+ *
  * Ne tourne que sur demande : `npx playwright test captures --project=desktop`.
  */
 
@@ -32,6 +35,6 @@ for (const [nom, route] of VUES) {
     await page.setViewportSize({ width: 1440, height: 900 });
     await ouvrirAvecDemo(page, route, { historique: true });
     await page.waitForTimeout(400);
-    await page.screenshot({ path: `test-results/captures/${nom}.png` });
+    await page.screenshot({ path: `captures-recette/${nom}.png` });
   });
 }

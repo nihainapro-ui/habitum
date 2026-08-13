@@ -119,6 +119,22 @@ test.describe('profile', () => {
     await expect(page.locator('[data-profiles] li')).toHaveCount(1);
   });
 
+  /* 05-SPEC-VUES.md § 11 : l'identité, c'est nom, identifiant, fonction et
+     date d'entrée. Les deux du milieu manquaient jusqu'à la recette visuelle. */
+  test('l’identité porte le nom, l’identifiant et la fonction', async ({ page }) => {
+    await ouvrirVierge(page, ROUTE);
+
+    await page.getByLabel('Nom', { exact: true }).fill('Amina Sarr');
+    await page.getByLabel('Identifiant').fill('amina');
+    await page.getByLabel('Fonction').selectOption({ label: 'Chercheuse' });
+
+    await page.reload();
+    await attendreHydratation(page);
+    await expect(page.getByLabel('Nom', { exact: true })).toHaveValue('Amina Sarr');
+    await expect(page.getByLabel('Identifiant')).toHaveValue('amina');
+    await expect(page.getByLabel('Fonction')).toHaveValue('2');
+  });
+
   test('le dernier profil ne se supprime pas', async ({ page }) => {
     await ouvrirVierge(page, ROUTE);
     await expect(page.locator('[data-profiles] li')).toHaveCount(1);

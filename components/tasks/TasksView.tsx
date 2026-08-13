@@ -12,12 +12,15 @@ import { TaskItem } from './TaskItem';
 
 /* Vue « Tâches » — 05-SPEC-VUES.md § 6. */
 
+/* Les groupes ont leurs PROPRES libellés. Réutiliser ceux de la navigation
+   (« Jour suivant », « Plus ») donnait des titres qui ne nomment pas ce qu'ils
+   contiennent — défaut relevé en comparant la vue à sa capture de référence. */
 const TITRES: Record<GroupeTache, string> = {
-  today: 'today',
-  tomorrow: 'nextDay',
-  week: 'thisWeek',
-  later: 'more',
-  done: 'done',
+  today: 'grpToday',
+  tomorrow: 'grpTomorrow',
+  week: 'grpWeek',
+  later: 'grpLater',
+  done: 'grpDone',
 };
 
 export function TasksView() {

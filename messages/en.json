@@ -265,7 +265,13 @@
     "calMoveOff": "Move cancelled",
     "calKeyHint": "Enter to move · Shift + arrows for duration",
     "calAllDay": "All day",
-    "calToday": "Today"
+    "calToday": "Today",
+    "grpToday": "Today",
+    "grpTomorrow": "Tomorrow",
+    "grpWeek": "This week",
+    "grpLater": "Later",
+    "grpDone": "Done",
+    "byCategory": "By category"
   },
   "editor": {
     "addRem": "Add a reminder",

@@ -95,13 +95,36 @@ Chacun est écrit dans le code, à côté de la ligne qu'il explique, et report�
 restent **statiques**. Le poids par route monte à 213–228 kB, à surveiller au budget de
 performance du plan 8.
 
+### Ce que la comparaison visuelle a trouvé
+
+Les onze vues ont été comparées à leur capture de référence. Quatre défauts en
+sont sortis, qu'aucun test automatisé ne pouvait voir :
+
+- **Les groupes de tâches s'appelaient « Jour suivant » et « Plus »** — les
+  libellés du bouton de navigation, réutilisés faute d'en avoir écrit d'autres.
+  Ils s'appellent « Demain » et « Plus tard », comme dans le prototype.
+- **Le panneau de répartition par catégorie était titré « Focus par cible »**,
+  ce qu'il n'est pas : il montre un taux de réussite, pas des sessions.
+- **Les sessions récentes de la vue Notes affichaient « 15 »** sans unité. Un
+  nombre nu ne dit pas des minutes.
+- **L'identité du profil n'avait que le nom** : `05-SPEC-VUES.md` § 11 demande
+  aussi l'identifiant et la fonction, qui existent dans le modèle depuis la
+  phase 1 et que rien n'exposait.
+
+Deux écarts sont **assumés** : la grille du mois ne montre que les tâches, pas
+les habitudes — le prototype les empile toutes, ce qui remplit chaque case de
+cinq puces et rend les tâches invisibles ; la charge du jour est portée par
+l'intensité de la case. Et l'humeur du journal est une échelle de 1 à 5 là où
+le prototype propose quatre humeurs nommées : le modèle stocke un nombre.
+
 ### Limite connue — la comparaison visuelle
 
 La comparaison aux captures de `public/prototype/tests/visual/reference/` reste **manuelle** : la
 non-régression visuelle automatisée est la tâche 8.2, et elle demande un socle de captures pris
 sur l'application, pas sur le prototype. `tests/e2e/captures.spec.ts` produit les onze images à la
-demande ; **cinq** ont été comparées à leur référence à la clôture (`dash`, `today`, `habits`,
-`stats`, `timer`).
+demande, et **les onze ont été comparées** à leur référence à la clôture — les quatre défauts
+ci-dessus en viennent. Ce qui reste à automatiser, c'est la RÉPÉTITION de cette comparaison à
+chaque livraison.
 
 Ce que la comparaison montre, et qui vaut pour les onze : le **contenu** et les **chiffres**
 correspondent, la **coque** est plus sobre que le prototype. Le rail est une colonne de libellés

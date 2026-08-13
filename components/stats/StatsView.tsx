@@ -252,7 +252,10 @@ export function StatsView() {
           </div>
         </Panel>
 
-        <Panel title={t('focusByTarget')}>
+        {/* « Focus par cible » désignait autre chose : ce panneau montre le taux
+            de réussite PAR CATÉGORIE, pas des sessions de focus. Titre corrigé
+            en comparant la vue à sa capture de référence. */}
+        <Panel title={t('byCategory')}>
           <ul className="m-0 flex list-none flex-col gap-3 p-0">
             {parts.map((p) => (
               <li key={p.category} className="flex flex-col gap-1.5">

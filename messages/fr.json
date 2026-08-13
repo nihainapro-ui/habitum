@@ -265,7 +265,13 @@
     "calMoveOff": "Déplacement annulé",
     "calKeyHint": "Entrée pour déplacer · Maj + flèches pour la durée",
     "calAllDay": "Toute la journée",
-    "calToday": "Aujourd’hui"
+    "calToday": "Aujourd’hui",
+    "grpToday": "Aujourd'hui",
+    "grpTomorrow": "Demain",
+    "grpWeek": "Cette semaine",
+    "grpLater": "Plus tard",
+    "grpDone": "Terminé",
+    "byCategory": "Répartition par catégorie"
   },
   "editor": {
     "addRem": "Ajouter un rappel",

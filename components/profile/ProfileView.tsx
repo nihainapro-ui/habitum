@@ -47,6 +47,9 @@ export function ProfileView() {
 
   const actif = profiles.find((p) => p.id === activeProfileId) ?? profiles[0];
   const { h, m } = splitHeuresMinutes(focus);
+  /* Les six fonctions viennent du catalogue de libellés — un tableau, comme
+     dans le prototype : les traduire, ce n’est pas les recopier. */
+  const fonctions = tp.raw('roles') as string[];
   const membreDepuis = `${tp('since')} ${actif?.since ?? ''}`;
 
   const importer = async (f: File) => {
@@ -88,18 +91,58 @@ export function ProfileView() {
             label={tp('avatar')}
             size={64}
           />
+          {/* 05-SPEC-VUES.md § 11 : nom, IDENTIFIANT, FONCTION, membre depuis.
+              Les deux du milieu manquaient — `handle` et `role` existent dans le
+              modèle depuis la phase 1, et rien ne les exposait. */}
           <div className="flex min-w-[220px] flex-1 flex-col gap-3">
+            <div className="flex flex-wrap gap-3">
+              <label className="flex min-w-[180px] flex-1 flex-col gap-1.5">
+                <span className="text-[12px]" style={{ color: 'var(--txt2)' }}>
+                  {tp('name')}
+                </span>
+                <input
+                  value={actif?.name ?? ''}
+                  onChange={(e) => actif && void updateProfile(actif.id, { name: e.target.value })}
+                  className="rounded-field w-full border outline-none"
+                  style={champStyle}
+                />
+              </label>
+
+              <label className="flex min-w-[180px] flex-1 flex-col gap-1.5">
+                <span className="text-[12px]" style={{ color: 'var(--txt2)' }}>
+                  {tp('handle')}
+                </span>
+                <input
+                  value={actif?.handle ?? ''}
+                  onChange={(e) =>
+                    actif && void updateProfile(actif.id, { handle: e.target.value })
+                  }
+                  className="rounded-field w-full border outline-none"
+                  style={champStyle}
+                />
+              </label>
+            </div>
+
             <label className="flex flex-col gap-1.5">
               <span className="text-[12px]" style={{ color: 'var(--txt2)' }}>
-                {tp('name')}
+                {tp('role')}
               </span>
-              <input
-                value={actif?.name ?? ''}
-                onChange={(e) => actif && void updateProfile(actif.id, { name: e.target.value })}
+              <select
+                value={String(actif?.role ?? 0)}
+                onChange={(e) =>
+                  actif && void updateProfile(actif.id, { role: Number(e.target.value) })
+                }
                 className="rounded-field w-full border outline-none"
                 style={champStyle}
-              />
+              >
+                {fonctions.map((nom, i) => (
+                  <option key={nom} value={i}>
+                    {nom}
+                  </option>
+                ))}
+              </select>
             </label>
+
             <span className="font-mono text-[11px]" style={{ color: 'var(--mut)' }}>
               {membreDepuis}
             </span>

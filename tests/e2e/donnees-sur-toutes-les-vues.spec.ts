@@ -32,14 +32,14 @@ test('une donnée écrite une fois se relit sur les onze routes', async ({ page 
 
   await ouvrir(page, '/app');
   await page.keyboard.press('Meta+k');
-  await page.getByRole('combobox').fill('Arroser les plantes');
+  await page.getByRole('combobox', { name: /Rechercher une habitude/ }).fill('Arroser les plantes');
   await page.keyboard.press('Enter');
   await expect(page.getByRole('dialog')).toBeHidden();
 
   for (const route of ROUTES) {
     await ouvrir(page, route);
     await page.keyboard.press('Meta+k');
-    await page.getByRole('combobox').fill('Arroser');
+    await page.getByRole('combobox', { name: /Rechercher une habitude/ }).fill('Arroser');
     await expect(page.getByRole('listbox'), `hydratation sur ${route}`).toContainText(
       /arroser les plantes/i,
     );
@@ -56,7 +56,7 @@ test("un compte vierge n'affiche aucun jeu de démonstration", async ({ page }) 
   await expect(page.getByLabel(/démonstration/i)).toHaveCount(0);
 
   await page.keyboard.press('Meta+k');
-  await page.getByRole('combobox').fill('a');
+  await page.getByRole('combobox', { name: /Rechercher une habitude/ }).fill('a');
   /* Seule la création rapide subsiste : aucune habitude, aucune tâche,
      aucun objectif n'a été inventé. */
   await expect(page.getByRole('option')).toHaveCount(1);

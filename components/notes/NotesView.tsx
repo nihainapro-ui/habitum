@@ -78,6 +78,9 @@ export function NotesView() {
     [notes, recherche],
   );
 
+  /* « 15 » ne dit pas des minutes. Composé hors du JSX, que
+     `jsx-no-literals` garde libre de tout libellé. */
+  const minutes = (n: number) => `${n} min`;
   const notesHabitude = habitNotes(notes);
   const nomHabitude = (id?: string) => habits.find((h) => h.id === id)?.name ?? '';
   const sessionsRecentes = recentSessions(sessions, MAX_SESSIONS);
@@ -211,7 +214,7 @@ export function NotesView() {
                   <li key={s.id} className="flex items-center gap-2 text-[12.5px]">
                     <span className="min-w-0 flex-1 truncate">{s.label || t('focusTime')}</span>
                     <span className="font-mono text-[11px]" style={{ color: 'var(--txt2)' }}>
-                      {s.minutes}
+                      {minutes(s.minutes)}
                     </span>
                   </li>
                 ))}

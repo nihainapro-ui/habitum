@@ -54,11 +54,17 @@ test('les onze vues portent leur titre, en anglais', async ({ page }) => {
 });
 
 test('aucune vue ne déborde, dans les trois thèmes', async ({ page }) => {
+  /* Un seul semis : 44 remplissages de base coûtaient plus que le délai du
+     test, pour vérifier une propriété qui ne dépend pas des données écrites
+     mais de leur PRÉSENCE. */
+  await ouvrirAvecDemo(page, VUES[0].route, { historique: true });
+
   for (const largeur of [390, 768, 1060, 1440]) {
     await page.setViewportSize({ width: largeur, height: 900 });
 
     for (const vue of VUES) {
-      await ouvrirAvecDemo(page, vue.route, { historique: true });
+      await page.goto(vue.route);
+      await expect(page.locator('[data-hydrated="true"]')).toBeAttached();
       for (const theme of THEMES) {
         await poserTheme(page, theme);
         const deborde = await page.evaluate(
