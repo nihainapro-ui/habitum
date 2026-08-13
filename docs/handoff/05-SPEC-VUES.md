@@ -24,8 +24,11 @@ avec case d'action directe, prochaines tâches, mini-heatmap 30 jours, objectifs
 **Contenu :** navigation jour précédent/suivant (`state.day`), filtres par catégorie
 (`state.filter`), liste unifiée habitudes + tâches triée par heure, sous-listes dépliables,
 compteurs quantitatifs avec `−`/`+`.
-**Interactions :** case à cocher, incrément/décrément, appui long ou clic sur « ⋯ » → **tiroir
-d'actions** : *Marquer réussi · Passer · Reporter · Supprimer · Note*. Toast avec **Annuler**.
+**Interactions :** case à cocher, incrément/décrément, clic sur « ⋯ » → **tiroir d'actions** :
+*Marquer réussi · Passer · Reporter · Supprimer · Note*, **contextuel** (« Reporter » n'a pas de
+sens pour une habitude, « Passer » n'en a pas pour une tâche). Toast avec **Annuler**.
+L'appui long n'est pas porté : le bouton « ⋯ » est atteignable au doigt comme au clavier, un
+appui long ne l'est qu'au doigt.
 
 ## 3. `cal` — Calendrier
 **But :** planification.
@@ -37,10 +40,14 @@ d'actions** : *Marquer réussi · Passer · Reporter · Supprimer · Note*. Toas
 > mois »), est une variante **décorative** de la grille mensuelle : il n'affiche aucune information
 > que `month` ne donne pas. Il n'est **pas porté**, et ce choix est délibéré plutôt que subi.
 > Les quatre modes ci-dessus le sont, et retombent tous sur `agenda` sous 768 px (D6).
+
 **Interactions :** navigation par `calOff` (animation directionnelle `calDir`), **glisser-déposer**
 d'une tâche vers un autre jour/heure, **redimensionnement** modifiant `duration` (minimum 15 min),
 toast « déplacé/redimensionné » annulable. Clic sur un jour → `today` sur ce jour.
-**À refaire proprement :** accessibilité clavier du drag&drop (phase 7.3).
+**Fait (phase 4) :** le glisser-déposer a son **alternative clavier complète** — Entrée ouvre un
+mode déplacement, les flèches travaillent en jours et en quarts d'heure, Entrée valide, Échap
+abandonne ; Maj + flèches changent la durée. Elle ne rejoue pas le glissement en pixels : elle
+manipule les unités du domaine.
 
 ## 4. `habits` — Habitudes
 **But :** gestion du catalogue.
@@ -49,13 +56,24 @@ toast « déplacé/redimensionné » annulable. Clic sur un jour → `today` sur
 taux sur 30 jours, bouton d'édition. Bouton « Nouvelle habitude » en haut à droite.
 **Interactions :** cocher un jour de la semaine directement, ouvrir l'éditeur, archiver, supprimer.
 
-## 5. Éditeur habitude / tâche (modale, 4 onglets)
-- **Définition** : nom, catégorie, type d'objectif (`check` / `total` / `list` / `limit`), cible,
-  unité, sous-éléments pour `list`.
+## 5. Éditeur habitude / tâche (feuille latérale, plein écran sous 768 px)
+- **Définition** : nom, catégorie, type d'objectif — **les SEPT** (`check`, `count`, `time`,
+  `total`, `list`, `limit`, `exact`), cible, unité, sous-éléments pour `list`.
+
+  > **Corrigé au portage (phase 4).** Cette ligne n'en citait que quatre. C'est exactement la
+  > forme du défaut qui a fait disparaître quatre habitudes sur six à l'import (CHANGELOG
+  > 2026-08-05) : une liste blanche recopiée et incomplète. Les sept types sont déclarés une
+  > seule fois, dans `lib/domain/types.ts`, et l'éditeur les importe de là.
 - **Planning** : jours de semaine, date de début, date de fin, heure, durée, priorité (tâches).
 - **Rappels** : liste d'heures `HH:mm` (⚠ non déclenchés aujourd'hui — phase 4.2).
 - **Avancé** : note libre, archivage, suppression (avec annulation).
 Validation à porter en `zod` ; état brouillon isolé du store principal.
+
+> **Précisé au portage (phase 4).** L'habitude a **quatre** onglets, la tâche **trois** : le modèle
+> cible ne porte pas de rappel sur une tâche, et un onglet « Rappels » qui n'écrirait nulle part
+> serait le champ décoratif que le plan 6 § 6.4 interdit. L'objectif a son propre éditeur, à deux
+> onglets. La suppression se confirme **en deux temps** en plus d'être annulable : l'annulation
+> dure six secondes, l'historique d'une habitude dure des mois.
 
 ## 6. `tasks` — Tâches
 **But :** liste d'actions.
@@ -64,13 +82,19 @@ puce de priorité (1–3), heure, catégorie, sous-tâches avec compteur, note.
 Colonne latérale : **liste de courses** (`shop`) et listes annexes.
 **Interactions :** cocher tâche et sous-tâche, reporter (+1 jour), supprimer, éditer.
 
+> **Précisé au portage (phase 4).** « Cette semaine » s'arrête à la fin de la semaine **courante**
+> (`Settings.weekStart`), et non sept jours après aujourd'hui comme dans le prototype : la fenêtre
+> glissante annonçait « cette semaine » pour des jours de la suivante. Une tâche **en retard**
+> remonte dans « Aujourd'hui » plutôt que dans un groupe séparé qui se replie et s'oublie.
+
 ## 7. `goals` — Objectifs
 **But :** engagements à moyen terme.
 **Contenu :** carte par objectif : type (`cumul` cumulatif / `reduce` réduction), cible + unité,
 habitude source, échéance, barre de progression, puce d'état.
 **Existant :** création par brouillon (`objDraft`), suppression annulable.
-**À compléter (phase 3.7) :** rythme requis restant, courbe d'avancement, jalons, alerte
-d'échéance, historique des objectifs atteints.
+**Fait (phase 4) :** rythme requis (`requiredPace`), statut d'échéance (`goalStatus`, qui distingue
+« en retard » d'« échéance dépassée »), courbe d'avancement (`goalTrail`, qui rejoue la mesure à
+chaque date au lieu d'interpoler) et jalons.
 
 ## 8. `stats` — Statistiques
 **But :** preuve de progression.
@@ -85,8 +109,9 @@ classement des habitudes par score, répartition par catégorie (barres), minute
 `countdown`, `interval`.
 **Contenu :** cadran circulaire animé, phase et cycle en cours, habitude liée (crédit automatique
 à la fin de session), sessions récentes du jour + total.
-**À refondre (B5) :** ancrage `startedAt` + `accumulatedMs`, survie au rechargement et à
-l'arrière-plan, notification et son de fin de phase.
+**Fait (phase 4, B5) :** ancrage `startedAt` + `accumulatedMs`, survie au rechargement et à
+l'arrière-plan — la session reprend toujours **en pause**, écoulé conservé.
+**Reste au plan 6 :** notification et son de fin de phase.
 
 ## 10. `notes` — Notes
 **Contenu :** journal du jour (zone de texte auto-sauvegardée, clé `j|YYYY-MM-DD`), humeur du jour,
@@ -101,10 +126,15 @@ création, suppression, import de fichier JSON.
 
 ## 12. `settings` — Réglages
 **Contenu :** thème (`neural` / `plasma` / `clinical`), langue (FR / EN), début de semaine
-(lundi / dimanche), interrupteurs `notif` · `sound` · `vibrate` · `confetti` · `cloud`,
+(lundi / dimanche), interrupteurs `notif` · `sound` · `vibrate` · `confetti`,
 export JSON, réinitialisation avec confirmation en deux temps.
-**Corrections :** brancher réellement `notif`/`sound`/`vibrate` (phase 4.2–4.3), renommer `cloud`
-(il gouverne la persistance locale, pas un cloud).
+
+> **Corrigé au portage (phase 4).** `cloud` n'existe plus : il ne gouvernait aucun nuage, et
+> ce n'est même pas un interrupteur — proposer de désactiver l'enregistrement local reviendrait
+> à proposer de perdre ses données. Une ligne d'état dit désormais où elles vivent.
+> `notif`, `sound` et `vibrate` restent **désactivés et motivés** jusqu'à ce que le plan 6 les
+> branche. La réinitialisation repart d'un **compte vierge**, et non du jeu de démonstration
+> comme dans le prototype (B4).
 
 ---
 

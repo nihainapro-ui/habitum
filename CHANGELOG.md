@@ -1,5 +1,112 @@
 # Journal des modifications
 
+## 2026-08-13 — Phase 4 : les onze vues
+
+Le produit se manipule. Onze vues portées, alimentées par IndexedDB, comparées aux 62 valeurs de
+référence **à l'écran** et non plus seulement dans le moteur. `npm run verify` vert,
+**303 tests unitaires** et **368 tests e2e** verts sur desktop et mobile.
+
+### Porté
+
+- **`today`** — file d'exécution unique, habitudes et tâches triées par heure, compteurs `−`/`+`,
+  sous-listes, tiroir d'actions contextuel, toast annulable. (T3.2)
+- **`habits`** — cartes, sept pastilles de la semaine suivant `Settings.weekStart`, série, record,
+  taux 30 jours. Le test compare les trois chiffres des six habitudes à `golden.json`. (T3.1)
+- **`dash`** — anneau du jour, quatre compteurs, mini-carte 30 jours, objectifs, rappel de
+  sauvegarde. (T3.3)
+- **Éditeurs** habitude (4 onglets), tâche (3) et objectif (2), `react-hook-form` + `zod`,
+  brouillon isolé, suppression confirmée puis annulable. (T3.4, T3.5)
+- **`tasks`** — cinq groupes d'échéance, sous-tâches, priorités écrites, liste de courses. (T3.6)
+- **`calendar`** — mois, semaine, jour, agenda ; glisser-déposer `@dnd-kit` et **pilotage clavier
+  complet**. (T3.7 → T3.10)
+- **`stats`** — indicateurs, barres du mois, carte de chaleur six mois, classement, répartition par
+  catégorie. (T3.11, T3.12)
+- **`timer`** — quatre modes ancrés sur l'horloge murale, session survivant au rechargement, crédit
+  d'habitude. (T3.13, T3.14)
+- **`goals`** — rythme requis, statut d'échéance, courbe d'avancement, jalons. (T3.15)
+- **`notes`** — journal auto-enregistré, humeur, historique, recherche plein texte. (T3.16)
+- **`profile`** et **`settings`** — profils multiples, avatar OKLCH, statistiques réelles, export,
+  import, réinitialisation en deux temps. (T3.17, T3.18)
+
+**Sept modules de domaine** neufs — `agenda`, `tasks`, `stats`, `timer`, `calendar`, `backup`, et
+les compléments de `goals` — chacun avec ses tests. Aucun calcul n'est écrit dans un composant
+(G2) : c'est ce qui permet aux vues d'afficher les mêmes nombres que le moteur, et au moteur de
+rester protégé par l'oracle.
+
+### Corrigé — dix défauts, dont quatre invisibles à l'œil
+
+- **Les toasts n'étaient affichés nulle part.** `withUndo` en posait depuis la phase 2 et aucun
+  composant ne les rendait : **toute suppression était en pratique irréversible**. Le défaut ne
+  pouvait pas se voir tant qu'aucune vue n'offrait de suppression.
+- **Les glyphes `home` et `study` étaient intervertis**, et `04-DESIGN-TOKENS.md` laissait trois
+  couleurs de catégorie non renseignées.
+- **`/app/settings` portait deux `<h1>`** depuis la phase 3 — le test de fumée était rouge sur
+  `main`.
+- **Le bandeau de dates et la grille du calendrier cassaient l'hydratation** (React #418) : bâtis
+  sur `today()` au rendu, ils portaient la date de la **compilation**.
+- **Une clé de libellé manquante ne casse rien** : next-intl journalise et affiche le chemin de la
+  clé. Les sept tests de la vue Statistiques étaient verts pendant que l'écran affichait
+  « app.emStatsT ». `console.spec.ts` fait désormais échouer la recette sur toute erreur ou tout
+  avertissement de console, sur les onze vues, compte vierge **et** compte de démonstration.
+- **`redimensionner(0, d)` ajoutait quinze minutes** : son premier argument est la durée courante,
+  et `0 || DUREE_MIN` vaut 15. D'où `borneDuree`.
+- **Une touche de redimensionnement maintenue perdait neuf frappes sur dix** : chaque ajustement
+  lisait la durée avant que le précédent ne soit écrit.
+- **Une session de minuteur en cours perdait tout son écoulé au rechargement** : seul `startedAt`
+  était enregistré.
+- **La fin d'une phase de Pomodoro pouvait être enregistrée deux fois** — l'écriture prend
+  quelques millisecondes, pendant lesquelles les ticks suivants voient encore le seuil franchi.
+- **Une concentration terminée n'était enregistrée nulle part** : le prototype ne journalisait que
+  le compte à rebours, et les minutes de Pomodoro n'apparaissaient dans aucune statistique.
+
+### Écarts assumés au prototype
+
+Chacun est écrit dans le code, à côté de la ligne qu'il explique, et reporté dans
+`05-SPEC-VUES.md`.
+
+- **Le réglage `cloud` disparaît** (T4.4). Il ne gouvernait aucun nuage, et ce n'est pas un
+  interrupteur : proposer de désactiver l'enregistrement local, c'est proposer de perdre ses
+  données. **La réinitialisation repart d'un compte vierge**, et non du jeu de démonstration —
+  rendre six habitudes qu'on n'a pas créées est exactement le défaut B4. Le libellé qui
+  l'annonçait est corrigé dans les deux langues.
+- **Les interrupteurs non branchés sont désactivés et disent pourquoi** : un interrupteur qui
+  s'allume sans rien déclencher est un mensonge d'interface (plan 6 § 6.4). Même raison pour le
+  tiroir d'actions, dont les cinq actions sont **contextuelles** : le prototype affichait
+  « Reporter » sur une habitude et se contentait d'annoncer l'action sans rien faire.
+- **« Cette semaine » s'arrête à la fin de la semaine courante**, et non sept jours après
+  aujourd'hui : la fenêtre glissante du prototype ignorait `Settings.weekStart`.
+- **Le cinquième mode du calendrier, `orbit`, n'est pas porté** : projection décorative du mois,
+  elle n'affiche rien que la grille ne donne. `05-SPEC-VUES.md` n'en parlait pas et
+  `RECETTE.md` disait vrai — le document est corrigé.
+- **Le classement des habitudes se fait au taux de réussite**, la série départageant les ex æquo.
+  Le plan proposait « pct pondéré par la série » : aucune référence ne donne cette pondération, et
+  un coefficient inventé rendrait le classement invérifiable (G3). Même raison pour l'« indice
+  cognitif » et le « niveau » du profil, qui ne sont pas portés.
+- **Cinq mesures de contraste ont déplacé des couleurs** : une ligne faite se signale par un
+  liseré et non par un fond teinté, l'étiquette « Habitude / Tâche » est neutre et la catégorie
+  est écrite, les micro-libellés sur `--panel2` passent en `--txt2`, et le numéro du jour porte
+  son propre fond. À chaque fois `--mut` mesurait entre 2,07 et 4,39 là où AA demande 4,5.
+
+### Dépendances ajoutées
+
+`react-hook-form` (MIT), `@hookform/resolvers` (MIT), `@radix-ui/react-tabs`,
+`@radix-ui/react-dropdown-menu` (MIT), `@dnd-kit/core`, `@dnd-kit/modifiers` (MIT) — conformes
+à **G5**. First Load JS **partagé inchangé à 103 kB** pour un budget de 150 ; les douze routes
+restent **statiques**. Le poids par route monte à 213–228 kB, à surveiller au budget de
+performance du plan 8.
+
+### Limite connue
+
+La comparaison aux captures de `public/prototype/tests/visual/reference/` reste **manuelle** : la
+non-régression visuelle automatisée est la tâche 8.2, et elle demande un socle de captures de
+référence pris sur l'application, pas sur le prototype. Ce qui est automatisé aujourd'hui : les
+chiffres (contre `golden.json`), la structure, l'absence de débordement aux quatre paliers dans
+les trois thèmes, l'accessibilité, et l'absence d'erreur de console.
+
+**409 libellés** traduits et symétriques.
+
+---
+
 ## 2026-08-12 — Phase 3 : système visuel
 
 Onze vues peuvent maintenant s'écrire sans réinventer une bordure. Douze primitives sur les jetons

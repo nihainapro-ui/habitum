@@ -63,8 +63,16 @@ function CaseJour({
         aria-label={libelle}
         className="rounded-btn-sm cursor-pointer self-start px-1.5 py-0.5 font-mono text-[11px]"
         style={{
-          color: isToday ? '#04060d' : inMonth ? 'var(--txt2)' : 'var(--mut)',
-          background: isToday ? 'var(--acc2)' : 'transparent',
+          /* Tous les numéros en `--txt2` : sur une case teintée par
+             `dayRatio`, `--mut` tombe jusqu'à 2,07 — très en dessous d'AA.
+             Le hors-mois se lit à son fond et à sa position, pas à un texte
+             qu'on n'arrive plus à lire. */
+          color: isToday ? '#04060d' : 'var(--txt2)',
+          /* Le numéro porte son PROPRE fond. Posé à même la case, il se lit
+             sur une teinte qui varie avec `dayRatio` — au plus fort du vert,
+             `--txt2` n'y mesurait plus que 4,39. Un fond opaque rend le
+             contraste indépendant de la charge de la journée. */
+          background: isToday ? 'var(--acc2)' : 'var(--bg)',
         }}
       >
         {numero}

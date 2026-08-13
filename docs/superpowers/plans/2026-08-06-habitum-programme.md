@@ -335,16 +335,21 @@ Elles bloquent un plan chacune. Aucune n'est technique.
 
 | Plan | Charge | État | Avancement produit à la sortie |
 |---|---:|---|---:|
-| 1 · Stabilisation | 4 j | ⬜ à faire | 22 % → 27 % |
-| 0 · DevOps | 3 j | ⬜ à faire | 27 % → 31 % |
-| 2 · Données | 6,5 j | ⬜ à faire | 31 % → 42 % |
-| 3 · État & coque | 4 j | ⬜ à faire | 42 % → 48 % |
-| 4 · Système visuel | 5 j | ⬜ à faire | 48 % → 56 % |
-| 5 · Les 11 vues | 15 j | ⬜ à faire | 56 % → 80 % |
+| 1 · Stabilisation | 4 j | ✅ livré (6 août 2026) | 22 % → 27 % |
+| 0 · DevOps | 3 j | ✅ livré (6 août 2026) | 27 % → 31 % |
+| 2 · Données | 6,5 j | ✅ livré (8 août 2026) | 31 % → 42 % |
+| 3 · État & coque | 4 j | ✅ livré (8 août 2026) | 42 % → 48 % |
+| 4 · Système visuel | 5 j | ✅ livré (12 août 2026) | 48 % → 56 % |
+| 5 · Les 11 vues | 15 j | ✅ livré (13 août 2026) | 56 % → 80 % |
 | 6 · Fiabilisation & PWA | 6 j | ⬜ à faire | 80 % → 91 % |
 | 7 · Vitrine & SEO | 3 j | ⬜ à faire | 91 % → 95 % |
 | 8 · Qualité & lancement | 7 j | ⬜ à faire | 95 % → **100 % — v1.0** |
-| **TOTAL** | **53,5 j** | | |
+| **TOTAL** | **53,5 j** | **6 plans sur 9** | |
+
+> Le tableau était resté à « ⬜ à faire » sur toute la ligne alors que cinq plans étaient livrés :
+> corrigé à la sortie du plan 5. Les dates sont celles des entrées de `CHANGELOG.md`, qui numérote
+> les phases dans l'ordre d'exécution (phase 0 = plans 1 et 0, phase 1 = plan 2, phase 2 = plan 3,
+> phase 3 = plan 4, phase 4 = plan 5).
 
 > L'écart avec les 46–48 j-p de l'audit vient du Plan 0 (DevOps, 3 j) désormais compté à part et
 > des marges de recette. Le Plan 0 étant parallélisable, le **délai calendaire reste ~9 semaines**
