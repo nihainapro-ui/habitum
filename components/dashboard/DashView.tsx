@@ -9,9 +9,11 @@ import {
   dayAgenda,
   daysBack,
   goalProgress,
+  openTasksFrom,
   shouldNagExport,
   splitHeuresMinutes,
   today,
+  upcomingTasks,
 } from '@/lib/domain';
 import { useDayRatio, useFocusMinutes, useStore } from '@/lib/store';
 import { CategoryGlyph, Panel, Ring } from '@/components/ui';
@@ -54,21 +56,14 @@ export function DashView() {
     [logIndex, habits, tasks],
   );
   const habitudesDuJour = entrees.filter((e) => e.kind === 'habit');
-  const restantes = tasks.filter((k) => !k.done && k.date >= jour).length;
+  const restantes = openTasksFrom(tasks, jour).length;
   const record = useMemo(() => bestStreakOverall(logIndex, habits), [logIndex, habits]);
   const mini = useMemo(
     () => daysBack(logIndex, habits, tasks, JOURS_MINI),
     [logIndex, habits, tasks],
   );
 
-  const prochaines = useMemo(
-    () =>
-      tasks
-        .filter((k) => !k.done && k.date >= jour)
-        .sort((a, b) => a.date.localeCompare(b.date) || (a.time ?? '').localeCompare(b.time ?? ''))
-        .slice(0, MAX_TACHES),
-    [tasks, jour],
-  );
+  const prochaines = useMemo(() => upcomingTasks(tasks, jour, MAX_TACHES), [tasks, jour]);
 
   const rappel = shouldNagExport({
     lastExport,

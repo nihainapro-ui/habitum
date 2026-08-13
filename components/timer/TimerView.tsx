@@ -9,16 +9,17 @@ import {
   elapsedMs,
   formatChrono,
   INTERVAL,
-  isScheduled,
+  focusTargets,
   phaseRatio,
   PRESETS_COUNTDOWN,
   remainingMs,
+  sessionsOfDay,
   splitHeuresMinutes,
   TIMER_MODES,
   today,
   type TimerMode,
 } from '@/lib/domain';
-import { useStore } from '@/lib/store';
+import { useFocusMinutes, useStore } from '@/lib/store';
 import { Panel } from '@/components/ui';
 import { ViewHeader } from '@/components/shell/view-header';
 import { TimerDial } from './TimerDial';
@@ -88,17 +89,15 @@ export function TimerView() {
   const ratio = maintenant === null ? 0 : phaseRatio(timer, horloge);
 
   const jour = dateKey(today());
-  const duJour = sessions.filter((s) => s.date === jour);
-  const { h, m } = splitHeuresMinutes(duJour.reduce((somme, s) => somme + s.minutes, 0));
+  const duJour = sessionsOfDay(sessions, jour);
+  /* Le total du jour passe par `focusMinutes` — la fonction que l'oracle
+     protège — plutôt que par une somme réécrite ici. Une fenêtre d'un jour,
+     c'est aujourd'hui. */
+  const { h, m } = splitHeuresMinutes(useFocusMinutes(1));
 
   const cibles = [
     { kind: '' as const, id: '', label: t('tmNoTarget') },
-    ...habits
-      .filter((x) => isScheduled(x, today()))
-      .map((x) => ({ kind: 'h' as const, id: x.id, label: x.name })),
-    ...tasks
-      .filter((k) => !k.done && k.date === jour)
-      .map((k) => ({ kind: 't' as const, id: k.id, label: k.name })),
+    ...focusTargets(habits, tasks, jour),
   ];
 
   const puce = (actif: boolean) => ({

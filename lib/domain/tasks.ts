@@ -1,4 +1,4 @@
-import type { Task } from './types';
+import type { DateKey, Task } from './types';
 import { addDays, dateKey, startOfWeek, today, type WeekStart } from './date';
 
 /* Regroupement des tâches — 05-SPEC-VUES.md § 6.
@@ -52,3 +52,16 @@ export const subTaskCount = (t: Task): { done: number; total: number } | null =>
   t.subTasks.length
     ? { done: t.subTasks.filter((s) => s.done).length, total: t.subTasks.length }
     : null;
+
+/** Tâches non faites à partir d'une date — celles qui restent à faire.
+ *  Le passé non fait EN FAIT PARTIE : une tâche d'hier qu'on n'a pas cochée
+ *  reste due, et la compter pour zéro serait se mentir sur sa charge. */
+export const openTasksFrom = (tasks: readonly Task[], from: DateKey): Task[] =>
+  tasks.filter((t) => !t.done && t.date >= from);
+
+/** Prochaines échéances : ce qui reste à faire, au plus tôt d'abord, puis par
+ *  heure. Limité — un aperçu qui liste tout n'est plus un aperçu. */
+export const upcomingTasks = (tasks: readonly Task[], from: DateKey, limite: number): Task[] =>
+  openTasksFrom(tasks, from)
+    .sort((a, b) => a.date.localeCompare(b.date) || (a.time ?? '').localeCompare(b.time ?? ''))
+    .slice(0, Math.max(0, limite));

@@ -2,6 +2,7 @@
 
 import { useMemo } from 'react';
 import { useTranslations } from 'next-intl';
+import { sortHabitsCatalog } from '@/lib/domain';
 import { useStore } from '@/lib/store';
 import { EmptyState } from '@/components/shell/empty-state';
 import { PrimaryButton } from '@/components/shell/primary-button';
@@ -19,10 +20,7 @@ export function HabitsView() {
   const habits = useStore((s) => s.habits);
   const openEditor = useStore((s) => s.openEditor);
 
-  const triees = useMemo(
-    () => [...habits].sort((a, b) => Number(a.archived) - Number(b.archived)),
-    [habits],
-  );
+  const triees = useMemo(() => sortHabitsCatalog(habits), [habits]);
 
   const nouveau = (
     <PrimaryButton onClick={() => openEditor({ kind: 'habit', id: null })}>

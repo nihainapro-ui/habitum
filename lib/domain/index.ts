@@ -12,3 +12,5 @@ export * from './stats';
 export * from './timer';
 export * from './backup';
 export * from './calendar';
+export * from './journal';
+export * from './catalog';

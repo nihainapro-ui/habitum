@@ -4,7 +4,7 @@ import { useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { Upload } from 'lucide-react';
 import { champStyle, Panel, Switch } from '@/components/ui';
-import { bestStreakOverall, perfectDays, splitHeuresMinutes } from '@/lib/domain';
+import { activeHabits, bestStreakOverall, perfectDays, splitHeuresMinutes } from '@/lib/domain';
 import { useFocusMinutes, useSettings, useStore } from '@/lib/store';
 import { ViewHeader } from '@/components/shell/view-header';
 import { Avatar } from './Avatar';
@@ -65,7 +65,7 @@ export function ProfileView() {
   };
 
   const chiffres = [
-    { cle: 'hab', libelle: tp('kHab'), valeur: String(habits.filter((x) => !x.archived).length) },
+    { cle: 'hab', libelle: tp('kHab'), valeur: String(activeHabits(habits).length) },
     { cle: 'streak', libelle: tp('kStreak'), valeur: String(bestStreakOverall(logIndex, habits)) },
     {
       cle: 'perf',

@@ -1,7 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import type { EntreeTache } from '@/lib/domain';
+import { subTaskCount, type EntreeTache } from '@/lib/domain';
 import { useStore } from '@/lib/store';
 import { ActionDrawer } from './ActionDrawer';
 import { RowCheck } from './RowCheck';
@@ -24,7 +24,7 @@ export function TaskRow({ entree, cochable }: { entree: EntreeTache; cochable: b
   const deleteTask = useStore((s) => s.deleteTask);
   const updateTask = useStore((s) => s.updateTask);
 
-  const faites = k.subTasks.filter((s) => s.done).length;
+  const sous = subTaskCount(k);
   const repetition = k.recurrence
     ? `⟳ ${k.recurrence.freq === 'daily' ? te('repDaily') : te('repMonth')}`
     : '';
@@ -45,8 +45,8 @@ export function TaskRow({ entree, cochable }: { entree: EntreeTache; cochable: b
       done={k.done}
       tag={t('task')}
       meta={meta || undefined}
-      amount={k.subTasks.length ? `${faites}/${k.subTasks.length}` : undefined}
-      ratio={k.subTasks.length ? faites / k.subTasks.length : null}
+      amount={sous ? `${sous.done}/${sous.total}` : undefined}
+      ratio={sous ? sous.done / sous.total : null}
       check={
         <RowCheck
           name={k.name}

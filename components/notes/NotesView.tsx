@@ -3,7 +3,14 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { champStyle, Panel } from '@/components/ui';
-import { dateKey, today, type Note } from '@/lib/domain';
+import {
+  dateKey,
+  habitNotes,
+  journalHistory,
+  recentSessions,
+  searchNotes,
+  today,
+} from '@/lib/domain';
 import { useStore } from '@/lib/store';
 import { ViewHeader } from '@/components/shell/view-header';
 import { useLocaleSwitcher } from '@/components/shell/locale-provider';
@@ -19,6 +26,9 @@ import { MoodPicker } from './MoodPicker';
  *  ne perde rien en quittant la vue, assez long pour ne pas écrire à chaque
  *  frappe. */
 const DELAI_SAUVEGARDE = 600;
+
+/** Sessions montrées en marge du journal. */
+const MAX_SESSIONS = 6;
 
 export function NotesView() {
   const t = useTranslations('app');
@@ -61,23 +71,16 @@ export function NotesView() {
     [locale],
   );
 
-  const historique = useMemo(
-    () =>
-      notes
-        .filter((n): n is Note & { date: string } => n.kind === 'journal' && Boolean(n.date))
-        .sort((a, b) => b.date.localeCompare(a.date)),
-    [notes],
+  const historique = useMemo(() => journalHistory(notes), [notes]);
+
+  const resultats = useMemo(
+    () => (recherche.trim() ? searchNotes(notes, recherche) : null),
+    [notes, recherche],
   );
 
-  const resultats = useMemo(() => {
-    const q = recherche.trim().toLowerCase();
-    if (!q) return null;
-    return notes.filter((n) => n.body.toLowerCase().includes(q));
-  }, [notes, recherche]);
-
-  const notesHabitude = notes.filter((n) => n.kind === 'habit' && n.body.trim());
+  const notesHabitude = habitNotes(notes);
   const nomHabitude = (id?: string) => habits.find((h) => h.id === id)?.name ?? '';
-  const sessionsRecentes = [...sessions].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 6);
+  const sessionsRecentes = recentSessions(sessions, MAX_SESSIONS);
 
   return (
     <div className="flex flex-col gap-4">
