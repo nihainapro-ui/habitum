@@ -1,6 +1,37 @@
 import createNextIntlPlugin from 'next-intl/plugin';
+import withSerwistInit from '@serwist/next';
 
 const withNextIntl = createNextIntlPlugin('./i18n/request.ts');
+
+/* PWA — tâche 5.7. Serwist (MIT, successeur de next-pwa) compile `app/sw.ts`
+   vers `public/sw.js` et y injecte la liste de précache.
+
+   DÉSACTIVÉ EN DÉVELOPPEMENT : un service worker qui met en cache pendant que
+   Fast Refresh recompile sert des morceaux de deux versions différentes, et
+   fait perdre des heures à chercher un bogue qui n'existe pas. */
+const withSerwist = withSerwistInit({
+  swSrc: 'app/sw.ts',
+  swDest: 'public/sw.js',
+  disable: process.env.NODE_ENV === 'development',
+  /* Les vues visitées sont mises en cache au passage. Le précache ne contient
+     que la coquille et les ressources statiques : les documents des onze routes
+     n'y sont pas, et ne peuvent pas y être — leur HTML référence des morceaux
+     dont l'empreinte change à chaque build, et un document précaché périmé
+     chargerait des fichiers qui n'existent plus. La limite est donc assumée et
+     écrite : une route jamais ouverte demande une connexion, une fois. */
+  cacheOnNavigation: true,
+  /* L'archive du prototype est HORS du service worker : elle a son propre jeu
+     d'en-têtes, elle charge React depuis unpkg.com, et rien ne justifie de la
+     précharger — c'est une pièce d'archive, pas une surface de production.
+
+     Les DEUX options sont nécessaires, et c'est ce qui a failli passer :
+     `exclude` filtre les sorties du build, `globPublicPatterns` filtre
+     `public/`. Sans la seconde, le précache embarquait les 336 Ko du prototype
+     ET ses captures de référence — plusieurs mégaoctets téléchargés à
+     l'installation, pour un fichier que personne n'ouvrira hors ligne. */
+  exclude: [/\.map$/, /^manifest.*\.js$/],
+  globPublicPatterns: ['**/*', '!prototype/**', '!sw.js'],
+});
 
 /* D9 — en-têtes de sécurité (tâche T8.5 du backlog).
 
@@ -151,4 +182,4 @@ const nextConfig = {
   },
 };
 
-export default withNextIntl(nextConfig);
+export default withSerwist(withNextIntl(nextConfig));

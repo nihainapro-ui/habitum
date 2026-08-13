@@ -40,3 +40,9 @@ Thumbs.db
 /Photo/
 *.docx
 *.xlsx
+
+# service worker généré par Serwist à chaque build (tâche 5.7). Le SOURCE est
+# app/sw.ts ; le fichier compilé n'a pas à être versionné.
+/public/sw.js
+/public/sw.js.map
+/public/swe-worker-*.js

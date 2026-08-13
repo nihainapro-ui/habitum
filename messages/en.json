@@ -473,6 +473,9 @@
     "pDelNo": "Cancel",
     "pDelYes": "Yes, delete",
     "saveFail": "Cannot save: storage is full. Export your data.",
+    "updT": "A new version is ready.",
+    "updNow": "Reload",
+    "updLater": "Later",
     "srView": "Current view:",
     "tmRestored": "Timer session restored, paused"
   },

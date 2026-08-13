@@ -13,3 +13,5 @@ docs
 
 # Fichiers générés — leur mise en forme appartient à leur générateur.
 styles/tokens.css
+public/sw.js
+public/swe-worker-*.js

@@ -10,7 +10,18 @@ const config = [
     // triple-slash vers .next/types/ : il est déjà dans .gitignore et n'a pas à
     // être linté. Sans cette exclusion, le lint local passe au rouge dès qu'on
     // a construit une fois, alors que la CI reste verte sur checkout propre (D18).
-    ignores: ['.next/**', 'node_modules/**', 'public/prototype/**', 'docs/**', 'next-env.d.ts'],
+    /* `public/sw.js` est le service worker COMPILÉ par Serwist à chaque build
+       (tâche 5.7). Le source est `app/sw.ts`, lui bien linté ; linter la sortie
+       minifiée d'un outil tiers ne dit rien sur notre code et fait échouer
+       `verify` sur des motifs qu'on ne peut pas corriger. */
+    ignores: [
+      '.next/**',
+      'node_modules/**',
+      'public/prototype/**',
+      'public/sw.js',
+      'docs/**',
+      'next-env.d.ts',
+    ],
   },
   ...compat.extends('next/core-web-vitals', 'next/typescript'),
   prettier,

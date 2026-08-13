@@ -473,6 +473,9 @@
     "pDelNo": "Annuler",
     "pDelYes": "Oui, supprimer",
     "saveFail": "Sauvegarde impossible : espace de stockage plein. Exportez vos données.",
+    "updT": "Une nouvelle version est prête.",
+    "updNow": "Recharger",
+    "updLater": "Plus tard",
     "srView": "Vue affichée :",
     "tmRestored": "Session de minuteur restaurée, en pause"
   },

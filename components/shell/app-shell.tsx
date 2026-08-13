@@ -16,6 +16,7 @@ import { LiveRegion } from './live-region';
 import { Rail } from './rail';
 import { ID_CONTENU, SkipLink } from './skip-link';
 import { ToastHost } from './toast-host';
+import { UpdateBanner } from './update-banner';
 
 /* Coque applicative : rail, en-tête, contenu, barre basse, palette.
 
@@ -117,6 +118,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <ToastHost />
       <EditorSheet />
       <CommandPalette />
+      <UpdateBanner />
     </div>
   );
 }
