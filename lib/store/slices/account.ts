@@ -10,6 +10,7 @@ import {
   seedDemo,
   type ImportReport,
 } from '@/lib/data';
+import { construireCopie, ecrireCopie, lireCopie } from '@/lib/features/backup/snapshot';
 import { chargerTout } from '../hydrate';
 import type { AccountActions, AppState } from '../types';
 
@@ -77,15 +78,37 @@ export const createAccountSlice: StateCreator<AppState, [], [], AccountActions> 
     set({ nagDismissed: true });
   },
 
+  /* Copie de secours AVANT d'importer. L'import n'efface pas le compte : il
+     ajoute, et écrase ce qui porte le même identifiant. On ne s'aperçoit donc
+     qu'après coup qu'on a ouvert le mauvais fichier — d'où la copie, prise
+     avant même de valider la charge. Valider peut échouer ; ce qui existe déjà
+     ne doit pas en dépendre. */
   async importJson(charge: string): Promise<ImportReport> {
+    await ecrireCopie(await construireCopie());
     const rapport = await importFromJson(charge);
     set(await chargerTout());
     return rapport;
   },
 
   async resetAccount(): Promise<void> {
+    /* La copie est CONSTRUITE avant, ÉCRITE après : la réinitialisation vide
+       la table `meta`, et une copie posée avant serait effacée avec le reste —
+       au moment exact où elle sert. */
+    const copie = await construireCopie();
     await resetAll();
+    await ecrireCopie(copie);
     set(await chargerTout());
+  },
+
+  /* Restauration de la copie automatique. Elle passe par le MÊME importeur que
+     les fichiers d'utilisateur : un chemin de restauration privé serait un
+     chemin que personne ne teste. */
+  async restoreBackup(): Promise<ImportReport | null> {
+    const copie = await lireCopie();
+    if (!copie) return null;
+    const rapport = await importFromJson(JSON.stringify(copie.payload));
+    set(await chargerTout());
+    return rapport;
   },
 
   /* Le parcours d'accueil se clôt SANS rien fabriquer : les habitudes cochées

@@ -448,6 +448,7 @@
     "errT": "Quelque chose s’est mal passé",
     "expFail": "Export impossible sur cet appareil. Réessayez ou changez de navigateur.",
     "expOk": "Sauvegarde exportée",
+    "impMerge": "L’import ajoute au compte courant et remplace les entrées de même identifiant. Une copie de secours est prise avant.",
     "impPartial": "entrées invalides ignorées",
     "impTooBig": "Fichier trop volumineux (2 Mo maximum)",
     "imp_EMPTY": "aucune donnée exploitable",

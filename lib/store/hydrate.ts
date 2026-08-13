@@ -35,6 +35,7 @@ export async function chargerTout(): Promise<DataState> {
     refuse,
     accueilFranchi,
     occurrences,
+    copie,
   ] = await Promise.all([
     habitsRepo.list(),
     tasksRepo.list(),
@@ -51,6 +52,7 @@ export async function chargerTout(): Promise<DataState> {
     metaRepo.get<boolean>(META_KEYS.nagDismissed),
     metaRepo.get<boolean>(META_KEYS.onboarded),
     metaRepo.get<Record<string, number>>(META_KEYS.occ),
+    metaRepo.get<{ at: string }>(META_KEYS.backup),
   ]);
 
   /* Les réglages enregistrés priment, mais un réglage ajouté après coup ne doit
@@ -83,5 +85,6 @@ export async function chargerTout(): Promise<DataState> {
     lastExport: dernierExport ?? null,
     nagDismissed: refuse === true,
     onboarded: accueilFranchi === true,
+    backupAt: copie?.at ?? null,
   };
 }

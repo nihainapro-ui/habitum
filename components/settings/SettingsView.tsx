@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { Download } from 'lucide-react';
 import { Panel, Segmented, Switch } from '@/components/ui';
 import type { WeekStart } from '@/lib/domain';
 import { useSettings, useStore } from '@/lib/store';
@@ -10,6 +9,7 @@ import { clearErrorLog, readErrorLog, type ErreurJournalisee } from '@/lib/logge
 import { ViewHeader } from '@/components/shell/view-header';
 import { FeedbackSettings } from './FeedbackSettings';
 import { NotificationSetting } from './NotificationSetting';
+import { DataSection } from './DataSection';
 import { LocaleSwitcher } from './LocaleSwitcher';
 import { ThemeSwitcher } from './ThemeSwitcher';
 
@@ -31,11 +31,9 @@ export function SettingsView() {
   const ts = useTranslations('system');
   const settings = useSettings();
   const setSetting = useStore((s) => s.setSetting);
-  const exportJson = useStore((s) => s.exportJson);
   const resetAccount = useStore((s) => s.resetAccount);
 
   const [confirme, setConfirme] = useState(false);
-  const [erreurExport, setErreurExport] = useState(false);
 
   /* Journal d'erreurs LOCAL (tâche 5.1, décision E). Il est lu ici et nulle
      part ailleurs : c'est le seul endroit où l'utilisateur peut voir ce que
@@ -47,25 +45,6 @@ export function SettingsView() {
 
   /* Composé hors du JSX, que `jsx-no-literals` garde libre de tout gabarit. */
   const origine = (e: ErreurJournalisee) => `${e.at} · ${e.where}`;
-
-  /* L'export passe par un lien objet révoqué aussitôt : aucune donnée ne
-     transite par un serveur, et le fichier ne reste pas en mémoire. */
-  const exporter = async () => {
-    try {
-      const charge = await exportJson();
-      const lien = document.createElement('a');
-      const url = URL.createObjectURL(new Blob([charge], { type: 'application/json' }));
-      lien.href = url;
-      lien.download = `habitum-${new Date().toISOString().slice(0, 10)}.json`;
-      lien.click();
-      URL.revokeObjectURL(url);
-      setErreurExport(false);
-    } catch {
-      /* D5 — un échec d'export doit se voir. Le prototype n'avait aucun
-         `try/catch` : l'échec restait muet. */
-      setErreurExport(true);
-    }
-  };
 
   return (
     <div className="flex max-w-[760px] flex-col gap-4">
@@ -106,30 +85,7 @@ export function SettingsView() {
 
       <Panel title={t('dataSec')}>
         <div className="flex flex-col gap-4">
-          <div className="flex flex-col gap-1">
-            <span className="text-[13px]">{ts('localBackup')}</span>
-            <span className="text-[11.5px]" style={{ color: 'var(--mut)' }}>
-              {t('localOnly')}
-            </span>
-          </div>
-
-          <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={() => void exporter()}
-              className="rounded-btn flex cursor-pointer items-center gap-2 border px-4 py-2 text-[12.5px]"
-              style={{ borderColor: 'var(--line)', color: 'var(--txt2)' }}
-            >
-              <Download size={13} aria-hidden="true" />
-              {t('exportBtn')}
-            </button>
-          </div>
-
-          {erreurExport ? (
-            <p role="alert" className="m-0 text-[12px]" style={{ color: 'var(--bad)' }}>
-              {ts('expFail')}
-            </p>
-          ) : null}
+          <DataSection />
 
           <div className="flex flex-col gap-2 border-t pt-4" style={{ borderColor: 'var(--line)' }}>
             <span className="text-[13px]">{t('resetT')}</span>

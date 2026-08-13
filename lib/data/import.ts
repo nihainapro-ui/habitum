@@ -42,6 +42,28 @@ export interface ImportReport {
   byEntity: Record<ImportEntity, { read: number; kept: number }>;
 }
 
+/** Refus d'import, avec un CODE stable.
+ *
+ *  Le message reste en français pour les journaux et les tests ; l'interface,
+ *  elle, ne doit pas dépendre d'une phrase — elle affiche le libellé traduit
+ *  qui correspond au code (`system.imp_*`). */
+export type CodeRefusImport = 'JSON' | 'FORMAT' | 'EMPTY' | 'TOO_BIG';
+
+/* Réexporté ici pour que l'interface puisse refuser un fichier énorme AVANT de
+   le lire en mémoire — ouvrir 400 Mo pour découvrir qu'ils sont de trop fige
+   l'onglet le temps de la lecture. */
+export { MAX_IMPORT_BYTES };
+
+export class ImportError extends Error {
+  constructor(
+    readonly code: CodeRefusImport,
+    message: string,
+  ) {
+    super(message);
+    this.name = 'ImportError';
+  }
+}
+
 export const emptyReport = (): ImportReport => ({
   read: 0,
   kept: 0,
@@ -98,20 +120,21 @@ export async function importFromJson(input: unknown): Promise<ImportReport> {
   let charge = input;
   if (typeof charge === 'string') {
     if (charge.length > MAX_IMPORT_BYTES) {
-      throw new Error(
+      throw new ImportError(
+        'TOO_BIG',
         `Fichier trop volumineux : un export Habitum ne dépasse pas ${Math.round(MAX_IMPORT_BYTES / 1024 / 1024)} Mo.`,
       );
     }
     try {
       charge = JSON.parse(charge) as unknown;
     } catch {
-      throw new Error("Fichier illisible : ce n'est pas un export Habitum.");
+      throw new ImportError('JSON', "Fichier illisible : ce n'est pas un export Habitum.");
     }
   }
 
   const enveloppe = habitumExport.safeParse(charge);
   if (!enveloppe.success) {
-    throw new Error("Fichier non reconnu : ce n'est pas un export Habitum.");
+    throw new ImportError('FORMAT', "Fichier non reconnu : ce n'est pas un export Habitum.");
   }
   const src = enveloppe.data;
 

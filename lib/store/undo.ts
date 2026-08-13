@@ -64,6 +64,7 @@ export function capturer(s: AppState): Snapshot {
     isDemo: s.isDemo,
     lastExport: s.lastExport,
     nagDismissed: s.nagDismissed,
+    backupAt: s.backupAt,
     onboarded: s.onboarded,
   };
 }

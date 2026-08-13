@@ -78,6 +78,9 @@ export interface DataState {
   /** Dernier export, et refus du rappel de sauvegarde (D8). */
   lastExport: DateKey | null;
   nagDismissed: boolean;
+  /** Horodatage de la copie de secours automatique, `null` s'il n'y en a pas.
+   *  Prise avant un import et avant une réinitialisation (tâche 5.8). */
+  backupAt: string | null;
 }
 
 export interface HabitsActions {
@@ -192,6 +195,8 @@ export interface AccountActions {
   completeOnboarding(): Promise<void>;
   /** Charge le jeu de démonstration. Geste EXPLICITE, jamais un défaut (B4). */
   loadDemo(): Promise<void>;
+  /** Restaure la copie de secours automatique. `null` s'il n'y en a aucune. */
+  restoreBackup(): Promise<ImportReport | null>;
 }
 
 export interface LifecycleActions {
