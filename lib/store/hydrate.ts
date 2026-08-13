@@ -11,7 +11,7 @@ import {
   shoppingRepo,
   tasksRepo,
 } from '@/lib/data';
-import type { Settings } from '@/lib/domain';
+import type { DateKey, Settings } from '@/lib/domain';
 import type { DataState } from './types';
 
 /** Charge tout l'état persistant en une passe.
@@ -31,6 +31,8 @@ export async function chargerTout(): Promise<DataState> {
     reglages,
     demo,
     actif,
+    dernierExport,
+    refuse,
   ] = await Promise.all([
     habitsRepo.list(),
     tasksRepo.list(),
@@ -43,6 +45,8 @@ export async function chargerTout(): Promise<DataState> {
     metaRepo.get<Partial<Settings>>(META_KEYS.settings),
     metaRepo.get<boolean>(META_KEYS.demo),
     metaRepo.get<string>(META_KEYS.activeProfile),
+    metaRepo.get<DateKey>(META_KEYS.lastExport),
+    metaRepo.get<boolean>(META_KEYS.nagDismissed),
   ]);
 
   /* Les réglages enregistrés priment, mais un réglage ajouté après coup ne doit
@@ -64,5 +68,7 @@ export async function chargerTout(): Promise<DataState> {
     settings,
     activeProfileId,
     isDemo: demo === true,
+    lastExport: dernierExport ?? null,
+    nagDismissed: refuse === true,
   };
 }

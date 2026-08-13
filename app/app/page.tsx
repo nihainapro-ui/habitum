@@ -1,5 +1,5 @@
-import { PortStatus } from '@/components/port-status';
+import { DashView } from '@/components/dashboard/DashView';
 
 export default function Page() {
-  return <PortStatus view="dash" titleKey="navDash" />;
+  return <DashView />;
 }

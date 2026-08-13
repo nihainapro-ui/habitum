@@ -28,6 +28,8 @@ const donneesInitiales: DataState = {
   profiles: [],
   activeProfileId: null,
   isDemo: false,
+  lastExport: null,
+  nagDismissed: false,
 };
 
 export const useStore = create<AppState>()((...a) => ({

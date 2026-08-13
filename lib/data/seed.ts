@@ -40,6 +40,9 @@ export const META_KEYS = {
   activeProfile: 'activeProfile',
   /** État du minuteur — `startedAt` + `accumulatedMs` (B5). */
   timer: 'timer',
+  /** Date du dernier export, et refus du rappel de sauvegarde (D8). */
+  lastExport: 'lastExport',
+  nagDismissed: 'nagDismissed',
 } as const;
 
 /** Réglages d'un compte neuf. `notifications`, `sound` et `vibrate` sont à

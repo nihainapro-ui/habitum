@@ -61,6 +61,8 @@ export function capturer(s: AppState): Snapshot {
     settings: { ...s.settings },
     activeProfileId: s.activeProfileId,
     isDemo: s.isDemo,
+    lastExport: s.lastExport,
+    nagDismissed: s.nagDismissed,
   };
 }
 

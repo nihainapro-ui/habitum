@@ -3,6 +3,8 @@ import { dateKey, today, type Profile } from '@/lib/domain';
 import {
   exportToJson,
   importFromJson,
+  META_KEYS,
+  metaRepo,
   profilesRepo,
   resetAll,
   type ImportReport,
@@ -59,8 +61,19 @@ export const createAccountSlice: StateCreator<AppState, [], [], AccountActions> 
     }
   },
 
+  /* Un export réussi remet le compteur du rappel à zéro (D8) : c'est le seul
+     endroit qui sait qu'une sauvegarde a réellement été produite. */
   async exportJson(): Promise<string> {
-    return JSON.stringify(await exportToJson(), null, 2);
+    const charge = JSON.stringify(await exportToJson(), null, 2);
+    const jour = dateKey(today());
+    await metaRepo.set(META_KEYS.lastExport, jour);
+    set({ lastExport: jour });
+    return charge;
+  },
+
+  async dismissExportNag(): Promise<void> {
+    await metaRepo.set(META_KEYS.nagDismissed, true);
+    set({ nagDismissed: true });
   },
 
   async importJson(charge: string): Promise<ImportReport> {

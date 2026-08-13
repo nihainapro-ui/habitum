@@ -69,6 +69,9 @@ export interface DataState {
   activeProfileId: string | null;
   /** Drapeau `meta.demo` — l'interface doit pouvoir le dire à l'utilisateur. */
   isDemo: boolean;
+  /** Dernier export, et refus du rappel de sauvegarde (D8). */
+  lastExport: DateKey | null;
+  nagDismissed: boolean;
 }
 
 export interface HabitsActions {
@@ -163,6 +166,8 @@ export interface AccountActions {
   importJson(charge: string): Promise<ImportReport>;
   /** Efface tout et repart d'un compte VIERGE — jamais du jeu de démonstration. */
   resetAccount(): Promise<void>;
+  /** Refuse le rappel de sauvegarde. Il ne revient pas (D8). */
+  dismissExportNag(): Promise<void>;
 }
 
 export interface LifecycleActions {
