@@ -1,8 +1,9 @@
 import { create } from 'zustand';
 import { DEFAULT_SETTINGS } from '@/lib/data';
 import { timerInitial } from '@/lib/domain';
+import { logError } from '@/lib/logger';
 import { cacheDerive } from './derived';
-import { chargerTout, completerJournal } from './hydrate';
+import { chargerTout, completerJournal, memoriserJournal } from './hydrate';
 import { createAccountSlice } from './slices/account';
 import { createGoalsSlice } from './slices/goals';
 import { createHabitsSlice } from './slices/habits';
@@ -62,22 +63,42 @@ export const useStore = create<AppState>()((...a) => ({
        de ce qui était mémorisé ne peut être présumé vrai (tâche 5.9). */
     cacheDerive.clear();
     try {
-      /* Ouverture en DEUX TEMPS (tâche 5.10) : la fenêtre récente d'abord —
-         c'est tout ce que les métriques affichées lisent — puis le journal
-         complet en fond, pour que remonter à trois ans en arrière reste exact.
-         Sur 200 habitudes et 84 000 entrées, l'écran passe de 2,2 s à 0,3 s. */
-      const donnees = await chargerTout(true);
+      /* Ouverture par INSTANTANÉ (tâche 5.10) : une ligne de `meta` porte
+         l'index déjà construit, et seules les lignes modifiées depuis sont
+         relues. Sur 200 habitudes × 3 ans — 219 000 entrées — l'ouverture passe
+         de 5 s à moins d'une seconde, sans rien approximer : l'index est
+         COMPLET dès le premier écran. */
+      const { watermark, aJour, ...donnees } = await chargerTout();
       set((s) => ({ ...donnees, ui: { ...s.ui, loading: false } }));
 
-      void completerJournal().then((complet) => {
-        /* On ne réécrase que si rien n'a été journalisé entre-temps : une coche
-           faite pendant le chargement de fond ne doit pas être perdue. La
-           fenêtre récente fait autorité sur ce qu'elle contient. */
-        set((s) => ({
-          logIndex: new Map([...complet, ...s.logIndex]),
-          logIndexComplete: true,
-        }));
-      });
+      /* Le travail de fond ne doit JAMAIS faire tomber l'application : il n'a
+         aucune conséquence visible s'il échoue — l'index affiché est déjà bon,
+         seule l'ouverture suivante sera plus lente. Un onglet fermé pendant
+         l'écriture ferme la base sous les pieds de la promesse ; c'est le cas
+         normal, pas une anomalie. */
+      const enFond = (p: Promise<unknown>) => {
+        void p.catch((e: unknown) => void logError('journal', e));
+      };
+
+      if (donnees.logIndexComplete) {
+        /* Instantané déjà à jour : on ne réécrit pas 219 000 clés pour rien. */
+        if (!aJour) enFond(memoriserJournal(donnees.logIndex, watermark));
+        return;
+      }
+
+      /* Repli — aucun instantané enregistré : la fenêtre récente est déjà
+         affichée, on complète en fond puis on mémorise. C'est la toute première
+         ouverture d'une base importée : lente une fois, plus jamais. */
+      enFond(
+        completerJournal().then(({ index, watermark: filigrane }) => {
+          /* On ne réécrase que si rien n'a été journalisé entre-temps : une
+             coche faite pendant le chargement de fond ne doit pas être perdue.
+             La fenêtre récente fait autorité sur ce qu'elle contient. */
+          const complet = new Map([...index, ...useStore.getState().logIndex]);
+          set({ logIndex: complet, logIndexComplete: true });
+          return memoriserJournal(complet, filigrane);
+        }),
+      );
     } catch (err) {
       /* Une lecture qui échoue ne doit pas laisser un écran de chargement
          éternel : l'utilisateur doit pouvoir agir — au minimum exporter ses

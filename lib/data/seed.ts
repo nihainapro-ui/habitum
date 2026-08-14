@@ -46,6 +46,9 @@ export const META_KEYS = {
   /** Occurrences de tâches récurrentes accomplies. Nom et format FIGÉS (G1) :
    *  `{ "taskId|YYYY-MM-DD": 1 }`, comme dans le prototype. */
   occ: 'occ',
+  /** Instantané du journal + filigrane — cache d'ouverture (tâche 5.10).
+   *  Reconstructible : la table `logs` reste la seule source de vérité. */
+  logSnapshot: 'logSnapshot',
   /** Journal d'erreurs LOCAL — `lib/logger.ts`, décision E. */
   errors: 'errors',
   /** Copie de secours prise avant import et avant réinitialisation.
@@ -417,4 +420,8 @@ export async function resetAll(): Promise<void> {
   );
   await seedEmpty();
   if (accueilFranchi) await metaRepo.set(META_KEYS.onboarded, true);
+  /* La table `meta` vient d'être vidée : l'instantané du journal est parti avec
+     elle, et c'est ce qu'il faut. Un effacement DUR ne laisse aucune trace dans
+     `updatedAt` — un instantané survivant ressusciterait à la prochaine
+     ouverture tout ce qu'on vient d'effacer (tâche 5.10). */
 }

@@ -12,7 +12,7 @@ import {
 } from '@/lib/data';
 import { construireCopie, ecrireCopie, lireCopie } from '@/lib/features/backup/snapshot';
 import { cacheDerive } from '../derived';
-import { chargerTout } from '../hydrate';
+import { rechargerDonnees } from '../hydrate';
 import type { AccountActions, AppState } from '../types';
 
 /* Compte : profils, export, import, réinitialisation.
@@ -88,7 +88,7 @@ export const createAccountSlice: StateCreator<AppState, [], [], AccountActions> 
     await ecrireCopie(await construireCopie());
     const rapport = await importFromJson(charge);
     cacheDerive.clear();
-    set(await chargerTout());
+    set(await rechargerDonnees());
     return rapport;
   },
 
@@ -100,7 +100,7 @@ export const createAccountSlice: StateCreator<AppState, [], [], AccountActions> 
     await resetAll();
     await ecrireCopie(copie);
     cacheDerive.clear();
-    set(await chargerTout());
+    set(await rechargerDonnees());
   },
 
   /* Restauration de la copie automatique. Elle passe par le MÊME importeur que
@@ -111,7 +111,7 @@ export const createAccountSlice: StateCreator<AppState, [], [], AccountActions> 
     if (!copie) return null;
     const rapport = await importFromJson(JSON.stringify(copie.payload));
     cacheDerive.clear();
-    set(await chargerTout());
+    set(await rechargerDonnees());
     return rapport;
   },
 
@@ -130,6 +130,6 @@ export const createAccountSlice: StateCreator<AppState, [], [], AccountActions> 
     await seedDemo();
     await metaRepo.set(META_KEYS.onboarded, true);
     cacheDerive.clear();
-    set(await chargerTout());
+    set(await rechargerDonnees());
   },
 });

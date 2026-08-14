@@ -1,5 +1,6 @@
 'use client';
 
+import { memo } from 'react';
 import { useTranslations } from 'next-intl';
 import type { DateKey, EntreeHabitude } from '@/lib/domain';
 import { useHabitStreak, useStore } from '@/lib/store';
@@ -17,15 +18,29 @@ import { SubList } from './SubList';
 /** Types à compteur : ceux dont la valeur du jour se règle par − / +. */
 const QUANTITATIFS = new Set(['count', 'time', 'total', 'limit', 'exact']);
 
-export function HabitRow({
-  entree,
-  date,
-  cochable,
-}: {
+/* Comparaison par VALEURS, pas par référence — tâche 5.10.
+
+   `useDayAgenda` reconstruit ses entrées à chaque écriture du journal : sans
+   cette comparaison, cocher UNE habitude redessine les deux cents lignes de la
+   file, et l'interaction passe de 60 à 180 ms sur un compte chargé. Ce qui
+   compte tient en six champs ; `habit` est l'objet du store, stable tant que
+   l'habitude n'a pas changé. */
+const memesValeurs = (a: ProprietesLigne, b: ProprietesLigne): boolean =>
+  a.date === b.date &&
+  a.cochable === b.cochable &&
+  a.entree.done === b.entree.done &&
+  a.entree.value === b.entree.value &&
+  a.entree.target === b.entree.target &&
+  a.entree.time === b.entree.time &&
+  a.entree.habit === b.entree.habit;
+
+interface ProprietesLigne {
   entree: EntreeHabitude;
   date: DateKey;
   cochable: boolean;
-}) {
+}
+
+function LigneHabitude({ entree, date, cochable }: ProprietesLigne) {
   const t = useTranslations('app');
   const tc = useTranslations('cat');
   const h = entree.habit;
@@ -112,3 +127,5 @@ export function HabitRow({
     />
   );
 }
+
+export const HabitRow = memo(LigneHabitude, memesValeurs);

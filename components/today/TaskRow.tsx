@@ -1,5 +1,6 @@
 'use client';
 
+import { memo } from 'react';
 import { useTranslations } from 'next-intl';
 import { subTaskCount, type EntreeTache } from '@/lib/domain';
 import { useStore } from '@/lib/store';
@@ -10,7 +11,21 @@ import { SubList } from './SubList';
 
 /* Une tâche dans la file d'exécution du jour. */
 
-export function TaskRow({ entree, cochable }: { entree: EntreeTache; cochable: boolean }) {
+interface ProprietesLigne {
+  entree: EntreeTache;
+  cochable: boolean;
+}
+
+/* Même raison que pour `HabitRow` (tâche 5.10) : les entrées sont
+   reconstruites à chaque écriture, et seules ces quatre valeurs décident de ce
+   qui s'affiche. */
+const memesValeurs = (a: ProprietesLigne, b: ProprietesLigne): boolean =>
+  a.cochable === b.cochable &&
+  a.entree.done === b.entree.done &&
+  a.entree.date === b.entree.date &&
+  a.entree.task === b.entree.task;
+
+function LigneTache({ entree, cochable }: ProprietesLigne) {
   const t = useTranslations('app');
   /* Les libellés de récurrence appartiennent à l'éditeur : les redéclarer dans
      l'espace `app` créerait deux vérités pour le même mot. */
@@ -80,3 +95,5 @@ export function TaskRow({ entree, cochable }: { entree: EntreeTache; cochable: b
     />
   );
 }
+
+export const TaskRow = memo(LigneTache, memesValeurs);

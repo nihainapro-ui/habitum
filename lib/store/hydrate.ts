@@ -3,8 +3,9 @@ import {
   META_KEYS,
   goalsRepo,
   habitsRepo,
-  loadLogIndex,
-  loadLogIndexRecent,
+  loadLogIndexComplet,
+  loadLogIndexOuverture,
+  memoriserOuverture,
   metaRepo,
   notesRepo,
   profilesRepo,
@@ -15,9 +16,22 @@ import {
 import type { DateKey, Settings } from '@/lib/domain';
 import type { DataState } from './types';
 
-/** Journal COMPLET, pour compléter une ouverture partielle. */
-export async function completerJournal(): Promise<import('@/lib/domain').LogIndex> {
-  return loadLogIndex();
+/** Journal COMPLET relu depuis la table, avec son filigrane — sert à compléter
+ *  une ouverture de repli, puis à enregistrer l'instantané. */
+export const completerJournal = loadLogIndexComplet;
+
+/** Enregistre l'instantané d'ouverture (tâche 5.10). */
+export const memoriserJournal = memoriserOuverture;
+
+/** Relit tout après une écriture massive (import, restauration,
+ *  réinitialisation) et rend le seul état de données.
+ *
+ *  Le filigrane et le drapeau « déjà à jour » ne concernent QUE l'ouverture :
+ *  les laisser entrer dans le store y déposerait deux champs que personne ne
+ *  lit et qu'il faudrait maintenir. */
+export async function rechargerDonnees(): Promise<DataState> {
+  const { watermark: _w, aJour: _a, ...donnees } = await chargerTout();
+  return donnees;
 }
 
 /** Charge tout l'état persistant en une passe.
@@ -25,11 +39,11 @@ export async function completerJournal(): Promise<import('@/lib/domain').LogInde
  *  Une seule vague de lectures parallèles : à l'ouverture, l'utilisateur attend
  *  l'écran, pas neuf allers-retours en série.
  *
- *  `recent` ne lit que les 420 derniers jours du journal — la fenêtre la plus
- *  profonde du domaine. Sur trois ans de données, lire tout coûtait deux
- *  secondes avant le premier affichage (tâche 5.10). Le reste est chargé
- *  ensuite par `completerJournal`, et l'écran est interactif entre-temps. */
-export async function chargerTout(recent = false): Promise<DataState> {
+ *  Le journal passe par `loadLogIndexOuverture` : instantané + delta quand il
+ *  existe un instantané, fenêtre récente sinon (tâche 5.10). L'état rendu porte
+ *  donc deux informations de plus — le filigrane à mémoriser, et si l'instantané
+ *  enregistré est déjà à jour. */
+export async function chargerTout(): Promise<DataState & { watermark: string; aJour: boolean }> {
   const [
     habits,
     tasks,
@@ -38,7 +52,7 @@ export async function chargerTout(recent = false): Promise<DataState> {
     sessions,
     shopping,
     profiles,
-    logIndex,
+    ouverture,
     reglages,
     demo,
     actif,
@@ -55,7 +69,7 @@ export async function chargerTout(recent = false): Promise<DataState> {
     sessionsRepo.list(),
     shoppingRepo.list(),
     profilesRepo.list(),
-    recent ? loadLogIndexRecent() : loadLogIndex(),
+    loadLogIndexOuverture(),
     metaRepo.get<Partial<Settings>>(META_KEYS.settings),
     metaRepo.get<boolean>(META_KEYS.demo),
     metaRepo.get<string>(META_KEYS.activeProfile),
@@ -81,7 +95,10 @@ export async function chargerTout(recent = false): Promise<DataState> {
     sessions,
     shopping,
     profiles,
-    logIndex,
+    logIndex: ouverture.index,
+    logIndexComplete: ouverture.complete,
+    watermark: ouverture.watermark,
+    aJour: ouverture.aJour,
     /* Le format persisté est un objet `{ clé: 1 }` (G1) ; l'interface, elle,
        ne pose qu'une question — « cette occurrence est-elle faite ? ». D'où un
        ensemble, où la réponse coûte un accès au lieu d'un balayage. */
@@ -96,7 +113,6 @@ export async function chargerTout(recent = false): Promise<DataState> {
     lastExport: dernierExport ?? null,
     nagDismissed: refuse === true,
     onboarded: accueilFranchi === true,
-    logIndexComplete: !recent,
     backupAt: copie?.at ?? null,
   };
 }
