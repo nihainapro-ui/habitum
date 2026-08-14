@@ -12,6 +12,7 @@ remplace la précédente et on marque l'ancienne « remplacée par ».
 | [0005](0005-styles-en-ligne.md) | Styles en ligne, pas de feuille de classes | accepté |
 | [0006](0006-helpers-de-date-maison.md) | Helpers de date maison, sans bibliothèque | accepté |
 | [0007](0007-application-sous-app.md) | L'application vit sous `/app`, la racine revient à la vitrine | accepté |
+| [0008](0008-rappels-onglet-ouvert.md) | Les rappels sonnent tant qu'un onglet est ouvert, et le disent | accepté |
 
 > ADR-0005 a commencé à s'éteindre en phase 2 : la coque a besoin de points de rupture, qu'un
 > style en ligne ne sait pas exprimer. Elle est donc écrite en classes utilitaires. La phase 3

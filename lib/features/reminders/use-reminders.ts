@@ -29,7 +29,7 @@ export function useReminders(): void {
     return planifier({
       habits,
       log: logIndex,
-      envoyer: (r) => notifier(r.name, ts('notifRemB'), `rappel-${r.habitId}-${r.time}`),
+      envoyer: (r) => void notifier(r.name, ts('notifRemB'), `rappel-${r.habitId}-${r.time}`),
     });
   }, [actifs, habits, logIndex, ts]);
 }

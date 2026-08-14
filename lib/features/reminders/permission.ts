@@ -33,18 +33,46 @@ export async function demanderNotifications(): Promise<EtatNotifications> {
   }
 }
 
+/** Options communes aux deux chemins d'affichage. `tag` dédoublonne : deux
+ *  onglets ouverts, ou un rappel réarmé, ne produisent qu'une notification. */
+const options = (corps: string, tag: string): NotificationOptions => ({
+  ...(corps ? { body: corps } : {}),
+  tag,
+  icon: '/icons/icon-192.png',
+  badge: '/icons/icon-192.png',
+});
+
 /** Envoie une notification. Rend `false` si rien n'a pu être affiché — c'est
- *  ce que l'appelant doit savoir pour ne pas prétendre avoir prévenu. */
-export function notifier(titre: string, corps: string, tag: string): boolean {
+ *  ce que l'appelant doit savoir pour ne pas prétendre avoir prévenu.
+ *
+ *  ELLE PASSE PAR LE SERVICE WORKER quand il y en a un, et ce n'est pas un
+ *  détail d'architecture : sur Android, `new Notification()` LÈVE — Chrome
+ *  mobile n'accepte que les notifications persistantes, celles qu'affiche
+ *  l'enregistrement du service worker. Le chemin direct ne servait donc que le
+ *  bureau, et la fonction était silencieusement morte sur mobile.
+ *
+ *  Une notification persistante survit en outre à la fermeture de l'onglet et
+ *  reste cliquable : c'est le service worker qui la reçoit (`notificationclick`
+ *  dans `app/sw.ts`) et qui ramène l'utilisateur sur sa journée.
+ *
+ *  Le repli `new Notification` reste nécessaire : en développement, Serwist est
+ *  désactivé et il n'y a aucun service worker à interroger. */
+export async function notifier(titre: string, corps: string, tag: string): Promise<boolean> {
   if (etatNotifications() !== 'granted') return false;
+
+  if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
+    try {
+      const enregistrement = await navigator.serviceWorker.ready;
+      await enregistrement.showNotification(titre, options(corps, tag));
+      return true;
+    } catch {
+      /* Pas de service worker prêt : on tente le chemin direct plutôt que de
+         renoncer. */
+    }
+  }
+
   try {
-    /* `tag` dédoublonne : deux onglets ouverts, ou un rappel réarmé, ne
-       produisent qu'une seule notification à l'écran. */
-    new Notification(titre, {
-      ...(corps ? { body: corps } : {}),
-      tag,
-      icon: '/icons/icon-192.png',
-    });
+    new Notification(titre, options(corps, tag));
     return true;
   } catch {
     return false;

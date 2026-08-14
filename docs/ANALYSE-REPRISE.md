@@ -59,8 +59,9 @@ les plus fragiles **et sur les 62 valeurs de référence**, Playwright, CI GitHu
 2. **PWA** — pas de manifeste, pas de service worker, pas d'icônes, pas d'installation.
    *(Porté : manifeste, icônes générées, service worker Serwist, rechargement hors ligne éprouvé.)*
 3. **Notifications réelles** — rappels d'habitude et fin de pomodoro. *(Porté : permission demandée
-   au clic, rappels planifiés tant que l'onglet est ouvert ; la planification par service worker
-   reste à faire.)*
+   au clic, affichage par le service worker, clic qui ramène sur la journée. Les rappels sonnent
+   tant qu'un onglet est ouvert — pourquoi il ne peut pas en être autrement sans serveur :
+   ADR-0008.)*
 4. **Synchronisation / authentification** — produit mono-appareil (choix assumé, phase 6 optionnelle).
 5. **Journalisation d'erreurs** — volontairement absente : voir `DEPLOY.md` § 4. *(Porté :
    journal LOCAL uniquement, vingt entrées, aucun envoi réseau — décision E.)*

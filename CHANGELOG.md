@@ -4,7 +4,7 @@
 
 Le produit tient ce que son interface promettait. Plus un seul interrupteur sans effet, plus
 d'écran blanc possible, une application installable et utilisable **avion activé**.
-`npm run verify` vert, **376 tests unitaires** et **448 tests e2e** verts sur desktop et mobile.
+`npm run verify` vert, **393 tests unitaires** et **448 tests e2e** verts sur desktop et mobile.
 
 ### Tenu
 
@@ -16,7 +16,8 @@ d'écran blanc possible, une application installable et utilisable **avion activ
 - **Notifications réelles.** Permission demandée AU CLIC, jamais au chargement. Un refus ramène
   l'interrupteur à l'arrêt et dit que c'est le navigateur qui refuse — sans cette phrase, on
   re-clique indéfiniment sur un interrupteur qui ne s'allumera plus. Rappels d'habitude aux heures
-  configurées, et fin de phase du minuteur. (5.2)
+  configurées, et fin de phase du minuteur. Elles sont affichées **par le service worker** et le
+  clic ramène sur la journée, dans l'onglet déjà ouvert. (5.2)
 - **Son et vibration.** Bip Web Audio **synthétisé** — aucun fichier, aucune requête. La vibration
   masque son interrupteur là où l'API n'existe pas plutôt que de l'afficher inopérant. (5.3)
 - **Plus aucun interrupteur mort.** `interrupteurs.spec.ts` est générique : il ne connaît pas la
@@ -33,7 +34,7 @@ d'écran blanc possible, une application installable et utilisable **avion activ
   de mise à jour : une nouvelle version attend, l'utilisateur décide. (5.7)
 - **Sauvegarde** : import avec **rapport visible** (lues / gardées / écartées, détail des refus),
   et copie de secours automatique avant import et avant réinitialisation. (5.8)
-- **Cache dérivé ciblé** (corrige B3) et **ouverture en deux temps** du journal. (5.9, 5.10)
+- **Cache dérivé ciblé** (corrige B3) et **ouverture par instantané** du journal. (5.9, 5.10)
 
 ### Corrigé — des promesses que rien ne tenait
 
@@ -57,26 +58,40 @@ d'écran blanc possible, une application installable et utilisable **avion activ
 
 ### Mesuré, et écrit plutôt que caché
 
-Budget de performance du 13 août 2026, build de production, Chromium :
+Budget de performance du 13 août 2026, build de production, Chromium, à la charge du plan —
+**200 habitudes × 3 ans, 219 000 entrées de journal** :
 
-| Compte | Ouverture | Interaction |
+| Mesure | Budget | Obtenu |
 |---|---|---|
-| 40 habitudes × 3 ans (~44 000 entrées) | 0,5 à 1,0 s | 70 à 90 ms |
-| 60 habitudes × 3 ans | 1,0 à 1,7 s | — |
-| 200 habitudes × 3 ans | **2,2 s — hors budget** | — |
+| Ouverture (hors première) | < 1,5 s | **822 ms** |
+| Interaction (clic → DOM) | < 100 ms | **36 ms** |
 
-Le test de charge est calé sur 40 habitudes : le seuil qui tient sans varier d'une exécution à
-l'autre. Le mur est la lecture IndexedDB (~40 000 lignes par seconde), passée **avant** le premier
-rendu ; la sortie connue est une lecture fenêtrée par vue, et elle reste à faire.
+Comment. Lire 219 000 lignes coûtait cinq secondes : IndexedDB en sert ~40 000 par seconde, et ce
+temps passe **avant** le premier rendu. L'ouverture lit désormais un **instantané** — une ligne de
+`meta` portant l'index déjà construit et un filigrane — puis ne relit que ce qui a changé depuis.
+L'index est complet dès le premier écran ; rien n'est approximé, rien n'arrive en retard. La
+première ouverture d'une base importée reste lente, une fois : c'est elle qui construit
+l'instantané.
 
-`@tanstack/react-virtual` n'a **pas** été ajouté : la mesure dit que le coût est dans la lecture et
-le recalcul, pas dans le DOM — quarante cartes se rendent en 25 ms. La virtualisation reste
-inscrite là où elle a sa place, en phase 7.
+Deux corrections sont sorties de la mesure elle-même : les deux cents lignes de la file se
+redessinaient à chaque coche (comparaison par valeurs sur `HabitRow` et `TaskRow` : 180 → 60 ms), et
+le test mesurait sa propre granularité de sondage (la latence se mesure dans la page, du clic à la
+mutation du DOM, comme l'INP).
+
+`@tanstack/react-virtual` n'a **pas** été ajouté : après ces deux corrections, le coût restant est
+dans la lecture et le recalcul, pas dans le DOM. Une dépendance qui ne corrige pas ce qui a été
+mesuré n'a pas sa place ; la virtualisation reste inscrite en phase 7, si une liste devient
+réellement longue.
 
 ### Limites connues, écrites
 
-- Les rappels sont planifiés **dans l'onglet** (`setTimeout`). Onglet fermé, ils ne sonnent pas :
-  le libellé du réglage le dit, plutôt que de le laisser croire.
+- Les rappels sonnent **tant qu'un onglet est ouvert**, et le réglage le dit. Ce n'est pas un
+  raccourci : les quatre voies possibles ont été examinées et écartées, mesures à l'appui —
+  Notification Triggers n'existe plus (`showTrigger` vaut `false` en Chrome 151), Web Push exige un
+  serveur et fait quitter l'appareil à l'abonnement (contre l'ADR-0002), Periodic Background Sync
+  laisse le navigateur choisir l'heure, et un `setTimeout` dans un service worker ne survit pas à
+  son arrêt. La décision et ses raisons sont écrites dans **ADR-0008**, avec la condition qui la
+  rouvrirait.
 - Le précache ne peut pas contenir les documents des onze vues — leur HTML référence des morceaux
   dont l'empreinte change à chaque build. Une route jamais ouverte demande une connexion, une fois.
 - La copie de secours vit dans le même navigateur : elle protège d'un geste malheureux, pas d'une

@@ -26,7 +26,7 @@ export function usePhaseFeedback(): void {
     () =>
       surFinDePhase((e) => {
         const titre = e.phase === 'focus' ? ts('notifFocusEnd') : ts('notifBreakEnd');
-        if (notifications) notifier(titre, '', `phase-${e.phase}`);
+        if (notifications) void notifier(titre, '', `phase-${e.phase}`);
         /* Une pause qui commence sonne plus grave qu'une concentration qui
            reprend : deux signaux distincts, sans regarder l'écran. */
         if (sound) beep(e.phase === 'focus' ? 660 : 880);

@@ -72,3 +72,39 @@ const serwist = new Serwist({
 });
 
 serwist.addEventListeners();
+
+/* Clic sur un rappel — tâche 5.2.
+
+   Les notifications sont affichées par CET enregistrement
+   (`registration.showNotification`, voir `lib/features/reminders/permission.ts`).
+   Elles survivent donc à la fermeture de l'onglet, et c'est ici — et nulle part
+   ailleurs — que le clic peut être reçu.
+
+   On RÉUTILISE un onglet déjà ouvert plutôt que d'en empiler un second : rien
+   n'agace autant qu'une application qui se rouvre en double parce qu'on a
+   cliqué sur son rappel. */
+const CIBLE = '/app/today';
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+
+  event.waitUntil(
+    (async () => {
+      const clients = await self.clients.matchAll({
+        type: 'window',
+        includeUncontrolled: true,
+      });
+
+      for (const client of clients) {
+        if (!client.url.includes('/app')) continue;
+        await client.focus();
+        /* Le rappel parle de la journée : on y emmène, même si l'onglet
+           ouvert était ailleurs. */
+        if ('navigate' in client) await client.navigate(CIBLE).catch(() => undefined);
+        return;
+      }
+
+      await self.clients.openWindow(CIBLE);
+    })(),
+  );
+});

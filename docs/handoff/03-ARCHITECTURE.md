@@ -17,7 +17,7 @@
 | Graphiques | SVG maison (comme le prototype) ou **visx** | MIT | Heatmap et barres sont triviales en SVG, pas de gros lib |
 | i18n | **next-intl** | MIT | Externalise `L`/`EL`/`PL` |
 | Tests | **Vitest** + **Playwright** | MIT / Apache-2.0 | Moteur métier + parcours |
-| PWA | **Serwist** | MIT | Service worker, hors ligne. *Les rappels sont planifiés dans l'onglet (`setTimeout`), pas encore par le service worker — voir CHANGELOG phase 5.* |
+| PWA | **Serwist** | MIT | Service worker, hors ligne, affichage des notifications et clic. *Les rappels sont planifiés dans l'onglet ; pourquoi ils ne peuvent pas l'être ailleurs sans serveur : ADR-0008.* |
 | Sync (opt.) | **Neon PostgreSQL** + **Drizzle** + **Auth.js** | plans gratuits | Postgres serverless, branches de base natives, driver HTTP adapté au serverless |
 | Hébergement | **Vercel Hobby** | gratuit | ou Cloudflare Pages / Netlify free |
 
@@ -200,16 +200,31 @@ le domaine fournit la mécanique, la couche qui écrit décide quand une valeur 
 Aucune persistance — un cache reconstruit en quelques millisecondes n'a pas à survivre au
 rechargement, et un cache persisté est un cache qu'on peut retrouver périmé.
 
-### Ouverture en deux temps du journal — phase 5, tâche 5.10
-`chargerTout(recent = true)` ne lit que les **420 derniers jours** (`N_STREAK`, la fenêtre la plus
-profonde du domaine) par une requête de plage unique sur l'index `date`, puis complète l'index en
-fond. Le drapeau `logIndexComplete` — exposé par la coque en `data-journal` — dit lequel des deux
-états est atteint.
+### Ouverture du journal par instantané — phase 5, tâche 5.10
 
-Budget mesuré le 13 août 2026 (build de production, Chromium) : 40 habitudes × 3 ans → ouverture
-0,5 à 1,0 s, interaction 70 à 90 ms. À 200 habitudes, l'ouverture atteint 2,2 s : le mur est la
-lecture IndexedDB (~40 000 lignes/s), passée avant le premier rendu. La sortie connue est une
-lecture fenêtrée **par vue**, non faite.
+Lire la table `logs` à l'ouverture coûte ~40 000 lignes par seconde : cinq secondes pour trois ans
+de suivi sur deux cents habitudes, **avant** le premier rendu.
+
+`loadLogIndexOuverture()` lit donc **un instantané** — la ligne `meta.logSnapshot`, qui porte
+l'index déjà construit et un **filigrane** (le `updatedAt` le plus récent pris en compte) — puis ne
+relit de la table que `updatedAt >= filigrane`. L'index est COMPLET dès le premier écran.
+
+La table `logs` reste la seule source de vérité. Trois règles, chacune testée
+(`tests/unit/data/log-snapshot.test.ts`) :
+
+1. **filigrane inclusif** — une écriture faite à la milliseconde du filigrane est relue, jamais
+   ratée ; réappliquer est sans effet, rater est une donnée perdue ;
+2. **pierres tombales appliquées** — une entrée effacée depuis est retirée de l'index (G9) ;
+3. **toute suppression DURE oublie l'instantané** (réinitialisation, `logs.clear`,
+   `deleteForHabit`) : un effacement ne laisse aucune trace dans `updatedAt`, donc le delta ne peut
+   pas le voir.
+
+Sans instantané — première ouverture d'une base importée — le repli lit la fenêtre récente
+(420 jours, `N_STREAK`) puis complète en fond et mémorise. Le drapeau `logIndexComplete`, exposé par
+la coque en `data-journal`, dit lequel des deux états est atteint.
+
+Budget mesuré le 13 août 2026 (build de production, Chromium) à **200 habitudes × 3 ans**
+(219 000 entrées) : ouverture **822 ms** (budget 1,5 s), interaction **36 ms** (budget 100 ms).
 
 ### Clés de la table `meta` (application portée)
 
