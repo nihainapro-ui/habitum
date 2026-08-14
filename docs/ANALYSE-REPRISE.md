@@ -49,12 +49,21 @@ les plus fragiles **et sur les 62 valeurs de référence**, Playwright, CI GitHu
 
 ## 3. Manquant
 
+> **État au 13 août 2026 (fin de phase 5).** Les points 1, 2, 3 et 5 sont livrés dans
+> l'application portée — voir `CHANGELOG.md` § Phase 5. Ce tableau décrit le PROTOTYPE, qui reste
+> la référence exécutable et n'a pas vocation à recevoir ces briques.
+
 1. **Onboarding** — l'application démarre sur un jeu de démonstration ; un compte vierge n'est
-   pas un chemin de première ouverture.
+   pas un chemin de première ouverture. *(Porté : parcours en trois écrans, compte vierge par
+   défaut, démonstration en lien secondaire badgé.)*
 2. **PWA** — pas de manifeste, pas de service worker, pas d'icônes, pas d'installation.
-3. **Notifications réelles** — rappels d'habitude et fin de pomodoro.
+   *(Porté : manifeste, icônes générées, service worker Serwist, rechargement hors ligne éprouvé.)*
+3. **Notifications réelles** — rappels d'habitude et fin de pomodoro. *(Porté : permission demandée
+   au clic, rappels planifiés tant que l'onglet est ouvert ; la planification par service worker
+   reste à faire.)*
 4. **Synchronisation / authentification** — produit mono-appareil (choix assumé, phase 6 optionnelle).
-5. **Journalisation d'erreurs** — volontairement absente : voir `DEPLOY.md` § 4.
+5. **Journalisation d'erreurs** — volontairement absente : voir `DEPLOY.md` § 4. *(Porté :
+   journal LOCAL uniquement, vingt entrées, aucun envoi réseau — décision E.)*
 
 ## 4. Problèmes techniques encore présents
 
@@ -64,7 +73,7 @@ les plus fragiles **et sur les 62 valeurs de référence**, Playwright, CI GitHu
 | **B6** | Migrations en cascade artisanales (`if v<2`, `if v<3`…) — testées, mais non versionnées | moyenne | phase 1 — migrations Dexie numérotées |
 | **B7** | Prototype non typé | moyenne | **en cours** : `lib/domain/` est typé strict ; le reste suit le portage |
 | — | Volume de stockage : `localStorage` plafonne (~5 Mo) à plusieurs années d'historique | moyenne | phase 1 — IndexedDB |
-| — | `notif` / `sound` / `vibrate` promettent un comportement inexistant | faible mais **malhonnête** | phase 4 — brancher ou retirer |
+| — | `notif` / `sound` / `vibrate` promettent un comportement inexistant | faible mais **malhonnête** | ✅ phase 5 — branchés dans l'application portée (5.2, 5.3) ; le prototype, lui, garde ses interrupteurs désactivés et motivés |
 | — | `cfg.cloud=false` désactive en réalité la persistance locale : nom trompeur (déjà renommé côté libellé, pas côté clé — et la clé ne doit pas être renommée) | faible | documenter, ne pas renommer |
 
 Aucun bug bloquant connu. Les trois défauts graves trouvés à la passe de finalisation

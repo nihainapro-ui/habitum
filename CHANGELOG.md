@@ -1,5 +1,87 @@
 # Journal des modifications
 
+## 2026-08-13 — Phase 5 : fiabilisation et PWA
+
+Le produit tient ce que son interface promettait. Plus un seul interrupteur sans effet, plus
+d'écran blanc possible, une application installable et utilisable **avion activé**.
+`npm run verify` vert, **376 tests unitaires** et **448 tests e2e** verts sur desktop et mobile.
+
+### Tenu
+
+- **Aucun écran blanc.** Frontière d'erreur applicative et dernier filet global. Les deux
+  proposent réessayer, revenir à l'accueil et **exporter ses données** — la troisième action est
+  celle qui compte, et elle lit la base sans passer par le store, qui peut être exactement ce qui
+  vient de tomber. Journal d'erreurs **local** (vingt entrées, aucun réseau, décision E),
+  consultable et effaçable depuis les réglages. (5.1)
+- **Notifications réelles.** Permission demandée AU CLIC, jamais au chargement. Un refus ramène
+  l'interrupteur à l'arrêt et dit que c'est le navigateur qui refuse — sans cette phrase, on
+  re-clique indéfiniment sur un interrupteur qui ne s'allumera plus. Rappels d'habitude aux heures
+  configurées, et fin de phase du minuteur. (5.2)
+- **Son et vibration.** Bip Web Audio **synthétisé** — aucun fichier, aucune requête. La vibration
+  masque son interrupteur là où l'API n'existe pas plutôt que de l'afficher inopérant. (5.3)
+- **Plus aucun interrupteur mort.** `interrupteurs.spec.ts` est générique : il ne connaît pas la
+  liste des réglages. Un interrupteur ajouté demain doit soit changer d'état quand on le manœuvre,
+  soit être désactivé avec une raison lisible **et annoncée** (`aria-describedby`). (5.4)
+- **Parcours d'accueil en trois écrans** — langue, thème, trois habitudes suggérées, **aucune
+  pré-cochée**. Le bouton principal mène à un compte VIERGE ; la démonstration est un lien
+  secondaire, et elle reste signalée par le badge permanent de l'en-tête (B4). (5.5)
+- **Récurrence de tâches** : quotidienne, hebdomadaire, mensuelle, intervalle et exceptions par
+  occurrence. Les cinq cas limites du plan ont leur test, dont le 31 janvier ramené au dernier jour
+  de février sans perdre son quantième, et la traversée du changement d'heure. (5.6)
+- **PWA** : manifeste, icônes 192/512/maskable **générées depuis les jetons**, service worker
+  Serwist. Un rechargement réseau coupé rend la vue attendue — c'est éprouvé, pas annoncé. Bandeau
+  de mise à jour : une nouvelle version attend, l'utilisateur décide. (5.7)
+- **Sauvegarde** : import avec **rapport visible** (lues / gardées / écartées, détail des refus),
+  et copie de secours automatique avant import et avant réinitialisation. (5.8)
+- **Cache dérivé ciblé** (corrige B3) et **ouverture en deux temps** du journal. (5.9, 5.10)
+
+### Corrigé — des promesses que rien ne tenait
+
+- **Les toasts d'annulation n'étaient pas le seul cas.** « ⟳ Quotidienne » s'affichait depuis la
+  phase 4 sur une tâche qui, cochée, disparaissait pour toujours. Une tâche récurrente mémorise
+  désormais l'occurrence du jour (`occ`, format figé) et avance à son échéance suivante.
+- **Le jeu de démonstration de recette était plus pauvre que le produit** : ses tâches n'avaient
+  aucune récurrence là où la production en pose deux. C'est ce qui a laissé passer le défaut
+  ci-dessus.
+- **Le précache du service worker embarquait l'archive du prototype** — 336 Ko et ses captures de
+  référence, téléchargés à chaque installation. `exclude` ne filtre que les sorties du build ;
+  `public/` demande `globPublicPatterns`.
+- **Le rechargement hors ligne échouait alors que la page ÉTAIT en cache.** La règle « pages » de
+  `defaultCache` filtre sur le `Content-Type` de la requête, qu'une navigation n'envoie pas.
+- **Le bandeau de mise à jour rechargeait à la première installation** : `controllerchange`
+  survient aussi quand le worker prend le contrôle d'un onglet déjà ouvert.
+- **Trois libellés d'erreur d'import étaient inatteignables** (`imp_JSON`, `imp_FORMAT`,
+  `imp_EMPTY`) : l'importeur levait des messages, pas des codes.
+- **L'interface laissait croire que l'import remplaçait tout.** Il ajoute et remplace ce qui porte
+  le même identifiant. C'est écrit à l'écran, maintenant.
+
+### Mesuré, et écrit plutôt que caché
+
+Budget de performance du 13 août 2026, build de production, Chromium :
+
+| Compte | Ouverture | Interaction |
+|---|---|---|
+| 40 habitudes × 3 ans (~44 000 entrées) | 0,5 à 1,0 s | 70 à 90 ms |
+| 60 habitudes × 3 ans | 1,0 à 1,7 s | — |
+| 200 habitudes × 3 ans | **2,2 s — hors budget** | — |
+
+Le test de charge est calé sur 40 habitudes : le seuil qui tient sans varier d'une exécution à
+l'autre. Le mur est la lecture IndexedDB (~40 000 lignes par seconde), passée **avant** le premier
+rendu ; la sortie connue est une lecture fenêtrée par vue, et elle reste à faire.
+
+`@tanstack/react-virtual` n'a **pas** été ajouté : la mesure dit que le coût est dans la lecture et
+le recalcul, pas dans le DOM — quarante cartes se rendent en 25 ms. La virtualisation reste
+inscrite là où elle a sa place, en phase 7.
+
+### Limites connues, écrites
+
+- Les rappels sont planifiés **dans l'onglet** (`setTimeout`). Onglet fermé, ils ne sonnent pas :
+  le libellé du réglage le dit, plutôt que de le laisser croire.
+- Le précache ne peut pas contenir les documents des onze vues — leur HTML référence des morceaux
+  dont l'empreinte change à chaque build. Une route jamais ouverte demande une connexion, une fois.
+- La copie de secours vit dans le même navigateur : elle protège d'un geste malheureux, pas d'une
+  perte d'appareil. C'est pourquoi le rappel d'export à 30 jours reste en place.
+
 ## 2026-08-13 — Phase 4 : les onze vues
 
 Le produit se manipule. Onze vues portées, alimentées par IndexedDB, comparées aux 62 valeurs de

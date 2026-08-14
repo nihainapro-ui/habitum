@@ -127,14 +127,21 @@ création, suppression, import de fichier JSON.
 ## 12. `settings` — Réglages
 **Contenu :** thème (`neural` / `plasma` / `clinical`), langue (FR / EN), début de semaine
 (lundi / dimanche), interrupteurs `notif` · `sound` · `vibrate` · `confetti`,
-export JSON, réinitialisation avec confirmation en deux temps.
+export JSON, **import avec rapport visible**, **copie de secours automatique**,
+**journal d'erreurs local**, réinitialisation avec confirmation en deux temps.
 
 > **Corrigé au portage (phase 4).** `cloud` n'existe plus : il ne gouvernait aucun nuage, et
 > ce n'est même pas un interrupteur — proposer de désactiver l'enregistrement local reviendrait
 > à proposer de perdre ses données. Une ligne d'état dit désormais où elles vivent.
-> `notif`, `sound` et `vibrate` restent **désactivés et motivés** jusqu'à ce que le plan 6 les
-> branche. La réinitialisation repart d'un **compte vierge**, et non du jeu de démonstration
-> comme dans le prototype (B4).
+> La réinitialisation repart d'un **compte vierge**, et non du jeu de démonstration comme dans
+> le prototype (B4).
+>
+> **Phase 5.** `notif`, `sound` et `vibrate` sont branchés. La permission de notifier se demande
+> au clic sur l'interrupteur, jamais au chargement ; un refus ramène l'interrupteur à l'arrêt en
+> disant que c'est le navigateur qui refuse. L'interrupteur de vibration est **masqué** là où
+> l'API n'existe pas (iOS Safari, ordinateurs de bureau) — un interrupteur affiché puis
+> inopérant est pire qu'un interrupteur absent. Aucun réglage n'attend plus « bientôt » :
+> `tests/e2e/interrupteurs.spec.ts` l'impose à tout interrupteur, présent ou futur.
 
 ---
 

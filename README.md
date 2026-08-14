@@ -30,25 +30,28 @@ Le prototype, lui, n'a besoin de rien : ouvrir
 | `npm test` | moteur métier (Vitest) |
 | `npm run test:e2e` | parcours (Playwright) |
 | `npm run check:tokens` | jetons de design conformes au prototype |
-| **`npm run verify`** | **les sept contrôles ci-dessus — à passer avant toute livraison** |
+| `npm run check:icons` | icônes d'installation conformes aux jetons |
+| `npm run icons` | régénère `public/icons/` et `app/apple-icon.png` |
+| **`npm run verify`** | **les huit contrôles ci-dessus — à passer avant toute livraison** |
 
 ## Où est quoi
 
 | Dossier | Rôle |
 |---|---|
-| `app/` | routes App Router — une par vue (11) |
-| `components/` | `ui/` (12 primitives), `shell/` (coque), `command/` (palette ⌘K), `settings/` |
+| `app/` | routes App Router — une par vue (11), `onboarding/`, `manifest.ts`, `sw.ts` (service worker) |
+| `components/` | `ui/` (12 primitives), `shell/` (coque), `command/` (palette ⌘K), `settings/`, `onboarding/` |
 | `lib/domain/` | **moteur métier pur** — jamais de React, jamais de Next, 100 % testable |
 | `lib/data/` | persistance : schéma Dexie, dépôts typés, import/export, amorces |
 | `lib/store/` | état Zustand en tranches — écrit aux dépôts, jamais à la base |
+| `lib/features/` | fonctions branchées sur le navigateur : rappels, retour sonore, sauvegarde |
 | `lib/keyboard/` | raccourcis globaux et piège de focus |
 | `lib/storage/` | clés persistées figées (`habitum.state`, `DB_NAME`…) |
 | `i18n/` | next-intl : langue par cookie, lue côté client — pas de segment d'URL, pas de rendu dynamique |
-| `messages/` | `fr.json` / `en.json` — 341 clés, symétrie vérifiée en CI |
+| `messages/` | `fr.json` / `en.json` — 462 clés, symétrie vérifiée en CI |
 | `styles/` | `globals.css` + `tokens.css` (généré) + `theme.css` (pont Tailwind) |
 | `types/` | alias public des types du domaine (`@/types`) |
 | `tests/` | `unit/` Vitest · `e2e/` Playwright · `fixtures/golden.json` |
-| `scripts/` | outillage local : contrôle des libellés, **génération des jetons** |
+| `scripts/` | outillage local : contrôle des libellés, **génération des jetons et des icônes** |
 | `public/prototype/` | **le prototype, servi tel quel** — référence exécutable |
 | `docs/` | analyse, passation, décisions (ADR), spécifications, captures |
 | `.claude/` | permissions et commandes pour Claude Code |

@@ -17,7 +17,7 @@
 | Graphiques | SVG maison (comme le prototype) ou **visx** | MIT | Heatmap et barres sont triviales en SVG, pas de gros lib |
 | i18n | **next-intl** | MIT | Externalise `L`/`EL`/`PL` |
 | Tests | **Vitest** + **Playwright** | MIT / Apache-2.0 | Moteur métier + parcours |
-| PWA | **Serwist** | MIT | Service worker, offline, notifications planifiées |
+| PWA | **Serwist** | MIT | Service worker, hors ligne. *Les rappels sont planifiés dans l'onglet (`setTimeout`), pas encore par le service worker — voir CHANGELOG phase 5.* |
 | Sync (opt.) | **Neon PostgreSQL** + **Drizzle** + **Auth.js** | plans gratuits | Postgres serverless, branches de base natives, driver HTTP adapté au serverless |
 | Hébergement | **Vercel Hobby** | gratuit | ou Cloudflare Pages / Netlify free |
 
@@ -190,11 +190,44 @@ fin de phase : détectée par comparaison au seuil, pas par accumulation de tick
 pomodoro : focus 25' ×4, pause 5', pause longue 15' ; crédit auto de l'habitude liée à la fin
 ```
 
-### Cache dérivé (remplace `memo()`)
+### Cache dérivé (remplace `memo()`) — livré en phase 5, tâche 5.9
 Le prototype invalide **tout** le cache dès qu'une habitude ou une entrée de journal change.
-Cible : cache par clé `(habitId, métrique, fenêtre)` invalidé uniquement pour l'habitude touchée,
-et statistiques journalières invalidées seulement pour la date touchée. À stocker en mémoire
-(Map) + persistance optionnelle dans la table `meta`.
+
+Livré : `lib/domain/cache.ts` — cache en mémoire par clé `(habitId, métrique, fenêtre)`,
+invalidé **uniquement** pour l'habitude touchée (`invalidateHabit`) ou pour les fenêtres qui
+contiennent la date touchée (`invalidateDate`). L'instance unique vit dans `lib/store/derived.ts` :
+le domaine fournit la mécanique, la couche qui écrit décide quand une valeur cesse d'être vraie.
+Aucune persistance — un cache reconstruit en quelques millisecondes n'a pas à survivre au
+rechargement, et un cache persisté est un cache qu'on peut retrouver périmé.
+
+### Ouverture en deux temps du journal — phase 5, tâche 5.10
+`chargerTout(recent = true)` ne lit que les **420 derniers jours** (`N_STREAK`, la fenêtre la plus
+profonde du domaine) par une requête de plage unique sur l'index `date`, puis complète l'index en
+fond. Le drapeau `logIndexComplete` — exposé par la coque en `data-journal` — dit lequel des deux
+états est atteint.
+
+Budget mesuré le 13 août 2026 (build de production, Chromium) : 40 habitudes × 3 ans → ouverture
+0,5 à 1,0 s, interaction 70 à 90 ms. À 200 habitudes, l'ouverture atteint 2,2 s : le mur est la
+lecture IndexedDB (~40 000 lignes/s), passée avant le premier rendu. La sortie connue est une
+lecture fenêtrée **par vue**, non faite.
+
+### Clés de la table `meta` (application portée)
+
+Table clé/valeur de la base Dexie. `occ` reprend le nom et le format du prototype (G1) ; les
+autres sont propres à l'application portée et documentées ici plutôt que devinées.
+
+| Clé | Contenu | Posée par |
+|---|---|---|
+| `settings` | préférences (`lang`, `theme`, `weekStart`, `notifications`, `sound`, `vibrate`, `confetti`, `customCursor`) | réglages |
+| `demo` | le jeu de démonstration a été chargé — l'en-tête l'affiche en permanence (B4) | `seedDemo()` |
+| `seeded` | amorçage effectué ; rend `seedEmpty()` idempotent | `seedEmpty()` |
+| `onboarded` | parcours d'accueil franchi ; absent = première ouverture, l'application renvoie à `/onboarding` (5.5) | `completeOnboarding()` |
+| `activeProfile` | profil courant (`pid` du prototype, renommé car nouvelle table) | réglages / profils |
+| `timer` | état du minuteur : `startedAt` + `accumulatedMs` (B5) | tranche minuteur |
+| `occ` | occurrences de tâches récurrentes accomplies, `{"<taskId>\|YYYY-MM-DD": 1}` — **nom et format figés** (5.6) | bascule de tâche |
+| `lastExport` / `nagDismissed` | date du dernier export et refus du rappel de sauvegarde (D8) | export / rappel |
+| `backup` | copie de secours `{at, payload}` prise avant import et avant réinitialisation (5.8) | `construireCopie()` |
+| `errors` | vingt dernières erreurs attrapées, **local uniquement**, lisibles dans les réglages (5.1) | `lib/logger.ts` |
 
 ## 5. Migration des données existantes
 
@@ -236,7 +269,7 @@ quel. Aucune migration nécessaire.
 |---|---|
 | `ov` | **o**ver­rides = le journal réel. `{"<habitId>\|YYYY-MM-DD": valeur}`. Clé de voûte de toutes les métriques |
 | `obj` | liste des **obj**ectifs (`cumul`, `milestones`, `reduce`) |
-| `occ` | **occ**urrences de tâches récurrentes cochées : `{"<taskId>\|YYYY-MM-DD": 1}` |
+| `occ` | **occ**urrences de tâches récurrentes cochées : `{"<taskId>\|YYYY-MM-DD": 1}`. Repris tel quel dans la table `meta` de l'application (phase 5, tâche 5.6) et dans l'export |
 | `tt` | **t**imer **t**arget : cible de la session en cours, `{k:'h'\|'t'\|'', id}` |
 | `mat` | drapeau : l'historique de démonstration a déjà été matérialisé (`materialize()`) |
 | `demo` | `1` = données de démonstration, `0` = compte importé (A6) |
