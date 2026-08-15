@@ -102,6 +102,13 @@ Ordre imposé par les dépendances (chaque lot est livrable et testable) :
 
 ## Phase 6 — Synchronisation optionnelle et comptes (2–3 j) · P2
 
+> **Attention, deux numérotations coexistent.** La « phase 6 » de CE document est la
+> synchronisation, et elle n'est **pas faite**. La « phase 6 » du programme d'exécution
+> (`docs/superpowers/plans/2026-08-06-habitum-phases-execution.md`), livrée le 15 août 2026, est
+> la **vitrine et le SEO**. Le programme est le plan effectivement suivi ; ce document reste la
+> feuille de route d'origine du dossier de passation. Quand le CHANGELOG dit « phase 6 », il
+> parle du programme.
+
 Reste **facultatif** : l'app fonctionne à 100 % en local. Socle gratuit — **Neon**, décision
 projet du 6 août 2026 ; les versions antérieures de ce document prescrivaient Supabase :
 

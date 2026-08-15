@@ -1,0 +1,663 @@
+/* --------------------------------------------------------------------------
+   Habitum — feuille de la VITRINE. Système Modernist, décision B1.
+
+   Elle n'est importée que par les deux layouts racines du groupe « site »
+   (`app/(site-fr)/layout.tsx`, `app/(site-en)/layout.tsx`). L'application a sa
+   propre feuille — `styles/globals.css` — et les deux ne se croisent jamais :
+   les groupes de routes ont des layouts RACINES distincts, donc des documents
+   distincts. C'est plus fort qu'une portée CSS : rien du registre sombre n'est
+   même téléchargé sur la vitrine.
+
+   Les jetons viennent de `modernist-tokens.css`, extrait du système livré dans
+   l'archive (`npm run check:modernist`). Ce fichier-ci ne contient que la
+   couche de composants, écrite à la main — et deux ÉCARTS de contraste, tous
+   deux mesurés :
+
+   1. `--color-accent` (#ec3013) sur le fond (#f3f2f2) donne 3,74:1. C'est
+      assez pour un filet, une icône ou un titre d'affiche, pas pour du texte
+      courant : le système le dit lui-même. Tout texte porté par un aplat rouge
+      passe donc par `--fond-accent` = `--color-accent-700` (#ae1800), soit
+      7,18:1 avec du blanc.
+   2. `--color-neutral-600` (#7d7979) donne 3,80:1 : insuffisant. Le texte
+      atténué utilise `--color-neutral-700` (#605d5d), 5,73:1.
+
+   Sans ces deux écarts, le critère « Accessibilité ≥ 95 » de la tâche 7.7 est
+   hors d'atteinte, et l'audit WCAG AA de la phase 7 le relèverait de toute
+   façon. Mieux vaut le corriger ici, une fois, que l'expliquer deux fois.
+   -------------------------------------------------------------------------- */
+
+@import './modernist-tokens.css';
+
+:root {
+  /* Aplat rouge portant du texte — voir l'écart 1 ci-dessus. */
+  --fond-accent: var(--color-accent-700);
+  /* Texte atténué — voir l'écart 2. */
+  --texte-attenue: var(--color-neutral-700);
+
+  --space-5: 20px;
+  --space-7: 28px;
+  --space-9: 40px;
+  --space-10: 48px;
+
+  --largeur-page: 1280px;
+  /* Mesure de lecture : au-delà, l'œil perd la ligne suivante. */
+  --mesure: 68ch;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Le système fixe le corps à 15 px. La vitrine se lit une fois, souvent sur
+   téléphone : 16 px, et aucun zoom forcé au focus d'un champ sous iOS. */
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-heading);
+  font-weight: var(--font-heading-weight);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  margin: 0 0 var(--space-3);
+  /* Rien ne déborde : un mot long tient dans sa colonne à 390 px. */
+  overflow-wrap: break-word;
+}
+
+p,
+li {
+  margin: 0 0 var(--space-3);
+  overflow-wrap: break-word;
+}
+
+ul,
+ol {
+  margin: 0 0 var(--space-4);
+  padding-left: var(--space-5);
+}
+
+a {
+  color: var(--fond-accent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+a:hover {
+  color: var(--color-accent);
+}
+
+:focus {
+  outline: none;
+}
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--color-accent) 30%, transparent);
+}
+
+img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+/* — ossature ------------------------------------------------------------- */
+
+.page {
+  max-width: var(--largeur-page);
+  margin: 0 auto;
+  padding: 0 var(--space-4);
+}
+
+.saut {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  background: var(--color-bg);
+  color: var(--color-text);
+  padding: var(--space-3);
+  z-index: 10;
+}
+.saut:focus {
+  left: var(--space-4);
+  top: var(--space-2);
+}
+
+.section {
+  padding: var(--space-8) 0;
+  border-bottom: 2px solid var(--color-divider);
+}
+.section:last-of-type {
+  border-bottom: 0;
+}
+
+.kicker {
+  margin: 0 0 var(--space-3);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--fond-accent);
+}
+
+.sur-titre {
+  margin: 0 0 var(--space-3);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--texte-attenue);
+}
+
+.attenue {
+  color: var(--texte-attenue);
+}
+
+.mesure {
+  max-width: var(--mesure);
+}
+
+.hr {
+  height: 2px;
+  border: 0;
+  margin: var(--space-6) 0;
+  background: var(--color-divider);
+}
+
+/* — en-tête et pied ------------------------------------------------------ */
+
+.entete {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+  row-gap: var(--space-2);
+  padding: var(--space-4) 0;
+  border-bottom: 2px solid var(--color-divider);
+}
+
+.marque {
+  font-family: var(--font-heading);
+  font-size: 20px;
+  font-weight: var(--font-heading-weight);
+  letter-spacing: -0.02em;
+  color: var(--color-text);
+  text-decoration: none;
+}
+
+.entete-signature {
+  display: none;
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--texte-attenue);
+  white-space: nowrap;
+}
+
+.entete-espace {
+  flex: 1;
+}
+
+.entete nav {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+  font-size: 14px;
+}
+
+.entete nav a {
+  color: var(--color-text);
+  text-decoration: none;
+  /* Cible tactile : 44 px de haut, sans casser l'alignement sur la ligne de
+     base de la marque. */
+  padding: 11px 0;
+}
+.entete nav a:hover,
+.entete nav a[aria-current='page'] {
+  color: var(--fond-accent);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.pied {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3) var(--space-6);
+  padding: var(--space-6) 0 var(--space-8);
+  border-top: 2px solid var(--color-divider);
+  font-size: 13px;
+  color: var(--texte-attenue);
+}
+.pied a {
+  color: var(--texte-attenue);
+  padding: 11px 0;
+}
+.pied a:hover {
+  color: var(--fond-accent);
+}
+
+/* — accroche ------------------------------------------------------------- */
+
+.accroche {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-6);
+  padding: var(--space-8) 0;
+  border-bottom: 2px solid var(--color-divider);
+}
+
+.accroche h1 {
+  font-size: clamp(34px, 7vw, 64px);
+  line-height: 1.02;
+  letter-spacing: -0.03em;
+  max-width: 22ch;
+  margin: 0;
+}
+
+.accroche-texte {
+  margin: var(--space-5) 0 0;
+  font-size: clamp(16px, 2.2vw, 18px);
+  line-height: 1.6;
+  max-width: 52ch;
+  color: var(--color-text);
+}
+
+.accroche-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-top: var(--space-6);
+}
+
+.chiffres {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  align-self: start;
+  border-top: 2px solid var(--color-divider);
+  padding-top: var(--space-6);
+}
+
+.chiffre + .chiffre {
+  border-top: 1px solid var(--color-neutral-300);
+  padding-top: var(--space-5);
+}
+
+.chiffre b {
+  display: block;
+  font-family: var(--font-heading);
+  font-size: clamp(34px, 6vw, 44px);
+  font-weight: var(--font-heading-weight);
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+.chiffre span {
+  display: block;
+  margin-top: var(--space-2);
+  font-size: 14px;
+  color: var(--texte-attenue);
+}
+
+/* — grilles -------------------------------------------------------------- */
+
+.colonnes {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  border-bottom: 2px solid var(--color-divider);
+}
+
+.colonnes > * {
+  padding: var(--space-6) 0;
+  border-bottom: 1px solid var(--color-neutral-300);
+}
+.colonnes > *:last-child {
+  border-bottom: 0;
+}
+
+.colonnes h2 {
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin: 0 0 var(--space-3);
+}
+
+.colonnes p {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.duo {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-6);
+}
+
+/* — cartes --------------------------------------------------------------- */
+
+.carte {
+  background: var(--color-surface);
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius-md);
+  padding: var(--space-5);
+}
+
+.carte h3 {
+  font-size: 20px;
+  margin: 0 0 var(--space-2);
+}
+
+.carte p:last-child {
+  margin-bottom: 0;
+}
+
+.carte-liste {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-4);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.carte-liste > li {
+  margin: 0;
+}
+
+.carte-lien {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+  height: 100%;
+}
+.carte-lien:hover {
+  border-color: var(--color-accent);
+  background: var(--color-accent-100);
+}
+.carte-lien h3 {
+  color: var(--fond-accent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* — boutons -------------------------------------------------------------- */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: var(--space-3) var(--space-5);
+  font-family: var(--font-heading);
+  font-weight: var(--font-heading-weight);
+  font-size: 15px;
+  line-height: 1.2;
+  text-decoration: none;
+  border: 2px solid transparent;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+}
+
+.btn-primaire {
+  background: var(--fond-accent);
+  color: #fff;
+}
+.btn-primaire:hover {
+  background: var(--color-accent-800);
+  color: #fff;
+}
+
+.btn-secondaire {
+  border-color: var(--color-divider);
+  color: var(--color-text);
+}
+.btn-secondaire:hover {
+  background: color-mix(in srgb, var(--color-text) 7%, transparent);
+  color: var(--color-text);
+}
+
+/* — tableau -------------------------------------------------------------- */
+
+.cadre-tableau {
+  /* Un tableau de comparaison ne rétrécit pas indéfiniment : il défile DANS
+     son cadre, et c'est le cadre qui empêche la page de déborder. */
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.tableau {
+  width: 100%;
+  min-width: 34rem;
+  border-collapse: collapse;
+  font-size: 15px;
+}
+
+.tableau caption {
+  text-align: left;
+  font-size: 13px;
+  color: var(--texte-attenue);
+  padding-bottom: var(--space-2);
+}
+
+.tableau th,
+.tableau td {
+  text-align: left;
+  vertical-align: top;
+  padding: var(--space-3) var(--space-4) var(--space-3) 0;
+  border-bottom: 1px solid var(--color-neutral-300);
+}
+
+.tableau thead th {
+  font-family: var(--font-heading);
+  font-weight: var(--font-heading-weight);
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border-bottom: 2px solid var(--color-divider);
+}
+
+/* — questions fréquentes ------------------------------------------------- */
+
+.faq {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0;
+  margin: 0;
+}
+
+.faq > div {
+  padding: var(--space-5) 0;
+  border-bottom: 1px solid var(--color-neutral-300);
+}
+
+.faq h3 {
+  font-size: 18px;
+  margin: 0 0 var(--space-2);
+}
+
+.faq p {
+  margin: 0;
+  max-width: var(--mesure);
+}
+
+/* — affiche -------------------------------------------------------------- */
+
+.affiche {
+  background: var(--fond-accent);
+  color: #fff;
+  padding: var(--space-8) var(--space-6);
+  margin: var(--space-8) 0;
+}
+
+.affiche .kicker {
+  color: #fff;
+}
+
+.affiche h2 {
+  margin: 0;
+  font-size: clamp(30px, 5.4vw, 52px);
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+  max-width: 26ch;
+}
+
+.affiche p {
+  margin: var(--space-5) 0 var(--space-6);
+  font-size: 16px;
+  max-width: 56ch;
+}
+
+.affiche .btn-primaire {
+  background: #fff;
+  color: var(--fond-accent);
+}
+.affiche .btn-primaire:hover {
+  background: var(--color-accent-100);
+  color: var(--fond-accent);
+}
+
+/* — article de fond ------------------------------------------------------ */
+
+.fil {
+  padding: var(--space-4) 0 0;
+  font-size: 13px;
+  color: var(--texte-attenue);
+}
+.fil ol {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.fil li {
+  margin: 0;
+}
+.fil li + li::before {
+  content: '/';
+  padding-right: var(--space-2);
+}
+
+.article {
+  padding: var(--space-6) 0 var(--space-8);
+}
+
+.article h1 {
+  font-size: clamp(30px, 5.2vw, 46px);
+  max-width: 24ch;
+}
+
+.article h2 {
+  font-size: clamp(22px, 3.4vw, 30px);
+  margin: var(--space-8) 0 var(--space-3);
+}
+
+.article > p,
+.article > ul,
+.article > ol {
+  max-width: var(--mesure);
+  font-size: 17px;
+}
+
+.article-chapeau {
+  font-size: 19px !important;
+  line-height: 1.55;
+  color: var(--color-text);
+}
+
+.article-date {
+  margin: 0 0 var(--space-6);
+  font-size: 13px;
+  color: var(--texte-attenue);
+}
+
+.article-suite {
+  margin-top: var(--space-8);
+  padding-top: var(--space-6);
+  border-top: 2px solid var(--color-divider);
+}
+
+/* — paliers -------------------------------------------------------------- */
+
+@media (min-width: 768px) {
+  .page {
+    padding: 0 var(--space-6);
+  }
+
+  .entete-signature {
+    display: block;
+  }
+
+  .duo {
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    gap: var(--space-8);
+  }
+
+  .carte-liste {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr));
+  }
+
+  .affiche {
+    padding: var(--space-9) var(--space-8);
+  }
+}
+
+@media (min-width: 1060px) {
+  .accroche {
+    grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+    gap: var(--space-8);
+    padding: var(--space-9) 0;
+  }
+
+  .chiffres {
+    border-top: 0;
+    border-left: 2px solid var(--color-divider);
+    padding-top: 0;
+    padding-left: var(--space-6);
+  }
+
+  .colonnes {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .colonnes > * {
+    padding: var(--space-7) var(--space-6);
+    border-bottom: 0;
+    border-right: 1px solid var(--color-neutral-300);
+  }
+  .colonnes > *:first-child {
+    padding-left: 0;
+  }
+  .colonnes > *:last-child {
+    padding-right: 0;
+    border-right: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

@@ -21,6 +21,21 @@ export const spaceGrotesk = localFont({
   ],
 });
 
+/* Archivo — VITRINE UNIQUEMENT (tâche 7.1, décision B1).
+ *
+ * Elle n'est déclarée sur aucun layout applicatif : l'application est sombre et
+ * reste en Space Grotesk. Un seul poids par rôle, trois fichiers, parce qu'une
+ * page de vitrine doit se peindre avant que le visiteur ait décidé de rester. */
+export const archivo = localFont({
+  variable: '--font-archivo',
+  display: 'swap',
+  src: [
+    { path: '../public/fonts/Archivo-Regular.woff2', weight: '400', style: 'normal' },
+    { path: '../public/fonts/Archivo-SemiBold.woff2', weight: '600', style: 'normal' },
+    { path: '../public/fonts/Archivo-ExtraBold.woff2', weight: '800', style: 'normal' },
+  ],
+});
+
 export const jetbrainsMono = localFont({
   variable: '--font-jetbrains-mono',
   display: 'swap',

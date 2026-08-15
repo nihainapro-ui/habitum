@@ -86,10 +86,10 @@ const config = [
        étaient écrits en français dans le JSX. Cette règle rend la rechute
        impossible.
 
-       `app/dev/**` est exclu : la galerie des primitives n'est pas un écran
-       produit, ses libellés sont des noms de composants. */
+       `app/(app)/dev/**` est exclu : la galerie des primitives n'est pas un
+       écran produit, ses libellés sont des noms de composants. */
     files: ['app/**/*.tsx', 'components/**/*.tsx'],
-    ignores: ['app/dev/**'],
+    ignores: ['app/(app)/dev/**'],
     rules: {
       'react/jsx-no-literals': [
         'error',

@@ -26,23 +26,41 @@ Aucune de ces briques n'exige de plan payant pour un produit mono-utilisateur.
 ## 2. Arborescence proposée
 
 ```
-app/                     routes (App Router) : /, /today, /habits, /tasks, /goals,
-                         /calendar, /stats, /timer, /notes, /profile, /settings
+app/                     TROIS groupes de routes, TROIS layouts racines (ADR-0007)
+  (app)/                 l'application, sombre — /app, /app/today … /app/settings,
+                         /onboarding, /dev/ui
+  (site-fr)/             la vitrine française, Modernist — /, /fonctionnalites,
+                         /comparatifs/…, /guides/…, /confidentialite, /mentions-legales
+  (site-en)/en/          la même vitrine en anglais, sous /en
+  manifest.ts  robots.ts  sitemap.ts  sw.ts  global-error.tsx
 lib/
   domain/                logique pure, sans React, 100 % testée
     types.ts  date.ts  schedule.ts  metrics.ts  goals.ts  recurrence.ts  cache.ts
   data/                  persistance
     db.ts  migrations.ts  seed.ts  repositories/  import.ts  log-index.ts
   store/                 Zustand : habits, tasks, goals, timer, notes, settings, ui, undo
+  site/                  vitrine : routes.ts (table des URL), textes.ts, metadonnees.ts,
+                         og.tsx, contenu/ (comparatifs, guides, pages légales)
+  seo/                   jsonld.ts — SoftwareApplication, FAQPage, BreadcrumbList, Article
 components/
   ui/                    primitives sans métier (Panel, Chip, Switch, Sheet…)
   shell/                 coque applicative
+  site/                  coque de vitrine, rendu des blocs, pages partagées
   <domaine>/             composants par vue (habits/, calendar/, stats/…)
-messages/                fr.json, en.json
-styles/                  tokens.css (GÉNÉRÉ), globals.css
+messages/                fr.json, en.json — dont le préfixe `site.` pour la vitrine
+styles/                  application : tokens.css (GÉNÉRÉ), globals.css, theme.css
+                         vitrine    : modernist-tokens.css (GÉNÉRÉ), modernist.css
 tests/                   unit/  e2e/  fixtures/
-drizzle/                 migrations/ (phase 6, optionnel — Neon)
+drizzle/                 migrations/ (synchronisation, optionnelle — Neon)
 ```
+
+> **Pourquoi trois layouts racines et non un groupe imbriqué.** Le layout de
+> l'application pose `lang="fr"`, la feuille sombre et `AppShell` — qui ouvre la
+> base et arme les rappels. La vitrine n'a besoin d'aucun des trois, et `/en` a
+> besoin de `lang="en"`, qui ne se décide qu'au layout racine. Les trois groupes
+> sont donc des documents distincts : la vitrine ne télécharge ni Space Grotesk
+> ni les jetons de thème, l'application ne télécharge pas Archivo. Détail et
+> conséquences : ADR-0007.
 
 > **Le dépôt n'a pas de dossier `src/`.** Les chemins `src/…` des versions
 > antérieures de ce document et de `06-BACKLOG.md` étaient faux : corrigés le

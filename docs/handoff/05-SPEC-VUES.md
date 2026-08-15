@@ -158,3 +158,25 @@ export JSON, **import avec rapport visible**, **copie de secours automatique**,
 | **États vides** | Présents sur les 11 vues (lot 2, D1) |
 | **Bandeau de rappel d'export** | En tête du tableau de bord au-delà de 30 jours sans export ; refusable, ne revient pas (lot 5, D8) |
 | **Région annoncée** | `aria-live="polite"` invisible portant le nom de la vue courante (lot 5, D3) |
+
+---
+
+## Hors application — la vitrine (phase 6)
+
+Ce document spécifie les **onze vues de l'application**. La vitrine publique n'en fait pas
+partie et n'y entre pas : c'est un autre produit, dans un autre registre visuel, servi par un
+autre layout racine. Elle est spécifiée ailleurs, et voici où.
+
+| Question | Où c'est écrit |
+|---|---|
+| Quelles URL, dans quelle langue | `lib/site/routes.ts` — table unique, source du plan du site et des `hreflang` |
+| Pourquoi trois layouts racines | `docs/adr/0007-application-sous-app.md` |
+| Quel registre visuel, et pourquoi il ne se mélange pas | `docs/handoff/07-DECISION-B1.md`, `styles/modernist.css` |
+| Quels libellés | `messages/*.json`, préfixe `site.` — symétrie imposée par `npm run check:messages` |
+| Quels articles de fond, et leur règle éditoriale | `lib/site/contenu/` — longueur, dates et sources vérifiées par `tests/unit/site-contenu.test.ts` |
+| Ce qui est promis à l'utilisateur, noir sur blanc | `/confidentialite` et `/mentions-legales`, engendrées depuis `lib/site/contenu/legal.ts` |
+
+**Une seule règle traverse les deux mondes** : ce que la vitrine affirme, l'application doit le
+tenir. « Aucune requête ne part » est écrit sur la page d'accueil *et* vérifié par
+`tests/e2e/fonts.spec.ts` et `tests/e2e/site.spec.ts`. Une promesse ajoutée à la vitrine sans le
+test qui la tient est une régression, pas une nouveauté.

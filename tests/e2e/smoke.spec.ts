@@ -21,12 +21,19 @@ test('les onze vues répondent', async ({ page }) => {
   }
 });
 
-/* ADR-0007 — la racine appartient à la vitrine (phase 6). Tant qu'elle n'existe
-   pas, elle mène à l'application, par une redirection TEMPORAIRE : un 308 mis en
-   cache par les navigateurs serait à déloger client par client. */
-test('la racine mène à l’application, temporairement', async ({ page }) => {
-  await page.goto('/');
-  await expect(page).toHaveURL(/\/app$/);
+/* ADR-0007 — la racine appartient à la vitrine, et depuis la phase 6 elle la
+   SERT. La redirection temporaire qui tenait la place a disparu ; ce test dit
+   maintenant l'inverse de ce qu'il disait, et c'est le résultat attendu.
+
+   Il reste ici, plutôt que d'être supprimé, parce qu'un pas-de-redirection se
+   casse aussi silencieusement qu'une redirection : une règle réintroduite dans
+   `next.config.mjs` renverrait la vitrine — le seul actif indexable du projet —
+   vers une application `noindex`, sans qu'aucun autre test ne s'en aperçoive. */
+test('la racine sert la vitrine, et ne redirige plus', async ({ page }) => {
+  const res = await page.goto('/');
+  expect(res?.status()).toBe(200);
+  await expect(page).toHaveURL(/\/$/);
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
 });
 
 test('le prototype reste servi tel quel — et DÉMARRE', async ({ page }) => {

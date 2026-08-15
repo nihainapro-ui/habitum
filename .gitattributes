@@ -19,4 +19,5 @@ public/prototype/** -text
 
 # Fichiers générés : diff bruité, à replier dans les revues.
 package-lock.json      linguist-generated=true -diff
-styles/tokens.css      linguist-generated=true
+styles/tokens.css          linguist-generated=true
+styles/modernist-tokens.css linguist-generated=true

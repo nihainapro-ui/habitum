@@ -52,6 +52,27 @@ test('la tolérance script-src est celle attendue, et rien de plus', async ({ re
   expect(scriptSrc).toBe("script-src 'self' 'unsafe-inline'");
 });
 
+/* Les COMMENTAIRES sont retirés avant la recherche — précision ajoutée à la
+   phase 6, et elle n'affaiblit pas la règle.
+
+   Le motif interdit est celui que la documentation de Next recommande pour le
+   JSON-LD. La vitrine s'en passe (`lib/seo/jsonld.ts`), et trois fichiers
+   expliquent en commentaire POURQUOI et comment. Sans ce filtrage, le test
+   échouait sur sa propre documentation : il interdisait d'écrire le nom de ce
+   qu'il interdit, et la seule façon de le satisfaire aurait été de retirer
+   l'explication — c'est-à-dire de rendre la règle plus facile à casser par la
+   prochaine personne qui ne saurait plus pourquoi elle existe.
+
+   Seuls sont retirés les blocs `/* ... *\/` et les lignes ENTIÈREMENT
+   commentées : jamais une fin de ligne, pour ne pas amputer du code réel
+   contenant « // » dans une chaîne. */
+const sansCommentaires = (source: string): string =>
+  source
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .split('\n')
+    .filter((ligne) => !/^\s*(\/\/|\*)/.test(ligne))
+    .join('\n');
+
 test('aucun dangerouslySetInnerHTML dans le code applicatif', async () => {
   const { readdirSync, readFileSync, statSync } = await import('node:fs');
   const { join } = await import('node:path');
@@ -62,7 +83,7 @@ test('aucun dangerouslySetInnerHTML dans le code applicatif', async () => {
     });
   const fautifs = ['app', 'components', 'lib']
     .flatMap(parcourir)
-    .filter((p) => readFileSync(p, 'utf8').includes('dangerouslySetInnerHTML'));
+    .filter((p) => sansCommentaires(readFileSync(p, 'utf8')).includes('dangerouslySetInnerHTML'));
   expect(fautifs, `dangerouslySetInnerHTML trouvé dans : ${fautifs.join(', ')}`).toEqual([]);
 });
 

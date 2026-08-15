@@ -107,19 +107,30 @@ const SECURITE = [
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+
+  /* Tâche 7.1 — active `app/global-not-found.tsx`.
+
+     Trois layouts racines valent trois documents, et Next n'en choisit aucun
+     pour une URL qui ne correspond à rien : sans ce drapeau, une adresse
+     inconnue reçoit la page interne de Next, sans attribut `lang`, sans marque
+     et sans retour possible. C'est le mécanisme prévu pour ce cas précis.
+
+     S'IL DISPARAÎT OU CHANGE DE NOM à une montée de version : la sortie de
+     repli est un 404 par groupe (`not-found.tsx`, déjà en place) et la page
+     interne pour les URL hors périmètre. Ne PAS le remplacer par un fourre-tout
+     `[...slug]` : sans créneau prérendu il ne correspond à rien, et avec un
+     rendu à la demande chaque 404 redevient une invocation serveur (D12). */
+  experimental: { globalNotFound: true },
   // Ne pas annoncer le framework : renseignement gratuit pour un attaquant.
   poweredByHeader: false,
   eslint: { ignoreDuringBuilds: false },
   typescript: { ignoreBuildErrors: false },
 
-  /* ADR-0007 (décision G) — l'application vit sous /app, la racine est réservée
-     à la vitrine de la phase 6. En attendant, / mène à l'application.
-
-     `permanent: false` est délibéré : un 308 serait mis en cache par les
-     navigateurs, et la phase 6 devrait le déloger client par client. */
-  async redirects() {
-    return [{ source: '/', destination: '/app', permanent: false }];
-  },
+  /* ADR-0007 (décision G) — l'application vit sous /app, la racine appartient à
+     la vitrine (phase 6, tâche 7.1). La redirection temporaire `/ → /app` qui
+     tenait la place a été retirée : elle était posée en `permanent: false`
+     précisément pour qu'aucun navigateur ne l'ait mise en cache le jour où la
+     vitrine prendrait `/`. C'est ce jour. */
 
   async headers() {
     return [
@@ -143,6 +154,23 @@ const nextConfig = {
          Elle n'affiche aucune donnée d'utilisateur et n'expose aucune action
          privilégiée : c'est une page statique de composants. */
       { source: '/dev/:path*', headers: [{ key: 'X-Robots-Tag', value: 'noindex, nofollow' }] },
+
+      /* Tâche 7.3 — l'application est un OUTIL PRIVÉ, et `robots.txt` ne
+         suffit pas à le garantir : `Disallow` est une demande, un en-tête
+         `noindex` est une instruction. Une URL applicative partagée dans un
+         message, puis explorée par un robot qui ignore robots.txt, serait
+         indexée sans cet en-tête — et une page d'application vide indexée
+         sous la marque coûte exactement ce que la vitrine cherche à gagner.
+
+         Les deux motifs sont posés : `/app/:path*` ne couvre pas `/app` nu
+         dans toutes les versions de la correspondance de chemins, et le
+         tableau de bord est justement l'URL qu'on partage. */
+      { source: '/app', headers: [{ key: 'X-Robots-Tag', value: 'noindex, nofollow' }] },
+      { source: '/app/:path*', headers: [{ key: 'X-Robots-Tag', value: 'noindex, nofollow' }] },
+      {
+        source: '/onboarding',
+        headers: [{ key: 'X-Robots-Tag', value: 'noindex, nofollow' }],
+      },
 
       /* L'archive a son propre jeu, complet et explicite. Elle est hors
          périmètre de sécurité (tâche 0.15) : ce n'est pas une surface de

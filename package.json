@@ -19,12 +19,14 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "check:messages": "node scripts/check-messages.mjs",
-    "verify": "npm run typecheck && npm run lint && npm run format:check && npm run check:messages && npm run check:tokens && npm run check:icons && npm run build && npm run test",
+    "verify": "npm run typecheck && npm run lint && npm run format:check && npm run check:messages && npm run check:tokens && npm run check:modernist && npm run check:fonts && npm run check:icons && npm run build && npm run test",
     "check:tokens": "node scripts/extract-tokens.mjs --check",
     "check:icons": "node scripts/generate-icons.mjs --check",
     "icons": "node scripts/generate-icons.mjs",
     "prepare": "node scripts/install-hooks.mjs",
-    "hooks:install": "node scripts/install-hooks.mjs"
+    "hooks:install": "node scripts/install-hooks.mjs",
+    "check:modernist": "node scripts/extract-modernist-tokens.mjs --check",
+    "check:fonts": "node scripts/extract-fonts.mjs --check"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
@@ -51,6 +53,7 @@
   "devDependencies": {
     "@axe-core/playwright": "^4.13.0",
     "@eslint/eslintrc": "^3.2.0",
+    "@fontsource/archivo": "^5.3.0",
     "@fontsource/jetbrains-mono": "^5.3.0",
     "@fontsource/space-grotesk": "^5.3.0",
     "@playwright/test": "^1.50.0",

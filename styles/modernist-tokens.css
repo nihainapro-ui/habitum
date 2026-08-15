@@ -1,0 +1,67 @@
+/* --------------------------------------------------------------------------
+   Habitum — jetons du système Modernist (VITRINE UNIQUEMENT).
+
+   FICHIER GÉNÉRÉ — ne pas éditer à la main.
+   Source      : public/prototype/_ds/modernist-8b2e5546-807b-4975-bde8-911e4f671604/styles.css
+   Régénérer   : node scripts/extract-modernist-tokens.mjs
+   Vérifier    : npm run check:modernist  (inclus dans npm run verify)
+
+   Décision B1 : l'application reste sombre (styles/tokens.css) ; la vitrine
+   et la documentation sont en Modernist. Les deux registres ne se mélangent
+   pas — ce fichier n’est importé que par les layouts racines du groupe
+   « site », jamais par celui de l’application.
+
+   `--font-heading` et `--font-body` sont RÉAFFECTÉES : le système les charge
+   depuis fonts.googleapis.com, la vitrine les sert depuis son domaine (D7).
+   -------------------------------------------------------------------------- */
+
+:root {
+  --color-bg: #f3f2f2;
+  --color-surface: #eae9e9;
+  --color-text: #201e1d;
+  --color-accent: #ec3013;
+  --color-accent-2: #e15b47;
+  --color-divider: color-mix(in srgb, #201e1d 40%, transparent);
+  --color-neutral-100: #f8f4f4;
+  --color-neutral-200: #eae7e7;
+  --color-neutral-300: #d7d3d3;
+  --color-neutral-400: #bab6b6;
+  --color-neutral-500: #9b9797;
+  --color-neutral-600: #7d7979;
+  --color-neutral-700: #605d5d;
+  --color-neutral-800: #444141;
+  --color-neutral-900: #2d2b2b;
+  --color-accent-100: #fff2ef;
+  --color-accent-200: #ffe0d9;
+  --color-accent-300: #ffc4b8;
+  --color-accent-400: #ff9783;
+  --color-accent-500: #ff563c;
+  --color-accent-600: #dd2b0f;
+  --color-accent-700: #ae1800;
+  --color-accent-800: #7c1405;
+  --color-accent-900: #4d170e;
+  --color-accent-2-100: #fff2ef;
+  --color-accent-2-200: #ffe0da;
+  --color-accent-2-300: #ffc4b9;
+  --color-accent-2-400: #ff9784;
+  --color-accent-2-500: #ef6853;
+  --color-accent-2-600: #c94b39;
+  --color-accent-2-700: #9e3526;
+  --color-accent-2-800: #71261b;
+  --color-accent-2-900: #471d16;
+  --font-heading: var(--font-archivo), 'Archivo', system-ui, sans-serif;
+  --font-heading-weight: 800;
+  --font-body: var(--font-archivo), 'Archivo', system-ui, sans-serif;
+  --space-1: 4.0px;
+  --space-2: 8.0px;
+  --space-3: 12.0px;
+  --space-4: 16.0px;
+  --space-6: 24.0px;
+  --space-8: 32.0px;
+  --radius-sm: 0px;
+  --radius-md: 0px;
+  --radius-lg: 0px;
+  --shadow-sm: 0 1px 2px color-mix(in srgb, #2d2b2b 14%, transparent);
+  --shadow-md: 0 3px 10px color-mix(in srgb, #2d2b2b 16%, transparent);
+  --shadow-lg: 0 12px 32px color-mix(in srgb, #2d2b2b 22%, transparent);
+}

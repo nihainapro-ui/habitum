@@ -1,0 +1,44 @@
+name: Lighthouse
+
+# Tâche 7.7 — le budget de performance vit en CI, pas dans une bonne intention.
+#
+# Il tourne sur les PR et à la demande, PAS sur chaque push de `main` : un run
+# Lighthouse coûte plusieurs minutes d'Actions, et le budget mensuel du plan
+# gratuit est fini. Ce qu'on veut attraper, c'est une régression AVANT la
+# fusion — c'est exactement ce que couvre `pull_request`.
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  budget:
+    name: budget de performance
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      # `autorun` démarre le serveur, collecte trois passes par URL, applique
+      # `lighthouserc.json` et échoue si un seuil n'est pas tenu.
+      - run: npx --yes @lhci/cli@0.15.x autorun
+      # Le rapport part en ARTEFACT, pas sur un stockage public tiers : la
+      # promesse « aucune donnée ne sort » vaut aussi pour l'outillage.
+      - name: Rapports
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: lighthouse
+          path: .lighthouseci/
+          retention-days: 7

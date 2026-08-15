@@ -24,6 +24,9 @@ blob-report/
 .env.local
 .env*.local
 
+# budget de performance — rapports de @lhci/cli (tâche 7.7)
+.lighthouseci/
+
 # plateformes
 .vercel/
 

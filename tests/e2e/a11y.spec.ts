@@ -53,6 +53,29 @@ test('axe — la galerie des primitives', async ({ page }) => {
   expect(await violations(page)).toEqual([]);
 });
 
+/* La vitrine (phase 6) est auditée ici comme le reste, et pas seulement par
+   Lighthouse : elle porte le seul contenu que des inconnus liront, dans un
+   registre visuel — Modernist, clair — que rien d'autre du dépôt n'utilise.
+   Ses deux écarts de contraste connus (`styles/modernist.css`) sont corrigés à
+   la source ; ce contrôle échoue s'ils reviennent. */
+const ROUTES_VITRINE = [
+  '/',
+  '/fonctionnalites',
+  '/comparatifs/habitnow',
+  '/guides/arreter-alcool',
+  '/confidentialite',
+  '/mentions-legales',
+  '/en',
+];
+
+for (const route of ROUTES_VITRINE) {
+  test(`axe — vitrine ${route}`, async ({ page }) => {
+    await page.goto(route);
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+    expect(await violations(page)).toEqual([]);
+  });
+}
+
 /* Le contraste dépend du thème : contrôler le seul thème par défaut
    laisserait deux tiers du produit sans vérification. */
 for (const theme of ['plasma', 'clinical'] as const) {

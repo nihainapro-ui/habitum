@@ -1,5 +1,126 @@
 # Journal des modifications
 
+## 2026-08-15 — Phase 6 : vitrine et SEO
+
+Le projet a enfin un actif indexable, et l'application a cessé d'en être un. La racine sert une
+vitrine bilingue en système **Modernist** ; les onze vues passent `noindex`, par `robots.txt` et
+par en-tête. **Lighthouse 100 / 100 / 100 / 100** sur les quatre URL de vitrine mesurées, `npm run
+verify` vert, **438 tests unitaires** et **558 tests e2e** verts sur desktop et mobile.
+
+### Tenu
+
+- **La racine appartient à la vitrine.** La redirection provisoire `/` → `/app` a disparu — elle
+  était posée en `permanent: false` précisément pour ce jour, et aucun cache de navigateur n'a eu
+  à être purgé. (7.1, ADR-0007)
+- **Vingt-quatre URL bilingues** : accueil, fonctionnalités, deux index de rubrique, trois
+  comparatifs, trois guides, confidentialité, mentions légales — chacune en français à la racine
+  et en anglais sous `/en`, avec des créneaux **traduits** (`/guides/arreter-alcool` ↔
+  `/en/guides/quit-alcohol`). Tout est prérendu : zéro fonction serveur, D12 intact. (7.1, 7.5, 7.6)
+- **Jetons Modernist EXTRAITS**, pas recopiés. `scripts/extract-modernist-tokens.mjs` les tire du
+  système livré dans l'archive, et `npm run check:modernist` échoue s'ils dérivent — même
+  discipline que `styles/tokens.css`, et pour la même raison (D3). Seules `--font-heading` et
+  `--font-body` sont réaffectées : le système les charge depuis Google Fonts, la vitrine sert
+  **Archivo** depuis son domaine (OFL 1.1, `check:fonts`). (7.1)
+- **Métadonnées complètes** : `metadataBase`, canonique, `hreflang` fr/en/x-default réciproques,
+  Open Graph, Twitter Card, et une **image sociale 1200 × 630 générée** en Modernist avec sa police
+  **embarquée** — lue sur le disque, jamais récupérée en ligne. (7.2)
+- **`robots.txt` et `sitemap.xml` engendrés par la table des URL**, jamais rédigés. Une page
+  ajoutée à `lib/site/routes.ts` entre au plan du site avec ses alternats, ou n'existe pas. (7.3)
+- **JSON-LD** `SoftwareApplication` (`price: "0"`, `isAccessibleForFree`), `FAQPage` sur les huit
+  questions réellement affichées, `BreadcrumbList` et `Article` sur les pages de fond. (7.4)
+- **Politique de confidentialité et mentions légales** opposables, datées, et alignées sur le
+  code : l'hébergeur, la région et le contact sont lus depuis `lib/site/routes.ts`, pas recopiés —
+  la décision C peut encore changer l'hébergeur. (7.6)
+- **Budget Lighthouse en CI** sur cinq URL, trois passes chacune, rapports en artefact et non sur
+  un stockage public tiers. (7.7)
+
+### Trois écarts au plan, tous délibérés
+
+- **Deux layouts racines pour le site, un troisième pour l'application.** Le plan prévoyait un
+  groupe `(site)` sous le layout existant. Impossible : ce layout pose `lang="fr"`, la feuille
+  sombre et `AppShell` — qui ouvre la base et arme les rappels. La vitrine n'a besoin d'aucun des
+  trois, et `/en` a besoin de `lang="en"`, qui ne se décide qu'au layout racine. Les trois groupes
+  sont donc des documents distincts : la vitrine ne télécharge ni Space Grotesk ni les jetons de
+  thème, l'application ne télécharge pas Archivo, et un test le vérifie.
+- **Aucun `nonce` pour le JSON-LD**, contrairement au plan. ADR-0007 avait déjà tranché l'inverse,
+  et la raison n'a pas bougé : un nonce impose un rendu dynamique. Il n'a pas fallu de
+  `dangerouslySetInnerHTML` pour autant — React ne réencode pas le texte d'une balise `<script>`,
+  et le sérialiseur échappe `<`, ce qui rend un `</script>` inséré structurellement impossible à
+  refermer.
+- **Pas de capture d'écran dans la section « preuve ».** Les captures de recette vivent hors de
+  Git et pèsent 3,3 Mo. La preuve est donc factuelle — le modèle en entier, et l'onglet réseau
+  vide — ce qui est aussi le choix qu'avait fait le prototype de vitrine.
+
+### Corrigé — cinq défauts, dont un que personne ne regardait
+
+- **La séparation des layouts racines avait coûté le 404 du projet.** Sans layout racine unique,
+  Next ne sait pas lequel appliquer à une URL qui ne correspond à rien : il servait sa page
+  interne — pas d'attribut `lang`, pas de marque, aucun lien de retour. Le code de statut restait
+  correct, et **aucun test ne regardait le reste** : trouvé à la main, en vérifiant ce que voit
+  quelqu'un qui se trompe d'adresse. Réparé par `app/global-not-found.tsx`, qui rend son propre
+  document ; le 404 reste **statique**, et quatre contrôles l'empêchent de repartir. Le
+  fourre-tout `[...slug]` a été essayé puis retiré : sans créneau prérendu il ne correspond à
+  rien, et avec un rendu à la demande chaque 404 redevenait une invocation serveur.
+- **Les tableaux de comparaison étaient inatteignables au clavier sur mobile.** Sous 768 px ils
+  défilent dans leur cadre — ce qui évite que la page déborde — mais un conteneur qui défile sans
+  être focalisable met sa moitié droite hors d'atteinte de qui n'a pas de souris. Relevé par axe
+  sur le profil **mobile uniquement** : à 1440 px rien ne défile et aucune règle ne se déclenche.
+  C'est la raison pour laquelle l'audit tourne désormais sur la vitrine, et sur les deux profils.
+
+- **`og:type` disparaissait de toutes les pages.** Next **remplace** les clés `openGraph` et
+  `twitter` du parent au lieu de les fusionner champ par champ : les métadonnées de page effaçaient
+  le socle, et l'aperçu social retombait sur une vignette carrée à image rognée.
+- **Le contrôle « aucun `dangerouslySetInnerHTML` » échouait sur sa propre documentation.** Il
+  cherchait le motif dans le fichier entier, commentaires compris : la seule façon de le satisfaire
+  aurait été de retirer l'explication de pourquoi on s'en passe. Il ignore désormais les
+  commentaires, et rien d'autre.
+- **Deux contrôles encodaient l'état d'avant la phase.** `build-output.test.ts` exigeait
+  `dynamicRoutes` vide — ce que six pages `[creneau]` rendent faux sans rien changer à D12 ; il
+  vérifie maintenant l'invariant réel, `fallback: false`, c'est-à-dire aucun rendu à la demande.
+  `smoke.spec.ts` attendait la redirection de la racine ; il vérifie maintenant son absence, ce qui
+  protège la vitrine d'une règle réintroduite par inadvertance.
+
+### Mesuré
+
+Lighthouse 12, build de production, préréglage bureau :
+
+| URL | Perf. | A11y | Bonnes pratiques | SEO |
+|---|---:|---:|---:|---:|
+| `/` | **100** | **100** | **100** | **100** |
+| `/fonctionnalites` | **100** | **100** | **100** | **100** |
+| `/comparatifs/habitnow` | **100** | **100** | **100** | **100** |
+| `/en` | **100** | **100** | **100** | **100** |
+| `/app` | 99 | **100** | **100** | 63 |
+
+Le 63 de `/app` **est le résultat attendu** : Lighthouse sanctionne une page bloquée à
+l'indexation, et c'est exactement ce que la phase a posé. Le budget est donc écrit par URL —
+SEO 100 exigé sur la vitrine, non asservi sur l'application. Un budget uniforme aurait été rouge
+par construction, et on l'aurait désactivé au premier échec.
+
+Deux écarts de contraste ont été corrigés à la source plutôt qu'expliqués deux fois : l'accent
+Modernist (#ec3013) donne 3,74:1 sur son fond — assez pour un filet ou un titre d'affiche, pas pour
+du texte — et le gris 600 donne 3,80:1. Tout aplat rouge portant du texte passe par
+`--color-accent-700` (7,18:1 avec du blanc), et le texte atténué par le gris 700 (5,73:1). Sans
+cela, « Accessibilité ≥ 95 » était hors d'atteinte.
+
+### Limites connues, écrites
+
+- **`experimental.globalNotFound` est un drapeau expérimental de Next 15.5.** C'est le mécanisme
+  prévu pour un projet à plusieurs layouts racines, et il n'y en a pas d'autre qui reste statique.
+  S'il change de nom à une montée de version, la conduite à tenir est écrite dans
+  `next.config.mjs`, à côté du drapeau — et surtout, ce qu'il ne faut **pas** faire à la place.
+- **Le contact est le suivi d'anomalies du dépôt**, pas une adresse électronique. Une page
+  opposable qui donne un contact injoignable est pire qu'une page qui n'en donne pas ;
+  `NEXT_PUBLIC_SITE_CONTACT` permet d'en poser une vraie sans toucher au code, à la mise en
+  production.
+- **L'hébergeur nommé est celui que `vercel.json` fixe aujourd'hui.** La décision C (Vercel Hobby
+  ou Cloudflare Pages) est tranchée en phase 7 : si elle change l'hébergeur, elle change la
+  politique de confidentialité et les mentions légales, qui la lisent depuis le code.
+- **Les comparatifs ne retiennent du produit comparé que des faits publics** — plateformes, modèle
+  économique, existence d'un compte — avec le lien officiel pour les revérifier et une date de
+  relecture. Un comparatif faux se retourne contre le produit ; celui-ci se relit, il ne se croit
+  pas.
+
 ## 2026-08-13 — Phase 5 : fiabilisation et PWA
 
 Le produit tient ce que son interface promettait. Plus un seul interrupteur sans effet, plus
