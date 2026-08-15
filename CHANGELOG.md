@@ -51,7 +51,7 @@ verify` vert, **438 tests unitaires** et **558 tests e2e** verts sur desktop et 
   Git et pèsent 3,3 Mo. La preuve est donc factuelle — le modèle en entier, et l'onglet réseau
   vide — ce qui est aussi le choix qu'avait fait le prototype de vitrine.
 
-### Corrigé — cinq défauts, dont un que personne ne regardait
+### Corrigé — six défauts, dont deux que personne ne regardait
 
 - **La séparation des layouts racines avait coûté le 404 du projet.** Sans layout racine unique,
   Next ne sait pas lequel appliquer à une URL qui ne correspond à rien : il servait sa page
@@ -70,6 +70,11 @@ verify` vert, **438 tests unitaires** et **558 tests e2e** verts sur desktop et 
 - **`og:type` disparaissait de toutes les pages.** Next **remplace** les clés `openGraph` et
   `twitter` du parent au lieu de les fusionner champ par champ : les métadonnées de page effaçaient
   le socle, et l'aperçu social retombait sur une vignette carrée à image rognée.
+- **Le budget Lighthouse n'assertait RIEN.** `assertMatrix` était posé à la racine de `ci` au lieu
+  de vivre sous `assert` : `lhci` répondait « No assertions to use » et serait passé au vert sans
+  rien vérifier — le pire état possible pour un garde-fou, celui où l'on croit être protégé. Vu
+  seulement en exécutant réellement `lhci assert` sur les rapports mesurés, puis confirmé par un
+  contrôle négatif : en exigeant SEO 100 sur la page `noindex`, l'outil échoue bien (0,63 < 1).
 - **Le contrôle « aucun `dangerouslySetInnerHTML` » échouait sur sa propre documentation.** Il
   cherchait le motif dans le fichier entier, commentaires compris : la seule façon de le satisfaire
   aurait été de retirer l'explication de pourquoi on s'en passe. Il ignore désormais les
@@ -90,12 +95,18 @@ Lighthouse 12, build de production, préréglage bureau :
 | `/fonctionnalites` | **100** | **100** | **100** | **100** |
 | `/comparatifs/habitnow` | **100** | **100** | **100** | **100** |
 | `/en` | **100** | **100** | **100** | **100** |
-| `/app` | 99 | **100** | **100** | 63 |
+| `/onboarding` — ce que `/app` sert à un compte neuf | 99 | **100** | **100** | 63 |
 
-Le 63 de `/app` **est le résultat attendu** : Lighthouse sanctionne une page bloquée à
-l'indexation, et c'est exactement ce que la phase a posé. Le budget est donc écrit par URL —
-SEO 100 exigé sur la vitrine, non asservi sur l'application. Un budget uniforme aurait été rouge
-par construction, et on l'aurait désactivé au premier échec.
+Le 63 **est le résultat attendu** : Lighthouse sanctionne une page bloquée à l'indexation, et
+c'est exactement ce que la phase a posé. Le budget est donc écrit par URL — SEO 100 exigé sur la
+vitrine, non asservi sur l'application. Un budget uniforme aurait été rouge par construction, et
+on l'aurait désactivé au premier échec.
+
+**La dernière ligne dit `/onboarding` et non `/app`, et ce n'est pas un détail.** Mesurer `/app`
+sur un profil neuf mesure en réalité `/onboarding` : la coque y renvoie tant que le compte n'est
+pas accueilli. Une première rédaction de ce tableau annonçait `/app` — c'était faux, relevé en
+relisant l'URL finale des rapports. Le budget vise donc explicitement `/onboarding`, qui est ce
+qu'un visiteur reçoit réellement.
 
 Deux écarts de contraste ont été corrigés à la source plutôt qu'expliqués deux fois : l'accent
 Modernist (#ec3013) donne 3,74:1 sur son fond — assez pour un filet ou un titre d'affiche, pas pour
