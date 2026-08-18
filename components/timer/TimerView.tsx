@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { Pause, Play, RotateCcw, Save } from 'lucide-react';
+import { ENCRE_SUR_TEINTE } from '@/components/ui/encre';
 import {
   CYCLES_POMO,
   dateKey,
@@ -191,7 +192,7 @@ export function TimerView() {
               className="rounded-btn flex cursor-pointer items-center gap-2 border-0 px-5 py-2.5 text-[12.5px] font-bold"
               style={{
                 background: 'linear-gradient(135deg, var(--acc), var(--acc2))',
-                color: '#04060d',
+                color: ENCRE_SUR_TEINTE,
               }}
             >
               {enMarche ? (

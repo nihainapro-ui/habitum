@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { applyTheme, defaultTheme, readThemeCookie, THEMES, type Theme } from '@/lib/theme';
 import { useStore } from '@/lib/store';
+import { ENCRE_SUR_TEINTE } from '@/components/ui/encre';
 
 /* Deuxième écran : le thème.
 
@@ -52,7 +53,10 @@ export function StepTheme({ onNext }: { onNext: () => void }) {
         type="button"
         onClick={onNext}
         className="rounded-btn cursor-pointer self-start border-0 px-5 py-2.5 text-[13px] font-bold"
-        style={{ background: 'linear-gradient(135deg, var(--acc), var(--acc2))', color: '#04060d' }}
+        style={{
+          background: 'linear-gradient(135deg, var(--acc), var(--acc2))',
+          color: ENCRE_SUR_TEINTE,
+        }}
       >
         {t('obNext')}
       </button>

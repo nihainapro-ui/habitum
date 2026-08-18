@@ -42,32 +42,62 @@ export function Switch({
         ) : null}
       </span>
 
+      {/* La CIBLE fait 44 px, le RAIL en fait 22 — tâche 8.3.
+
+          Le rail dessiné mesurait 38 × 22 et servait aussi de zone cliquable :
+          22 px de haut, sous les 24 px que WCAG 2.2 § 2.5.8 exige au niveau AA,
+          et très loin des 44 px que recommandent Apple et Android. Un
+          interrupteur qu'on rate au doigt se rattrape en le rouvrant — ou en
+          basculant celui d'à côté.
+
+          La cible est donc portée par la racine, transparente et carrée ; le
+          rail visible est un élément INTÉRIEUR. Le dessin ne change pas d'un
+          pixel, seule la surface atteignable grandit. C'est aussi pour cela que
+          la marge verticale de la ligne (`py-1.5`) n'a pas bougé : la hauteur
+          gagnée est déjà celle du rembourrage. */}
       <RadixSwitch.Root
         checked={checked}
         onCheckedChange={onChange}
         disabled={disabled}
         aria-describedby={reason ? idRaison : undefined}
-        className="rounded-pill relative shrink-0 border"
+        className="grid shrink-0 place-items-center"
         style={{
-          width: 38,
-          height: 22,
-          borderColor: checked ? 'var(--acc2)' : 'var(--line)',
-          background: checked ? 'var(--acc2)' : 'transparent',
+          width: 44,
+          height: 44,
+          /* La marge négative rend au dessin la place que la cible prend en
+             plus : le rail reste exactement où il était, au pixel près. Les
+             3 px qui débordent horizontalement tombent dans le rembourrage du
+             panneau (14 px) — les quatre paliers le vérifient. */
+          margin: '-11px -3px',
+          background: 'transparent',
+          border: 0,
+          padding: 0,
           opacity: disabled ? 0.45 : 1,
-          transition: 'background .18s ease, border-color .18s ease',
           cursor: disabled ? 'not-allowed' : 'pointer',
         }}
       >
-        <RadixSwitch.Thumb
-          className="rounded-pill block"
+        <span
+          aria-hidden="true"
+          className="rounded-pill relative block border"
           style={{
-            width: 16,
-            height: 16,
-            background: checked ? 'var(--bg)' : 'var(--mut)',
-            transform: `translateX(${checked ? 18 : 2}px)`,
-            transition: 'transform .18s ease, background .18s ease',
+            width: 38,
+            height: 22,
+            borderColor: checked ? 'var(--acc2)' : 'var(--line)',
+            background: checked ? 'var(--acc2)' : 'transparent',
+            transition: 'background .18s ease, border-color .18s ease',
           }}
-        />
+        >
+          <RadixSwitch.Thumb
+            className="rounded-pill block"
+            style={{
+              width: 16,
+              height: 16,
+              background: checked ? 'var(--bg)' : 'var(--mut)',
+              transform: `translateX(${checked ? 18 : 2}px)`,
+              transition: 'transform .18s ease, background .18s ease',
+            }}
+          />
+        </span>
       </RadixSwitch.Root>
     </label>
   );

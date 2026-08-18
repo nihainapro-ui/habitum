@@ -10,6 +10,7 @@ import {
   perfectDays,
   splitHeuresMinutes,
 } from '@/lib/domain';
+import type { Habit } from '@/lib/domain';
 import { DEMO_NOW, demoHabits, demoLogIndex, demoTasks } from '@/tests/fixtures/demo-seed';
 
 /* Les agrégats de la vue Statistiques se testent contre l'ORACLE, pas contre
@@ -124,5 +125,65 @@ describe('splitHeuresMinutes', () => {
 
   it('ne descend jamais sous zéro', () => {
     expect(splitHeuresMinutes(-10)).toEqual({ h: 0, m: 0 });
+  });
+});
+
+/* ============================================================================
+   Budget de calcul de la carte de chaleur — tâche 8.5.
+
+   Le plan fixe « Heatmap 6 mois, 200 habitudes : rendu < 300 ms ». Ce budget se
+   mesure ICI, et non dans le navigateur, pour une raison de méthode : ouvrir
+   `/app/stats` chronomètre une navigation complète — routage, hydratation,
+   réhydratation du store, PUIS le calcul de la carte. On relevait 570 ms et on
+   en aurait conclu que la carte est lente, alors qu'on avait mesuré une
+   ouverture de page (le test e2e la mesure toujours, contre le budget
+   d'ouverture, qui est le sien).
+
+   Ce que « rendu » recouvre réellement pour cette carte, c'est `daysBack` sur
+   182 jours × 200 habitudes : 36 400 évaluations de planification. Les 182
+   `<span>` du DOM ne pèsent rien à côté.
+   ========================================================================= */
+describe('carte de chaleur à la charge du plan', () => {
+  it('182 jours × 200 habitudes se calculent en moins de 300 ms', () => {
+    const NB_HABITUDES = 200;
+    const JOURS = 182;
+
+    const lourdes: Habit[] = Array.from({ length: NB_HABITUDES }, (_, i) => ({
+      id: `c${i}`,
+      name: `Habitude ${i}`,
+      category: 'health',
+      goal: { kind: 'check', target: 1, step: 1, unit: '' },
+      mode: 'dow',
+      days: [0, 1, 2, 3, 4, 5, 6],
+      subItems: [],
+      reminders: [],
+      archived: false,
+      note: '',
+      createdAt: '2020-01-01T00:00:00.000Z',
+      updatedAt: '2020-01-01T00:00:00.000Z',
+    }));
+
+    /* Un journal PLEIN sur la fenêtre : une carte calculée sur des cases vides
+       sauterait le travail qu'on veut justement mesurer. */
+    const journal = new Map<string, number>();
+    for (let i = 0; i < NB_HABITUDES; i++) {
+      for (let j = 0; j < JOURS; j++) {
+        const d = new Date(DEMO_NOW);
+        d.setDate(d.getDate() - j);
+        const cle = `c${i}|${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        journal.set(cle, 1);
+      }
+    }
+
+    const depart = performance.now();
+    const jours = daysBack(journal, lourdes, [], JOURS, DEMO_NOW);
+    const duree = performance.now() - depart;
+
+    expect(jours).toHaveLength(JOURS);
+    /* Le premier jour de la fenêtre doit être réellement agrégé : un calcul qui
+       rendrait 182 cases vides tiendrait n'importe quel budget. */
+    expect(jours[JOURS - 1]?.scheduled).toBe(NB_HABITUDES);
+
+    expect(Math.round(duree), `carte calculée en ${Math.round(duree)} ms`).toBeLessThan(300);
   });
 });

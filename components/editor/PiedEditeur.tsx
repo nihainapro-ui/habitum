@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { ENCRE_SUR_TEINTE } from '@/components/ui/encre';
 
 /* Pied de l'éditeur : annuler, enregistrer, et supprimer EN DEUX TEMPS.
 
@@ -64,7 +65,7 @@ export function PiedEditeur({
           className="rounded-btn flex-1 cursor-pointer border-0 px-4 py-2.5 text-[12.5px] font-bold"
           style={{
             background: 'linear-gradient(135deg, var(--acc), var(--acc2))',
-            color: '#04060d',
+            color: ENCRE_SUR_TEINTE,
           }}
         >
           {t('save')}

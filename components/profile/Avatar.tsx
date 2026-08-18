@@ -27,6 +27,10 @@ export function Avatar({
         height: size,
         borderRadius: size * 0.3,
         fontSize: size * 0.42,
+        /* SEULE encre restée en dur, et c'est justifié : le dégradé ci-dessous
+           est en OKLCH à clarté fixe (.78 / .62), donc CLAIR dans les trois
+           thèmes — il ne suit pas les jetons. `--bg` y serait blanc sur clair
+           dans `clinical`. Voir `components/ui/encre.ts`. */
         color: '#04060d',
         background: `linear-gradient(135deg, oklch(.78 .16 ${hue}), oklch(.62 .19 ${hue + 24}))`,
         boxShadow: `0 ${size * 0.2}px ${size * 0.6}px -${size * 0.28}px oklch(.72 .17 ${hue} / .9), inset 0 1px 0 rgba(255,255,255,.35)`,

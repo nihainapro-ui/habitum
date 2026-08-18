@@ -380,7 +380,17 @@ npx @lhci/cli autorun                       # budget tenu
 | **4 · Les onze vues** | 15 j | 37,5 j | ✅ 13 août 2026 | 56 % → **80 %** |
 | **5 · Fiabilisation & PWA** | 6 j | 43,5 j | ✅ 13 août 2026 | 80 % → **91 %** |
 | **6 · Vitrine & SEO** | 3 j | 46,5 j | ✅ 15 août 2026 | 91 % → **95 %** |
-| **7 · Qualité & lancement** | 7 j | 53,5 j | ⬜ | 95 % → **100 %** |
+| **7 · Qualité & lancement** | 7 j | 53,5 j | 🟡 17 août 2026 — 8.1 à 8.5, 8.8, 8.10 livrées | 95 % → **98 %** |
+
+> **État de la phase 7 au 17 août 2026.** Livré : les huit parcours critiques (8.1), la
+> non-régression visuelle (8.2), l'accessibilité approfondie (8.3), la recette responsive
+> (8.4), la charge côté client (8.5), la page de version (8.8) et le runbook (8.10).
+> **Reste :** les montées majeures `next@16` / `next-intl@4` et `exactOptionalPropertyTypes`
+> (8.6) ; les trois parcours au lecteur d'écran (8.3, étape 2) et les tests utilisateurs
+> (8.7), qui demandent des personnes ; la mise en production (8.9), qui demande la
+> **décision C** et des accès d'hébergeur. Détail : `CHANGELOG.md` et
+> `docs/RECETTE-2026-08-17.md`.
+
 
 ```
 Sem. 1-2  ██████ Phase 0 — Fondations

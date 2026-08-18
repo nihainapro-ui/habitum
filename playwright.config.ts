@@ -16,12 +16,27 @@ export default defineConfig({
     timezoneId: 'Europe/Paris',
     locale: 'fr-FR',
   },
+  /* Le socle de captures est celui de LINUX, celui que produit `ubuntu-latest`.
+     Le rendu des polices diffère d'une plateforme à l'autre : sans le suffixe,
+     une capture prise sous Windows écraserait silencieusement la référence de
+     CI, et l'inverse produirait des écarts qui ne veulent rien dire. */
+  snapshotPathTemplate: '{testDir}/visual/socle/{arg}-{platform}{ext}',
   projects: [
     {
       name: 'desktop',
+      /* La non-régression visuelle a son propre projet : elle ne peut pas
+         tourner à même une machine Windows ou macOS (voir `visual/vues.spec.ts`
+         § 3), et un `npm run test:e2e` rouge par construction sur deux tiers
+         des postes est un test qu'on finit par ne plus lancer. */
+      testIgnore: '**/visual/**',
       use: { ...devices['Desktop Chrome'], viewport: { width: 1440, height: 900 } },
     },
-    { name: 'mobile', use: { ...devices['Pixel 7'] } },
+    { name: 'mobile', testIgnore: '**/visual/**', use: { ...devices['Pixel 7'] } },
+    {
+      name: 'visual',
+      testMatch: '**/visual/**/*.spec.ts',
+      use: { ...devices['Desktop Chrome'], viewport: { width: 1440, height: 900 } },
+    },
   ],
   /* On teste ce qui sera DÉPLOYÉ, pas le serveur de développement.
      La tâche 0.12 l'annonçait ; la configuration lançait pourtant `npm run dev`.

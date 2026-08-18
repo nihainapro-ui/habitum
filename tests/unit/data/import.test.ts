@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { db } from '@/lib/data/db';
-import { exportToJson, importFromJson } from '@/lib/data';
+import { exportToJson, importFromJson, MAX_IMPORT_BYTES } from '@/lib/data';
 import {
   habitsRepo,
   logsRepo,
@@ -375,7 +375,11 @@ describe("aller-retour — les entités que l'export du prototype avait perdues"
     await importFromJson(JSON.stringify({ app: 'Habitum', habits: [] }));
     expect(await habitsRepo.count()).toBe(0);
 
-    const enorme = `{"app":"Habitum","note":"${'x'.repeat(2 * 1024 * 1024)}"}`;
+    /* Taille tirée de la CONSTANTE, jamais recopiée : le plafond est passé de
+       2 à 64 Mo à la tâche 8.5 — il valait moins que l'export du produit
+       lui-même — et un `2 * 1024 * 1024` écrit en dur ici transformait ce
+       contrôle en test qui ne contrôle plus rien. */
+    const enorme = `{"app":"Habitum","note":"${'x'.repeat(MAX_IMPORT_BYTES)}"}`;
     await expect(importFromJson(enorme)).rejects.toThrow(/Habitum/i);
     await expect(importFromJson('{cassé')).rejects.toThrow(/Habitum/i);
   });

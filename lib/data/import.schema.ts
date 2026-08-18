@@ -137,6 +137,25 @@ export const habitumExport = z.object({
   occ: z.record(z.string(), z.number()).optional(),
 });
 
-export const MAX_IMPORT_BYTES = 2 * 1024 * 1024;
+/* Plafond de lecture d'un fichier d'import — tâche 8.5.
+ *
+ * IL VALAIT 2 Mo, ET C'ÉTAIT UN PIÈGE À PERTE DE DONNÉES. Le garde-fou est là
+ * pour refuser un fichier hostile avant de le lire ; il refusait aussi
+ * l'export du produit lui-même. À la charge documentée du plan — 200 habitudes
+ * × 3 ans, soit 219 000 entrées de journal — `exportToJson()` produit
+ * **10,6 Mo** : 5,32 Mo pour `log`, autant pour `ov`, qui porte le même objet
+ * sous son ancien nom (G1, compatibilité du prototype).
+ *
+ * Autrement dit : au-delà d'environ 40 habitudes tenues sur trois ans,
+ * l'utilisateur téléchargeait une sauvegarde que l'application refusait de
+ * relire. Sans compte, l'export EST la sauvegarde — le garde-fou détruisait
+ * exactement ce qu'il devait protéger. Trouvé par le test de charge de la
+ * tâche 8.5, qui réimporte le fichier qu'il vient de produire ; aucun test ne
+ * le faisait avant, parce qu'aucun ne partait d'un export RÉEL à l'échelle.
+ *
+ * 64 Mo laisse six fois la charge du plan, et continue de refuser avant
+ * lecture ce qui n'a aucune chance d'être un export Habitum.
+ */
+export const MAX_IMPORT_BYTES = 64 * 1024 * 1024;
 export const LOG_KEY_RE = /^[^|]+\|\d{4}-\d{2}-\d{2}$/;
 export const DATE_KEY_RE = /^\d{4}-\d{2}-\d{2}$/;

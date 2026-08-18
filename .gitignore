@@ -49,3 +49,10 @@ Thumbs.db
 /public/sw.js
 /public/sw.js.map
 /public/swe-worker-*.js
+
+# Socle de non-régression visuelle : LINUX uniquement (tâche 8.2).
+# Une capture prise sous Windows ou macOS ne se compare à rien — les polices y
+# sont différentes. `npm run test:visual` passe par le conteneur officiel pour
+# cette raison ; ce qui suit empêche une exécution directe de polluer le socle.
+tests/e2e/visual/socle/*-win32.png
+tests/e2e/visual/socle/*-darwin.png

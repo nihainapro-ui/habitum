@@ -62,7 +62,7 @@ jobs:
   # raison : sans blocage, il reste le signal, et un signal qu'on peut manquer
   # n'en est pas un.
   alerte-main-rouge:
-    needs: [verify, e2e]
+    needs: [verify, e2e, visuel]
     if: failure() && github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-latest
     permissions:
@@ -114,4 +114,43 @@ jobs:
         with:
           name: rapport-playwright
           path: playwright-report/
+          retention-days: 7
+
+  # Non-régression visuelle — tâche 8.2. Onze vues × trois thèmes, comparées au
+  # socle versionné dans tests/e2e/visual/socle/.
+  #
+  # SUR UBUNTU, ET NULLE PART AILLEURS. Le socle porte le suffixe `-linux` :
+  # le rendu des polices diffère d'un système à l'autre, et comparer des
+  # captures prises sur deux plateformes produit des écarts qui ne veulent rien
+  # dire. En local, `npm run test:visual` passe par le conteneur officiel pour
+  # obtenir exactement les mêmes pixels que ce job.
+  #
+  # Job SÉPARÉ de `e2e` : un écart visuel et un parcours cassé ne se lisent pas
+  # de la même façon, et le second ne doit pas être noyé par le premier.
+  visuel:
+    needs: verify
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      - name: Cache des navigateurs Playwright
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+      - run: npx playwright install --with-deps chromium
+      - run: npm run build
+      - run: npx playwright test --project=visual
+      # L'écart se REGARDE. Un rapport qui dit « 3 % de pixels différents » sans
+      # montrer lesquels ne permet pas de trancher entre une régression et un
+      # changement voulu — et c'est exactement la décision que ce job demande.
+      - if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: ecarts-visuels
+          path: |
+            playwright-report/
+            test-results/
           retention-days: 7

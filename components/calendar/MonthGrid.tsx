@@ -4,6 +4,7 @@ import { useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useDroppable } from '@dnd-kit/core';
 import { useTranslations } from 'next-intl';
+import { ENCRE_SUR_TEINTE } from '@/components/ui/encre';
 import { addDays, monthGrid, startOfWeek, today } from '@/lib/domain';
 import { useDayRatios, useSettings, useStore } from '@/lib/store';
 import { useLocaleSwitcher } from '@/components/shell/locale-provider';
@@ -67,7 +68,7 @@ function CaseJour({
              `dayRatio`, `--mut` tombe jusqu'à 2,07 — très en dessous d'AA.
              Le hors-mois se lit à son fond et à sa position, pas à un texte
              qu'on n'arrive plus à lire. */
-          color: isToday ? '#04060d' : 'var(--txt2)',
+          color: isToday ? ENCRE_SUR_TEINTE : 'var(--txt2)',
           /* Le numéro porte son PROPRE fond. Posé à même la case, il se lit
              sur une teinte qui varie avec `dayRatio` — au plus fort du vert,
              `--txt2` n'y mesurait plus que 4,39. Un fond opaque rend le

@@ -55,7 +55,13 @@ test.describe('stats', () => {
     expect(nombres[0]).toBe(golden['habit.alc'].pct30);
   });
 
-  test('la carte de chaleur couvre six mois, en DOM', async ({ page }) => {
+  test('la carte de chaleur couvre six mois, en DOM', async ({ page }, info) => {
+    /* Tâche 8.4 — la fenêtre DÉPEND de la place : six mois au-dessus de 768 px,
+       trois en dessous, où vingt-six colonnes ne tiennent pas et où la carte
+       défilait au lieu de se réorganiser. Ce test-ci parle du grand écran ; le
+       comportement étroit et l'intitulé qui le suit sont éprouvés dans
+       `recette-responsive.spec.ts`, avec leur raison. */
+    test.skip(info.project.name === 'mobile', 'fenêtre réduite sous 768 px — voir 8.4');
     await ouvrirAvecDemo(page, ROUTE, { historique: true });
     /* 182 jours : la décision B7 garde le DOM sous 400 cellules. */
     await expect(page.locator('[data-heatmap] [data-cell]')).toHaveCount(182);

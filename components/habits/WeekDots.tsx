@@ -4,6 +4,7 @@ import { useMemo } from 'react';
 import { useTranslations } from 'next-intl';
 import type { JourSemaine } from '@/lib/domain';
 import { useLocaleSwitcher } from '@/components/shell/locale-provider';
+import { ENCRE_SUR_TEINTE } from '@/components/ui/encre';
 
 /* Les sept pastilles de la semaine courante.
 
@@ -51,7 +52,7 @@ export function WeekDots({
             style={{
               borderColor: j.done ? 'var(--ok)' : j.scheduled ? 'var(--line2)' : 'var(--line)',
               background: j.done ? 'var(--ok)' : 'transparent',
-              color: j.done ? '#04120d' : j.scheduled ? 'var(--txt2)' : 'var(--mut)',
+              color: j.done ? ENCRE_SUR_TEINTE : j.scheduled ? 'var(--txt2)' : 'var(--mut)',
               opacity: j.scheduled ? 1 : 0.45,
               cursor: actif ? 'pointer' : 'default',
             }}

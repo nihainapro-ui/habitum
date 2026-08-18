@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import type { Category, HabitGoalKind } from '@/lib/domain';
+import { ENCRE_SUR_TEINTE } from '@/components/ui/encre';
 
 /* Troisième écran : trois habitudes suggérées.
 
@@ -79,7 +80,7 @@ export function StepHabits({
           className="rounded-btn cursor-pointer border-0 px-5 py-2.5 text-[13px] font-bold"
           style={{
             background: 'linear-gradient(135deg, var(--acc), var(--acc2))',
-            color: '#04060d',
+            color: ENCRE_SUR_TEINTE,
           }}
         >
           {t('obStart')}

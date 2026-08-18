@@ -55,6 +55,13 @@ const config = [
          traité à sa vraie place : la validation zod de l'importeur, et le test
          dédié de la tâche 7.6. */
       'security/detect-object-injection': 'off',
+      /* XSS — la seule voie d'injection qu'une application React s'ouvre à
+         elle-même. Le plan 8 § 8.6 demande que ce soit IMPOSÉ, pas surveillé :
+         `tests/e2e/headers.spec.ts` cherchait déjà le motif dans les fichiers,
+         mais un test qui grep arrive après coup, et seulement si on le lance.
+         En erreur ici, le lint arrête la livraison — et l'éditeur le dit avant
+         même l'enregistrement. */
+      'react/no-danger': 'error',
     },
   },
   {

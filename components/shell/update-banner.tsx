@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { ENCRE_SUR_TEINTE } from '@/components/ui/encre';
 
 /* Bandeau de mise à jour — tâche 5.7.
 
@@ -83,7 +84,10 @@ export function UpdateBanner() {
         type="button"
         onClick={appliquer}
         className="rounded-btn cursor-pointer border-0 px-3 py-1.5 text-[12px] font-bold"
-        style={{ background: 'linear-gradient(135deg, var(--acc), var(--acc2))', color: '#04060d' }}
+        style={{
+          background: 'linear-gradient(135deg, var(--acc), var(--acc2))',
+          color: ENCRE_SUR_TEINTE,
+        }}
       >
         {ts('updNow')}
       </button>

@@ -18,6 +18,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
+    "test:visual": "node scripts/visual.mjs",
+    "test:visual:update": "node scripts/visual.mjs --update",
     "check:messages": "node scripts/check-messages.mjs",
     "verify": "npm run typecheck && npm run lint && npm run format:check && npm run check:messages && npm run check:tokens && npm run check:modernist && npm run check:fonts && npm run check:icons && npm run build && npm run test",
     "check:tokens": "node scripts/extract-tokens.mjs --check",

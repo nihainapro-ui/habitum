@@ -74,12 +74,29 @@ export function ratio(theme: Theme, avant: string, arriere: string): number {
   return (a! + 0.05) / (b! + 0.05);
 }
 
+/* Les couleurs de TEXTE, sur les deux fonds de page.
+ *
+ *  Les quatre couleurs de rôle — `acc2`, `ok`, `warn`, `bad` — ont été ajoutées
+ *  à la tâche 8.3, et pas par excès de zèle : elles servent de couleur de texte
+ *  dans huit vues sur onze (série d'une habitude, priorité d'une tâche, statut
+ *  d'échéance d'un objectif, cadran du minuteur), et quatre d'entre elles
+ *  échouaient à AA dans le thème `clinical` — jusqu'à 2,55 pour `acc2`. Ne
+ *  contrôler que `txt`, `txt2` et `mut` laissait sans vérification exactement
+ *  les couleurs qui portent les CHIFFRES du produit. */
 const PAIRES = [
   ['txt', 'bg'],
   ['txt2', 'bg'],
   ['mut', 'bg'],
+  ['acc2', 'bg'],
+  ['ok', 'bg'],
+  ['warn', 'bg'],
+  ['bad', 'bg'],
   ['txt', 'bg2'],
   ['mut', 'bg2'],
+  ['acc2', 'bg2'],
+  ['ok', 'bg2'],
+  ['warn', 'bg2'],
+  ['bad', 'bg2'],
 ] as const;
 
 /* UN SEUL SEUIL : 4,5.

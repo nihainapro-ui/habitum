@@ -35,12 +35,34 @@ mesure faite, c'est `clinical` qui échouait, pas `plasma`. Voir `tests/unit/con
 --bg:#eef2f8  --bg2:#e4eaf3  --panel:rgba(255,255,255,.74)  --panel2:rgba(20,60,120,.06)
 --line:rgba(20,60,120,.16)  --line2:rgba(20,60,120,.3)
 --txt:#0d1725  --txt2:#3c4c63  --mut:#596a82
---acc:#2b5bff  --acc2:#0aa9a0  --acc3:#7c3aed
---ok:#0f9d64  --warn:#b26a00  --bad:#d32546  --glow:43,91,255
+--acc:#2b5bff  --acc2:#07756f  --acc3:#7c3aed
+--ok:#0b784c  --warn:#975a00  --bad:#c92343  --glow:43,91,255
 ```
 ⚠️ `--mut` valait `#6c7d95` jusqu'au 12 août 2026 : **3,73** sur `--bg` et **3,47** sur `--bg2`,
 sous le seuil AA de 4,5 exigé par du texte de 9,5 px. Corrigé **à la source** (prototype) en
 `#596a82` — 4,91 et 4,56 — puis `tokens.css` régénéré par extraction.
+
+⚠️ **Quatre couleurs de rôle corrigées le 16 août 2026** (phase 7, tâche 8.3), même méthode :
+à la source, puis extraction. Elles servent de couleur de TEXTE dans huit vues sur onze — série
+d'une habitude, priorité d'une tâche, statut d'échéance, cadran du minuteur — et échouaient
+toutes à AA sur les surfaces claires de ce thème :
+
+| Jeton | Avant | Pire ratio | Après | Pire ratio |
+|---|---|---:|---|---:|
+| `--acc2` | `#0aa9a0` | 2,41 | `#07756f` | 4,59 |
+| `--ok` | `#0f9d64` | 2,88 | `#0b784c` | 4,56 |
+| `--warn` | `#b26a00` | 3,50 | `#975a00` | 4,60 |
+| `--bad` | `#d32546` | 4,21 | `#c92343` | 4,56 |
+
+Teinte et saturation conservées : seule la clarté descend, juste assez pour franchir 4,5 sur la
+plus sombre des quatre surfaces claires (`--bg2`). Les thèmes sombres ne bougent pas.
+`tests/unit/contrast.test.ts` surveille désormais ces quatre rôles sur `--bg` et `--bg2` — il ne
+regardait que `txt`, `txt2` et `mut`, c'est-à-dire tout sauf les couleurs qui portent les chiffres.
+
+⚠️ **Encre posée SUR une teinte.** Le texte qui s'affiche sur un aplat `--ok`/`--acc2` ou sur le
+dégradé `--acc → --acc2` ne se choisit pas en dur : il vaut `--bg`, la couleur la plus éloignée
+des accents de son thème. Voir `components/ui/encre.ts` — dix composants écrivaient `#04060d`,
+juste dans les deux thèmes sombres et faux dans `clinical`.
 
 ### Couleurs de catégorie (fixes, hors thème)
 | Clé | FR | EN | Couleur | Glyphe |

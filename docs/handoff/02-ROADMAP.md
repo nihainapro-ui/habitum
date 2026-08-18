@@ -134,6 +134,12 @@ File System Access API vers un dossier synchronisé par l'utilisateur.*
 | 7.4 | Virtualisation des longues listes (`@tanstack/react-virtual`), heatmap en `<canvas>` si > 400 cellules | perf |
 | 7.5 | Budget Lighthouse ≥ 95 / ≥ 95 / 100 / 100, `next build --profile`, mesure de `materialize` supprimée | perf |
 
+> **Correction du 17 août 2026.** La parenthèse de 7.2 désigne le mauvais thème, et l'erreur a
+> survécu à deux campagnes : mesure faite, `plasma` est conforme ; c'est **`clinical`** qui
+> échouait — `--mut` (corrigé le 12 août), puis `--acc2`, `--ok`, `--warn` et `--bad` (corrigés
+> le 17 août, jusqu'à 2,55:1). Les valeurs et la méthode sont dans
+> `docs/handoff/04-DESIGN-TOKENS.md` ; le contrôle vit dans `tests/unit/contrast.test.ts`.
+
 ---
 
 ## Phase 8 — Qualité et mise en production (1,5 j) · P1

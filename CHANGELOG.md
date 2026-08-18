@@ -1,5 +1,167 @@
 # Journal des modifications
 
+## 2026-08-17 — Phase 7 : qualité (parcours, non-régression visuelle, accessibilité)
+
+Première moitié de la phase de sortie. On ne cherche plus à construire, on cherche à casser :
+huit parcours critiques de bout en bout, un socle de non-régression visuelle, un audit
+d’accessibilité étendu aux vues peuplées et aux trois thèmes. **Six défauts réels trouvés et
+corrigés**, dont deux sur le chemin de RESTAURATION — l'application refusait de relire sa
+propre sauvegarde au-delà d'une quarantaine d'habitudes. **Un septième reste ouvert, mesuré
+et documenté** : à pleine charge, la restauration n'aboutit toujours pas.
+
+`npm run verify` vert — **473 tests unitaires**. Non-régression visuelle : 33 captures vertes.
+Recette consignée : `docs/RECETTE-2026-08-17.md`.
+
+### Tenu
+
+- **Les huit parcours critiques**, un fichier par parcours, verts sur desktop et mobile
+  (`tests/e2e/parcours/`). Chacun se termine sur un **état observable**, jamais sur un clic
+  réussi. Le parcours 5 — export → réinitialisation → import — est écrit en premier : c'est
+  le seul qui a déjà échoué. Il ne compare pas à une charge fabriquée mais à l'état AFFICHÉ
+  avant l'export, et exige l'égalité `gardées == lues` plutôt qu'un nombre en dur, qui
+  rougirait à la première entrée ajoutée au jeu de démonstration. (8.1)
+- **Ce que les parcours ajoutent aux tests de vue : le RECHARGEMENT au milieu du geste.** Une
+  écriture avalée par le store ne se voit qu'à la relecture — d'où le plafond `limit` repris
+  trois fois autour de sa cible (G9), le Pomodoro repris après rechargement, et le
+  déplacement au calendrier vérifié en base. (8.1)
+- **Socle de non-régression visuelle** : 11 vues × 3 thèmes, 33 captures, date figée au
+  5 août 2026 (`tests/e2e/visual/`). Le socle est celui de **Linux** — celui que produit
+  `ubuntu-latest`. Hors Linux, `npm run test:visual` passe par le conteneur officiel
+  Playwright : mêmes polices, mêmes pixels qu'en CI. Job `visuel` séparé du job `e2e` : un
+  écart visuel et un parcours cassé ne se lisent pas de la même façon. (8.2)
+- **axe étendu** aux onze vues PEUPLÉES, dans les trois thèmes, et à WCAG 2.2 — c'est
+  l'étiquette `wcag22aa` qui apporte `target-size`. Zéro violation critique ou sérieuse. (8.3)
+- **Charge côté client complétée** : heatmap six mois, export, import du fichier produit, et
+  **3 recalculs au clic sur 600 entrées en cache** — le plan en tolérait dix. (8.5)
+- **Robustesse de l'import** : pollution de prototype (`__proto__`, `constructor`, clés de
+  journal hostiles), fichier au-delà du plafond refusé **avant analyse**, JSON malformé refusé
+  avec un code stable, et un refus qui n'écrit ni ne détruit rien. (8.6, partiel)
+- **`react/no-danger` en ERREUR** dans ESLint. Le contrôle existait en e2e, sous forme de
+  grep sur les fichiers : il arrivait après coup, et seulement si on le lançait. (8.6, partiel)
+- **Page de version** (Réglages → À propos) : version applicative, version de schéma Dexie,
+  date de construction figée à la compilation. C'est ce qui rend un rapport d'anomalie
+  exploitable quand on n'a ni compte ni télémétrie. (8.8)
+- **`docs/RUNBOOK.md`** : rollback en une minute, trois niveaux de gravité, et le seul
+  incident S1 réellement possible — une régression de la couche de données. (8.10)
+
+### Corrigé — six défauts, dont deux sur le chemin de restauration des données
+
+- **Quatre couleurs de rôle échouaient à WCAG AA dans le thème `clinical`.** `--acc2` mesurait
+  **2,55:1** — la couleur qui porte les séries, les taux et les liens ; `--ok`, `--warn` et
+  `--bad` échouaient aussi. Personne ne le voyait parce que `contrast.test.ts` ne surveillait
+  que `txt`, `txt2` et `mut` : tout, sauf les couleurs qui portent les CHIFFRES. Corrigé **à
+  la source** (jetons du prototype), teinte et saturation conservées, puis `tokens.css`
+  régénéré par extraction — même méthode que la correction de `--mut` du 12 août. Les treize
+  paires sont désormais sous contrôle unitaire, sur les trois thèmes.
+- **Dix composants écrivaient une encre presque noire en dur** (`#04060d`) sur un aplat `--ok`
+  ou `--acc2`, ou sur le dégradé `--acc → --acc2` : bouton principal, case cochée, pastille de
+  semaine, jour courant du calendrier, bandeau de mise à jour, accueil, minuteur. Juste dans
+  les deux thèmes sombres, **faux dans `clinical`**, dont les accents sont sombres — texte
+  sombre sur fond sombre. **axe ne pouvait pas le voir** : il n'évalue pas le contraste d'un
+  élément dont le fond est un dégradé. L'encre se déduit maintenant du thème
+  (`components/ui/encre.ts`), et la seule exception — l'avatar, dont le dégradé OKLCH est
+  clair dans les trois thèmes — est écrite sur place.
+- **La carte de chaleur défilait au lieu de se réorganiser sous 768 px** — dernier point
+  responsive ouvert depuis l'audit du prototype. Vingt-six colonnes demandent 364 px ; il en
+  reste environ 320 à 390 px de large. Le cadre `overflow-x: auto` absorbait le débordement :
+  **la page ne débordait pas, et le contrôle des quatre paliers ne voyait rien.** Ce qui
+  restait, c'était la moitié droite de six mois d'historique atteignable par un geste
+  horizontal, et par lui seul — hors de portée sans souris ni doigt, ses cellules étant de
+  simples `<span>`. La carte montre désormais treize semaines sous 768 px, et **le dit** :
+  l'intitulé passe à « 3 derniers mois » (G3).
+- **L'écriture du journal à l'import était trois fois trop lente.** Profilé plutôt que deviné,
+  et la première hypothèse était fausse : la validation `zod` ne coûte que **246 ms** sur
+  219 000 entrées, `JSON.parse` **134 ms**. Le coût était entièrement dans **`logs.bulkPut`
+  d'un seul bloc de 219 000 lignes : 90 s**. Les mêmes lignes **par lots de 10 000 : 27 s**,
+  un facteur 3,3 pour trois lignes de code. Les lots restent DANS la transaction : l'atomicité
+  ne cède rien, un import interrompu ne laisse toujours pas une base à moitié peuplée.
+- **Le plafond d'import était plus bas que l'export du produit lui-même — perte de données
+  différée.** `MAX_IMPORT_BYTES` valait **2 Mo** ; à la charge documentée du plan — 200
+  habitudes × 3 ans, 219 000 entrées — `exportToJson()` produit **10,6 Mo** (5,32 Mo pour
+  `log`, autant pour `ov`, qui porte le même objet sous son ancien nom, G1). Au-delà d'une
+  quarantaine d'habitudes tenues sur trois ans, l'utilisateur téléchargeait une sauvegarde que
+  l'application **refusait de relire**. Sans compte, l'export EST la sauvegarde : le garde-fou
+  détruisait exactement ce qu'il devait protéger. Trouvé par le test de charge de la tâche 8.5,
+  qui réimporte le fichier qu'il vient de produire — **aucun test ne le faisait avant**, parce
+  qu'aucun ne partait d'un export réel à l'échelle. Plafond porté à 64 Mo, six fois la charge
+  du plan, et le refus reste posé AVANT lecture. Un test unitaire recalcule la taille attendue
+  au lieu de la recopier : si le format d'export change, le chiffre suit.
+- **Le panneau « À propos » affichait `Habitum 2.4 · Web`**, une chaîne écrite en dur, jamais
+  mise à jour, et fausse. Un numéro de version inventé est pire qu'absent : il fait
+  diagnostiquer la mauvaise version.
+
+### Trois écarts au plan, tous délibérés et écrits sur place
+
+- **Le parcours 6 ne prouve pas « l'isolation des profils »** : il n'y en a pas. Un profil est
+  une identité — nom, identifiant, fonction, avatar — et non une partition de données ; aucune
+  table ne porte de colonne de profil, ici comme dans le prototype. Le parcours fixe donc ce
+  que la bascule garantit réellement, et **consigne explicitement que les données sont
+  PARTAGÉES**, pour qu'une isolation ajoutée un jour casse ici plutôt que d'être supposée.
+- **Les cibles tactiles sont jugées par `target-size` d'axe, pas par une mesure maison.** Le
+  critère WCAG 2.2 n'est pas « chaque cible fait 24 px » : une cible plus petite est conforme
+  si un cercle de 24 px centré sur elle ne croise aucune autre cible. Une mesure maison qui
+  ignorait cette exception a inventé trente-quatre violations sur des cases à cocher qu'axe
+  déclare conformes, à raison. Le seuil de **confort de 44 px demandé par le plan n'est pas
+  atteint** : 174 commandes sont dessous. Il est **mesuré, imprimé à chaque exécution et
+  chiffré par famille** dans `docs/a11y/rapport-lecteur-ecran.md` § 3 plutôt que passé sous
+  silence — l'atteindre voudrait dire épaissir toutes les commandes de l'application, un
+  remaniement visuel que la phase n'a pas budgété et qui s'écarterait du prototype.
+- **Le compteur de recalculs du plan vivait sur `window`, dans un test de navigateur.** Il est
+  mesuré à la place dans le test unitaire du store, où l'unité est exacte — le nombre
+  d'entrées oubliées EST le nombre de recalculs à payer — et où il n'exige aucune trappe en
+  production.
+
+### Le harnais visuel a failli n'asserter rien
+
+Le contrôle négatif (`VISUEL_CONTROLE_NEGATIF=1` : rotation de teinte de 40° sur toute la
+page) **passait au vert** avec le seuil par défaut de Playwright. La raison tient au produit :
+deux thèmes sur trois sont quasi monochromes, et tourner la teinte d'un gris ne le déplace
+presque pas en espace YIQ. Le harnais était donc aveugle à la régression la plus probable —
+un jeton de couleur qui change — c'est-à-dire exactement ce que la tâche 8.3 venait de trouver
+à la main. Relevé sur les 33 captures : seuil 0,2 → **0 échec** ; 0,05 → 7 ; **0,02 → 27**.
+Le seuil retenu est 0,02, et le contrôle négatif reste dans le fichier.
+
+Une deuxième cause d'instabilité a été trouvée au passage : le thème était posé **avant** que
+les transitions soient neutralisées, si bien que quatre captures sur trente-trois saisissaient
+la page à mi-interpolation — toutes en `clinical`, dont les fonds partent de plus loin. Même
+défaut, même correction, dans l'audit axe : on mesurait des couleurs intermédiaires qui
+n'existent dans aucun état stable du produit.
+
+### Reste ouvert — et pourquoi
+
+| # | Ce qui manque | Ce qu'il faut |
+|---|---|---|
+| 8.6 | `next@16`, `next-intl@4`, `exactOptionalPropertyTypes`, `npm audit --audit-level=high` | montées majeures |
+| 8.3 | Trois parcours au lecteur d'écran (NVDA, VoiceOver) | une personne qui écoute — protocole prêt |
+| 8.7 | Tests utilisateurs, 5 personnes × 3 parcours | cinq personnes — protocole prêt |
+| 8.9 | Mise en production, 11 vérifications, `securityheaders.com` | décision C et accès d'hébergeur |
+
+### Un défaut connu, mesuré, laissé ouvert — la lenteur de l'import
+
+**L'écriture du journal à l'import reste trop lente**, à deux échelles :
+
+| Charge | Attendu (plan) | Mesuré |
+|---|---|---|
+| Fichier de 2 Mo (~43 700 entrées) | < 5 s | **32,3 s** |
+| Export à pleine charge (10,7 Mo, 219 000 entrées) | doit aboutir | **n'aboutit pas en 5 min** |
+
+Et dans les deux cas, **aucun indicateur de progression** — que le plan demandait pourtant.
+L'écriture par lots a déjà gagné un facteur 3,3 ; ce qui reste tient au schéma : chaque ligne
+de journal entretient **trois index secondaires** en plus de sa clé primaire composite, et le
+réduire demande une migration Dexie. À instruire, pas à bricoler en fin de phase, sur le
+chemin qui restaure les données des gens.
+
+Les deux tests restent dans le harnais, marqués `fixme` : ils gardent le budget du plan
+**écrit**, et repasseront au vert le jour où il sera tenu. Abaisser un seuil pour faire passer
+la suite aurait produit un contrôle qui ne mesure plus rien — c'est exactement le défaut que
+la phase 6 avait trouvé sur le budget Lighthouse.
+
+Portée : un compte ordinaire — quelques habitudes, un an — importe en quelques secondes. Il
+faut une quarantaine d'habitudes tenues trois ans pour atteindre 2 Mo. Mesures et pistes :
+`docs/RECETTE-2026-08-17.md` § 8.
+
+---
+
 ## 2026-08-15 — Phase 6 : vitrine et SEO
 
 Le projet a enfin un actif indexable, et l'application a cessé d'en être un. La racine sert une

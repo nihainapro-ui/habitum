@@ -123,6 +123,21 @@ const nextConfig = {
   experimental: { globalNotFound: true },
   // Ne pas annoncer le framework : renseignement gratuit pour un attaquant.
   poweredByHeader: false,
+
+  /* Tâche 8.8 — date de construction, FIGÉE À LA COMPILATION.
+     La page « À propos » l'affiche pour rendre un rapport d'anomalie
+     exploitable (docs/RUNBOOK.md § 4). Elle est évaluée ici, une fois, et
+     inlinée dans le bundle : les pages sont prérendues, donc un `new Date()`
+     au rendu donnerait la date du build côté serveur et celle de l'ouverture
+     côté client — deux valeurs pour le même écran, c'est-à-dire un chiffre
+     fabriqué (CLAUDE.md § 3).
+     `SOURCE_DATE_EPOCH` est honoré s'il est posé : c'est la convention des
+     constructions reproductibles, et elle permet de comparer deux artefacts. */
+  env: {
+    NEXT_PUBLIC_BUILD_DATE: new Date(
+      process.env.SOURCE_DATE_EPOCH ? Number(process.env.SOURCE_DATE_EPOCH) * 1000 : Date.now(),
+    ).toISOString(),
+  },
   eslint: { ignoreDuringBuilds: false },
   typescript: { ignoreBuildErrors: false },
 

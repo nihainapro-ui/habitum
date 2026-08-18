@@ -12,6 +12,7 @@ import { NotificationSetting } from './NotificationSetting';
 import { DataSection } from './DataSection';
 import { LocaleSwitcher } from './LocaleSwitcher';
 import { ThemeSwitcher } from './ThemeSwitcher';
+import { AboutPanel } from './AboutPanel';
 
 /* Vue « Paramètres » — 05-SPEC-VUES.md § 12.
 
@@ -174,11 +175,12 @@ export function SettingsView() {
         </div>
       </Panel>
 
-      <Panel title={t('aboutSec')}>
-        <span className="font-mono text-[12px]" style={{ color: 'var(--txt2)' }}>
-          {t('version')}
-        </span>
-      </Panel>
+      {/* Tâche 8.8 — remplace un panneau qui affichait « Habitum 2.4 · Web »,
+          une chaîne écrite en dur, jamais mise à jour, et FAUSSE : le dépôt en
+          est à la version de `package.json`. Un numéro de version inventé est
+          un chiffre fabriqué au sens de CLAUDE.md § 3, et il est pire qu'absent
+          — il fait diagnostiquer la mauvaise version. */}
+      <AboutPanel />
     </div>
   );
 }

@@ -1,6 +1,7 @@
 'use client';
 
 import { Check } from 'lucide-react';
+import { ENCRE_SUR_TEINTE } from '@/components/ui/encre';
 
 /* Case à cocher d'une ligne.
 
@@ -36,7 +37,7 @@ export function RowCheck({
         height: size,
         borderColor: checked ? 'var(--ok)' : 'var(--line2)',
         background: checked ? 'var(--ok)' : 'transparent',
-        color: checked ? '#04120d' : 'transparent',
+        color: checked ? ENCRE_SUR_TEINTE : 'transparent',
         cursor: disabled ? 'not-allowed' : 'pointer',
         transition: 'background .2s ease, border-color .2s ease',
       }}
