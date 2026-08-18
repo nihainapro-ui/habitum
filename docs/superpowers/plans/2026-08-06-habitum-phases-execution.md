@@ -385,8 +385,10 @@ npx @lhci/cli autorun                       # budget tenu
 > **État de la phase 7 au 17 août 2026.** Livré : les huit parcours critiques (8.1), la
 > non-régression visuelle (8.2), l'accessibilité approfondie (8.3), la recette responsive
 > (8.4), la charge côté client (8.5), la page de version (8.8) et le runbook (8.10).
-> **Reste :** les montées majeures `next@16` / `next-intl@4` et `exactOptionalPropertyTypes`
-> (8.6) ; les trois parcours au lecteur d'écran (8.3, étape 2) et les tests utilisateurs
+> **Reste :** les montées majeures `next@16` / `next-intl@4` — **tentées, mesurées, annulées** :
+> elles suppriment les quatre vulnérabilités hautes mais cassent le service worker et font
+> télécharger le registre sombre à la vitrine (détail au CHANGELOG) — et
+> `exactOptionalPropertyTypes`, 34 erreurs relevées (8.6) ; les trois parcours au lecteur d'écran (8.3, étape 2) et les tests utilisateurs
 > (8.7), qui demandent des personnes ; la mise en production (8.9), qui demande la
 > **décision C** et des accès d'hébergeur. Détail : `CHANGELOG.md` et
 > `docs/RECETTE-2026-08-17.md`.

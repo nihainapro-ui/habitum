@@ -127,11 +127,59 @@ la page à mi-interpolation — toutes en `clinical`, dont les fonds partent de 
 défaut, même correction, dans l'audit axe : on mesurait des couleurs intermédiaires qui
 n'existent dans aucun état stable du produit.
 
+### Les montées majeures : tentées, mesurées, ANNULÉES (8.6, D11 et D23)
+
+`next@16` + `next-intl@4` ont été installées, éprouvées, puis **retirées**. Ce n'est pas un
+renoncement de principe : c'est le résultat de l'essai, et il vaut mieux qu'il soit écrit que
+refait de zéro dans six mois.
+
+**Ce que la montée apporte, et c'est réel :** `npm audit` passe de **quatre vulnérabilités
+hautes à ZÉRO** (`postcss`, `sharp` par `next`, plus `nanoid` corrigé au passage). C'est
+exactement ce que D11 attendait.
+
+**Ce qu'elle coûte, mesuré sur la chaîne complète :** `npm run verify` reste vert — 473 tests
+unitaires, build statique intact, aucune route repassée en dynamique (D12 tenu). Mais **six
+contrôles e2e tombent, et deux régressions sont réelles** :
+
+1. **La vitrine télécharge tout le registre sombre.** `/` réclame les dix fichiers de
+   polices — Space Grotesk et JetBrains Mono compris — sur une page qui n'en affiche pas un
+   caractère. Next 16 ne découpe plus la feuille de styles de `next/font` par import :
+   séparer `lib/fonts.ts` en deux modules, l'un pour la vitrine l'autre pour l'application,
+   **n'y change rien** (essayé, mesuré). La séparation des registres de la phase 6, et le
+   budget Lighthouse qui en dépend, ne tiennent plus. C'est `tests/e2e/seo.spec.ts` qui l'a vu.
+2. **Le service worker ne prend plus le contrôle.** Les quatre contrôles PWA expirent :
+   installable et hors ligne tombent tous les deux. `@serwist/next@9.5.12` déclare pourtant
+   `next: >=14` — la compatibilité annoncée n'est pas la compatibilité constatée.
+
+**Trois autres frottements, ceux-là traités :** `eslint-config-next@16` livre des
+configurations plates et `FlatCompat` ne les traduit plus (référence circulaire au
+validateur) ; le compilateur React ajoute deux règles qui relèvent quatorze occurrences — non
+des défauts, mais le motif « lire le navigateur après le montage » qu'impose le prérendu
+(D12), et dont la sortie propre est `useSyncExternalStore` sur treize composants ; `next build`
+réécrit `tsconfig.json`.
+
+**`exactOptionalPropertyTypes` (D23)** a été activé dans la foulée : **34 erreurs**,
+concentrées dans les trois éditeurs (21 sur 34) et exactement là où le plan les annonçait —
+`Habit.start`, `Habit.end`, `Task.time`, `Goal.window`. Rien d'insurmontable, mais c'est un
+chantier à part entière, et l'enchaîner à une montée qu'on vient d'annuler n'aurait rien
+prouvé.
+
+**Pourquoi annuler plutôt que livrer :** livrer aurait échangé quatre vulnérabilités hautes
+— dans des dépendances de construction, sur une application qui ne reçoit aucune entrée
+réseau — contre la perte du fonctionnement hors ligne et du budget de performance de la
+vitrine. Ce n'est pas un bon échange, et surtout ce n'est pas un échange à faire en fin de
+phase. Le seuil d'audit de la CI reste donc à `critical`, avec sa date et son motif.
+
+**Ce que la prochaine tentative doit régler d'abord :** la compatibilité Serwist ↔ Next 16,
+et le découpage des polices par groupe de routes. Les deux sont indépendantes du reste du
+produit, et les huit parcours plus les 33 captures sont désormais là pour juger le résultat —
+c'est précisément ce que le plan attendait d'eux.
+
 ### Reste ouvert — et pourquoi
 
 | # | Ce qui manque | Ce qu'il faut |
 |---|---|---|
-| 8.6 | `next@16`, `next-intl@4`, `exactOptionalPropertyTypes`, `npm audit --audit-level=high` | montées majeures |
+| 8.6 | `next@16`, `next-intl@4`, `exactOptionalPropertyTypes`, seuil d'audit à `high` | **tenté et annulé** — voir ci-dessus |
 | 8.3 | Trois parcours au lecteur d'écran (NVDA, VoiceOver) | une personne qui écoute — protocole prêt |
 | 8.7 | Tests utilisateurs, 5 personnes × 3 parcours | cinq personnes — protocole prêt |
 | 8.9 | Mise en production, 11 vérifications, `securityheaders.com` | décision C et accès d'hébergeur |
