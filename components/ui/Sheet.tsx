@@ -21,8 +21,17 @@ export function Sheet({
   trigger?: ReactNode;
   children: ReactNode;
 }) {
+  /* Spread CONDITIONNEL plutôt que `open={open}` — `exactOptionalPropertyTypes`
+     (D23). Une prop déclarée `open?: boolean` signifie « absente, ou un
+     booléen » : lui passer explicitement `undefined` n'est pas la même chose
+     que ne pas la passer, et Radix distingue justement les deux — `undefined`
+     bascule le composant en mode NON CONTRÔLÉ. Le spread rend cette
+     distinction visible au lieu de la laisser au hasard. */
   return (
-    <RadixDialog.Root open={open} onOpenChange={onOpenChange}>
+    <RadixDialog.Root
+      {...(open === undefined ? {} : { open })}
+      {...(onOpenChange === undefined ? {} : { onOpenChange })}
+    >
       {trigger ? <RadixDialog.Trigger asChild>{trigger}</RadixDialog.Trigger> : null}
       <RadixDialog.Portal>
         <RadixDialog.Overlay

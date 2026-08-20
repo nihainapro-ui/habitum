@@ -22,6 +22,17 @@ tests, build. GitHub Actions est gratuit sur dépôt public.
 
 ## 2. Vercel (plan Hobby, gratuit)
 
+> **Décision C, tranchée le 18 août 2026 : Vercel Hobby.** Habitum est un produit **non
+> commercial**, et les conditions du plan Hobby ne l'interdisent qu'à l'usage commercial. La
+> décision est donc durable, pas provisoire.
+>
+> **La contrainte qui l'accompagne :** Hobby interdit **toute** monétisation. Cela ferme deux
+> choses que le programme envisageait — les **dons** rattachés au produit (décision F) et la
+> **synchronisation payante** de la v1.1. Si l'une des deux revient, il faut passer à
+> Cloudflare Pages ou Vercel Pro, et **avant l'indexation** : déplacer un domaine déjà
+> référencé coûte du référencement. C'est aussi ce que dit `lib/site/routes.ts`, d'où les
+> mentions légales tirent le nom de l'hébergeur.
+
 1. « Add New… → Project », importer le dépôt.
 2. Framework détecté : Next.js. L'application démarre sans aucune variable
    d'environnement ; **la vitrine en demande une** (voir ci-dessous).

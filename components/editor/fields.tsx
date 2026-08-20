@@ -5,6 +5,20 @@ import { useTranslations } from 'next-intl';
 import { Plus, X } from 'lucide-react';
 import { champStyle, Field } from '@/components/ui';
 
+/* `?: T | undefined` plutôt que `?: T` — `exactOptionalPropertyTypes` (D23).
+ *
+ * Sous ce drapeau, `error?: string` signifie « absente, ou une chaîne », et
+ * `error={undefined}` devient une erreur. La distinction est utile là où les
+ * deux cas diffèrent — chez Radix, `open={undefined}` bascule un composant en
+ * mode non contrôlé, et `components/ui/Dialog.tsx` la respecte par un spread
+ * conditionnel.
+ *
+ * Ici, elle n'existe pas : un champ sans erreur et un champ dont l'erreur vaut
+ * `undefined` s'affichent exactement pareil. Déclarer `| undefined` dit donc la
+ * vérité sur ces composants, et évite de tordre vingt appels
+ * `error={x ? … : undefined}` — qui est la forme naturelle quand on lit un
+ * `FieldError` de react-hook-form. */
+
 /* Contrôles de saisie de l'éditeur.
 
    Aucun n'est « intelligent » : ils affichent une valeur et rendent la
@@ -25,10 +39,10 @@ export function TextInput({
   label: string;
   value: string;
   onChange: (v: string) => void;
-  error?: string;
-  hint?: string;
+  error?: string | undefined;
+  hint?: string | undefined;
   type?: 'text' | 'date' | 'time' | 'number';
-  placeholder?: string;
+  placeholder?: string | undefined;
 }) {
   return (
     <Field label={label} error={error} hint={hint}>
@@ -56,7 +70,7 @@ export function TextArea({
   label: string;
   value: string;
   onChange: (v: string) => void;
-  placeholder?: string;
+  placeholder?: string | undefined;
 }) {
   return (
     <Field label={label}>
@@ -85,7 +99,7 @@ export function Select<T extends string>({
   value: T;
   options: { value: T; label: string }[];
   onChange: (v: T) => void;
-  error?: string;
+  error?: string | undefined;
 }) {
   return (
     <Field label={label} error={error}>
@@ -121,7 +135,7 @@ export function DayPicker({
   value: number[];
   names: string[];
   onChange: (v: number[]) => void;
-  error?: string;
+  error?: string | undefined;
 }) {
   return (
     <fieldset className="m-0 flex flex-col gap-1.5 border-0 p-0">
@@ -178,7 +192,7 @@ export function LigneListe({
   addLabel: string;
   onAdd: () => void;
   onRemove: (index: number) => void;
-  error?: string;
+  error?: string | undefined;
   children: (index: number) => ReactNode;
 }) {
   const t = useTranslations('app');

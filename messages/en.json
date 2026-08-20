@@ -447,6 +447,7 @@
     "errT": "Something went wrong",
     "expFail": "Export failed on this device. Try again or use another browser.",
     "expOk": "Backup exported",
+    "impBusy": "Importing… do not close this tab.",
     "impMerge": "Importing adds to the current account and replaces entries with the same id. A backup copy is taken first.",
     "impPartial": "invalid entries skipped",
     "impTooBig": "File too large (64 MB maximum)",

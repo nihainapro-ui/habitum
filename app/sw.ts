@@ -37,8 +37,20 @@ declare global {
 
 declare const self: ServiceWorkerGlobalScope;
 
+/* Le manifeste est INJECTÉ à la construction : il n'existe pas en
+   développement, où il vaut `undefined`. Sous `exactOptionalPropertyTypes`
+   (D23), passer la clé à `undefined` n'équivaut plus à ne pas la passer — et
+   c'est bien la seconde qu'on veut : Serwist doit voir un worker SANS liste de
+   préchargement, pas un worker dont la liste est vide.
+
+   UNE SEULE mention de `self.__SW_MANIFEST` dans tout le fichier, et c'est
+   celle-ci : l'injecteur de Serwist refuse d'en trouver deux (« Multiple
+   instances of self.__SW_MANIFEST »). D'où la constante plutôt que deux
+   références dans un ternaire. */
+const manifeste = self.__SW_MANIFEST;
+
 const serwist = new Serwist({
-  precacheEntries: self.__SW_MANIFEST,
+  ...(manifeste === undefined ? {} : { precacheEntries: manifeste }),
   skipWaiting: false,
   clientsClaim: true,
   /* Préchargement de navigation DÉSACTIVÉ : il lance la requête réseau en

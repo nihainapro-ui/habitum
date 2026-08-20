@@ -15,9 +15,9 @@ export function Toast({
   dismissLabel,
 }: {
   message: ReactNode;
-  actionLabel?: string;
-  onAction?: () => void;
-  onDismiss?: () => void;
+  actionLabel?: string | undefined;
+  onAction?: (() => void) | undefined;
+  onDismiss?: (() => void) | undefined;
   dismissLabel: string;
 }) {
   return (

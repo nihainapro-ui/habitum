@@ -365,7 +365,7 @@ npx @lhci/cli autorun                       # budget tenu
 | **G** | Application sur `/` ou `/app` ? | **`/app`**, la vitrine prend `/` | Phases 2 à 7 | **Avant la phase 2** — les tests e2e codent les routes en dur |
 | **E** | Télémétrie ? | Journal **local** par défaut · analytique sur la vitrine seule · Sentry opt-in jamais activé sans geste | Phase 5 | Avant la phase 5 |
 | **F** | Modèle économique | Gratuit + dons en v1.0 · synchronisation payante en v1.1 — on ne facture que ce qui coûte | Phase 6 | Avant la phase 6 |
-| **C** | **Vercel Hobby ou Cloudflare Pages ?** | Hobby **interdit l'usage commercial** — trancher selon la décision F | Phase 7 tâche 7.9 | **Avant le lancement** |
+| **C** | **Vercel Hobby ou Cloudflare Pages ?** | ✅ **Tranchée le 18 août 2026 : Vercel Hobby.** Le produit est non commercial, le plan Hobby est donc légitime. **Contrainte durable :** aucune monétisation — ni dons rattachés au produit, ni synchronisation payante (cela ferme la v1.1 payante qu'envisageait la décision F). Un retour en arrière impose Cloudflare Pages ou Vercel Pro, et **avant** l'indexation | Phase 7 tâche 7.9 | ✅ faite |
 
 ---
 

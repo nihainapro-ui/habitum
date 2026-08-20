@@ -228,4 +228,59 @@ describe('dépôts spécialisés — les requêtes métier filtrent les suppress
     expect(await habitsRepo.update('fantome', { name: 'X' })).toBeUndefined();
     expect(await habitsRepo.count()).toBe(1);
   });
+
+  /* ------------------------------------------------------------------------
+     Le contrat de `UpdatePatch` — D23, `exactOptionalPropertyTypes`.
+
+     CLÉ ABSENTE = ne pas toucher. CLÉ À `undefined` = RETIRER le champ.
+
+     Sans ce contrat, `{ sourceHabitId: undefined }` voulait dire les deux à la
+     fois, et la ligne écrite gardait la clé avec une valeur `undefined` — ce
+     qui n'est ni l'un ni l'autre. La distinction n'est pas théorique : le
+     modèle vise la synchronisation, où « jamais renseigné » et « effacé » ne se
+     fusionnent pas de la même façon.
+     ---------------------------------------------------------------------- */
+
+  it('une clé posée à undefined RETIRE le champ, elle ne l’écrase pas', async () => {
+    const g = await goalsRepo.create({
+      name: 'Semi-marathon',
+      kind: 'cumul',
+      target: 21,
+      unit: 'km',
+      category: 'sport',
+      sourceHabitId: 'course',
+      milestones: [],
+      current: 0,
+    });
+    expect(g.sourceHabitId).toBe('course');
+
+    const detache = await goalsRepo.update(g.id, { sourceHabitId: undefined });
+
+    /* La clé a DISPARU. `toBeUndefined()` seul ne le prouverait pas : une clé
+       présente valant `undefined` y répondrait aussi. */
+    expect(detache && 'sourceHabitId' in detache).toBe(false);
+
+    /* Et ce qui est relu depuis la base dit la même chose que ce qui a été
+       rendu — c'est là que le défaut se serait vu, pas en mémoire. */
+    const relu = await goalsRepo.get(g.id);
+    expect(relu && 'sourceHabitId' in relu).toBe(false);
+  });
+
+  it('une clé absente du correctif laisse le champ intact', async () => {
+    const g = await goalsRepo.create({
+      name: '24 livres',
+      kind: 'cumul',
+      target: 24,
+      unit: 'livres',
+      category: 'mind',
+      sourceHabitId: 'lecture',
+      milestones: [],
+      current: 0,
+    });
+
+    const renomme = await goalsRepo.update(g.id, { name: '30 livres' });
+
+    expect(renomme?.name).toBe('30 livres');
+    expect(renomme?.sourceHabitId).toBe('lecture');
+  });
 });

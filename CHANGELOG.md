@@ -1,5 +1,84 @@
 # Journal des modifications
 
+## 2026-08-20 — Phase 7 : ce qui pouvait être clos l'a été
+
+Suite directe de l'entrée du 17 août. Quatre points restaient à ma portée sans personne ni
+déploiement ; les quatre sont faits. **475 tests unitaires**, `npm run verify` vert.
+
+### Tenu
+
+- **`exactOptionalPropertyTypes` activé (D23).** 34 erreurs, corrigées selon une règle et non
+  au cas par cas — parce que la règle est justement ce que le drapeau sert à révéler :
+
+  | Situation | Traitement |
+  |---|---|
+  | `undefined` ≠ absent, et la différence est RÉELLE | spread conditionnel, la distinction est rendue explicite |
+  | `undefined` = absent, sur nos propres composants | `?: T \| undefined`, la déclaration dit la vérité |
+  | Entité qui part EN BASE | le champ vide est **omis**, jamais posé à `undefined` |
+
+  Le premier cas couvre Radix, où `open={undefined}` bascule un composant en mode NON
+  CONTRÔLÉ — ce n'est pas un détail de typage, c'est un changement de comportement. Le
+  troisième couvre les trois éditeurs : dans IndexedDB, une clé absente et une clé valant
+  `undefined` ne se relisent pas pareil, et le modèle vise la synchronisation, où « jamais
+  renseigné » et « effacé » ne se fusionnent pas de la même façon.
+
+- **Le contrat de `UpdatePatch` est devenu explicite, et testé.** `{ sourceHabitId: undefined }`
+  voulait dire deux choses à la fois — « ne touche pas » ou « efface » — et la ligne écrite
+  gardait la clé avec une valeur `undefined`, qui n'est ni l'un ni l'autre. Désormais :
+  **clé absente = ne pas toucher, clé à `undefined` = RETIRER le champ**, et `update` supprime
+  réellement la clé. Deux tests le verrouillent, dont un qui relit depuis la base — c'est là
+  que le défaut se serait vu, pas en mémoire. Cas d'usage réel : supprimer une habitude
+  détache les objectifs qu'elle alimentait.
+
+- **Indicateur de progression à l'import** — le plan le demandait, il n'existait pas. L'import
+  d'un fichier de 2 Mo prend 32 s, et l'écran ne disait RIEN : ni sablier, ni bouton grisé.
+  Une interface muette sur une opération longue est une interface qu'on croit plantée, et
+  l'utilisateur ferme l'onglet **au milieu d'une écriture**. L'attente est maintenant visible,
+  **annoncée** en région live polie — trente secondes de silence n'existent pas pour qui ne
+  voit pas l'écran — et elle retombe **même quand l'import échoue** : sans ce `finally`, un
+  refus laissait les boutons grisés pour toujours. Deux tests, dont celui du refus.
+
+- **Décision C tranchée : Vercel Hobby.** Le produit est **non commercial**, et les conditions
+  du plan Hobby ne l'interdisent qu'à l'usage commercial. La décision est donc durable, et
+  elle est écrite là où elle engage : `lib/site/routes.ts` (d'où les mentions légales tirent
+  le nom de l'hébergeur), `DEPLOY.md`, et la table des décisions du programme.
+
+  **La contrainte qui l'accompagne, et qui vaut pour la suite :** Hobby interdit TOUTE
+  monétisation. Cela ferme les **dons** rattachés au produit (décision F) et la
+  **synchronisation payante** de la v1.1. Si l'une revient, il faut Cloudflare Pages ou Vercel
+  Pro — et il faut en changer **avant** l'indexation, parce que déplacer un domaine déjà
+  référencé coûte du référencement.
+
+### Mesuré
+
+- **Budget de performance rejoué** après les corrections de jetons du 17 août :
+  **100 / 100 / 100 / 100** sur `/` et `/en`, 100 / 100 / 100 sur `/onboarding` (dont le SEO à
+  63 est attendu — la page est `noindex`, et le budget y désactive `is-crawlable`). Assombrir
+  quatre couleurs du thème `clinical` ne coûte rien au budget, et l'accessibilité reste à 100.
+
+  L'exécution se fait dans le conteneur officiel : sous Windows, Chrome échoue sur le nettoyage
+  de son dossier temporaire (`EPERM`), et la CI mesure de toute façon sur `ubuntu-latest`.
+
+### Un détail qui aurait cassé la construction en silence
+
+`app/sw.ts` mentionnait `self.__SW_MANIFEST` deux fois après le passage au spread conditionnel,
+et l'injecteur de Serwist refuse d'en trouver deux — la construction échouait avec « Multiple
+instances of self.__SW_MANIFEST ». Une constante intermédiaire suffit, et le commentaire dit
+pourquoi elle est là, pour qu'on ne la « simplifie » pas plus tard.
+
+### Ce qui reste, et ce que ça demande
+
+| # | Reste | Ce qu'il faut |
+|---|---|---|
+| 8.6 | `next@16` / `next-intl@4` | Serwist compatible + découpage des polices par groupe de routes |
+| 8.3 | 3 parcours au lecteur d'écran | une personne qui écoute — protocole prêt |
+| 8.7 | 5 tests utilisateurs | cinq personnes — protocole prêt |
+| 8.9 | mise en ligne, 11 vérifications, rollback éprouvé | des accès Vercel — **plus aucune décision en amont** |
+
+Le chemin critique n'est plus une décision : c'est un accès.
+
+---
+
 ## 2026-08-17 — Phase 7 : qualité (parcours, non-régression visuelle, accessibilité)
 
 Première moitié de la phase de sortie. On ne cherche plus à construire, on cherche à casser :

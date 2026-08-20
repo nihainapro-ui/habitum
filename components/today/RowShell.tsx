@@ -4,6 +4,22 @@ import type { ReactNode } from 'react';
 import type { Category } from '@/lib/domain';
 import { CategoryGlyph, COULEURS_CATEGORIE } from '@/components/ui';
 
+/* Les props facultatives portent `| undefined` — `exactOptionalPropertyTypes`
+ * (D23). Sous ce drapeau, `x?: T` signifie « absente, ou un T », et
+ * `x={undefined}` devient une erreur.
+ *
+ * La distinction compte là où les deux cas DIFFÈRENT : chez Radix,
+ * `open={undefined}` bascule un composant en mode non contrôlé, et
+ * `components/ui/Dialog.tsx` la respecte par un spread conditionnel. Elle
+ * compte aussi pour les entités qui partent en base, où une clé absente et une
+ * clé à `undefined` ne se relisent pas pareil — c'est pourquoi les éditeurs
+ * omettent les champs vides au lieu de les poser.
+ *
+ * Ici, elle n'existe pas : ces composants rendent exactement la même chose
+ * dans les deux cas. Déclarer `| undefined` dit donc la vérité, plutôt que de
+ * forcer un spread conditionnel à chaque appel pour une différence qui n'a pas
+ * de sens. */
+
 /* Géométrie commune d'une ligne de la file d'exécution.
 
    Habitude et tâche partagent la même anatomie — case, glyphe, intitulé,
@@ -28,14 +44,14 @@ export function RowShell({
   name: string;
   done: boolean;
   tag: string;
-  meta?: string;
-  amount?: string;
+  meta?: string | undefined;
+  amount?: string | undefined;
   /** Avancement 0–1, ou `null` quand la notion n'a pas de sens (oui/non). */
-  ratio?: number | null;
+  ratio?: number | null | undefined;
   check: ReactNode;
-  controls?: ReactNode;
+  controls?: ReactNode | undefined;
   drawer: ReactNode;
-  sub?: ReactNode;
+  sub?: ReactNode | undefined;
 }) {
   const couleur = COULEURS_CATEGORIE[category];
 

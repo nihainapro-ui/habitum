@@ -15,7 +15,7 @@ export function PiedEditeur({
   onDelete,
 }: {
   onCancel: () => void;
-  onDelete?: () => void;
+  onDelete?: (() => void) | undefined;
 }) {
   const t = useTranslations('editor');
   const [confirme, setConfirme] = useState(false);

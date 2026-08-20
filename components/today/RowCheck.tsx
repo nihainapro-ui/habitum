@@ -19,9 +19,9 @@ export function RowCheck({
 }: {
   name: string;
   checked: boolean;
-  disabled?: boolean;
+  disabled?: boolean | undefined;
   onToggle: () => void;
-  size?: number;
+  size?: number | undefined;
 }) {
   return (
     <button

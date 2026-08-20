@@ -12,8 +12,8 @@ export function Field({
   children,
 }: {
   label: ReactNode;
-  hint?: ReactNode;
-  error?: ReactNode;
+  hint?: ReactNode | undefined;
+  error?: ReactNode | undefined;
   children: (props: {
     id: string;
     'aria-describedby'?: string;

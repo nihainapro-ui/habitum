@@ -329,9 +329,16 @@ export async function seedDemo(): Promise<void> {
   }
 
   for (const t of demoTasks()) {
-    const { off, subTasks, ...reste } = t;
+    /* `recurrence` est extraite puis RÉINJECTÉE par spread conditionnel : le
+       fixture ne la pose que sur les tâches récurrentes, et sous
+       `exactOptionalPropertyTypes` (D23) la laisser passer dans `...reste`
+       reviendrait à écrire `recurrence: undefined` en base sur toutes les
+       autres. Une clé absente et une clé à `undefined` ne se relisent pas
+       pareil dans IndexedDB. */
+    const { off, subTasks, recurrence, ...reste } = t;
     await tasksRepo.create({
       ...reste,
+      ...(recurrence ? { recurrence } : {}),
       date: dateKey(addDays(maintenant, off)),
       duration: 60,
       subTasks: subTasks ?? [],

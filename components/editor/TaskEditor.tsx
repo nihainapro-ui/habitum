@@ -58,11 +58,18 @@ export function TaskEditor({ id, onClose }: { id: string | null; onClose: () => 
     cle ? t(`err.${cle}` as 'err.nameRequired') : undefined;
 
   const enregistrer = handleSubmit(async (valeurs) => {
+    /* Les champs facultatifs sont OMIS, jamais posés à `undefined` — D23.
+       Ce n'est pas une coquetterie de typage : cet objet part en base. Dans
+       IndexedDB, une clé absente et une clé qui vaut `undefined` ne se lisent
+       pas pareil, et le modèle est destiné à la synchronisation, où la
+       différence entre « jamais renseigné » et « effacé » décide de qui gagne
+       à la fusion. Le spread conditionnel est la seule forme qui dise l'un ou
+       l'autre sans ambiguïté. */
     const entree = {
       name: valeurs.name,
       category: valeurs.category,
       date: valeurs.date,
-      time: valeurs.time || undefined,
+      ...(valeurs.time ? { time: valeurs.time } : {}),
       duration: valeurs.duration,
       priority: valeurs.priority as Task['priority'],
       done: task?.done ?? false,
@@ -71,13 +78,14 @@ export function TaskEditor({ id, onClose }: { id: string | null; onClose: () => 
       /* L'intervalle n'est écrit que s'il vaut quelque chose : `interval: 1`
          est le défaut, et un champ qui répète le défaut alourdit l'export sans
          rien dire de plus. */
-      recurrence:
-        valeurs.recurrence === 'none'
-          ? undefined
-          : {
+      ...(valeurs.recurrence === 'none'
+        ? {}
+        : {
+            recurrence: {
               freq: valeurs.recurrence,
               ...(valeurs.interval > 1 ? { interval: valeurs.interval } : {}),
             },
+          }),
     };
 
     if (task) await updateTask(task.id, entree);

@@ -107,8 +107,12 @@ export function HabitEditor({ id, onClose }: { id: string | null; onClose: () =>
       interval: valeurs.interval,
       subItems: valeurs.subItems,
       reminders: valeurs.reminders,
-      start: valeurs.start || undefined,
-      end: valeurs.end || undefined,
+      /* Omis, jamais posés à `undefined` — D23. L'objet part en base : dans
+         IndexedDB, une clé absente et une clé qui vaut `undefined` ne se
+         lisent pas pareil, et le modèle vise la synchronisation, où l'écart
+         entre « jamais renseigné » et « effacé » décide de la fusion. */
+      ...(valeurs.start ? { start: valeurs.start } : {}),
+      ...(valeurs.end ? { end: valeurs.end } : {}),
       note: valeurs.note,
       archived: valeurs.archived,
     };

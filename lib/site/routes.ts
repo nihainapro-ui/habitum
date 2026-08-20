@@ -128,7 +128,17 @@ export const DEPOT = 'https://github.com/nihainapro-ui/habitum';
  * production (tâche 7.9 du plan 8). */
 export const CONTACT = process.env.NEXT_PUBLIC_SITE_CONTACT ?? `${DEPOT}/issues`;
 
-/** Hébergeur et région, tels que `vercel.json` et `DEPLOY.md` les fixent
- *  aujourd'hui. La décision C (Vercel Hobby ou Cloudflare Pages) est tranchée à
- *  la tâche 7.9 : si elle change l'hébergeur, elle change CETTE page. */
+/** Hébergeur et région — **décision C, tranchée le 18 août 2026 : Vercel Hobby**.
+ *
+ *  Le produit est NON COMMERCIAL, ce qui rend le plan Hobby légitime : ses
+ *  conditions ne l'interdisent qu'à l'usage commercial. C'est aussi ce qui rend
+ *  la décision durable, et pas seulement provisoire.
+ *
+ *  LA CONTRAINTE QUI VA AVEC, et elle vaut pour la suite : Hobby interdit TOUTE
+ *  monétisation. Ni dons rattachés au produit, ni synchronisation payante — le
+ *  programme envisageait les deux (décision F, et la v1.1). Si l'une revient, il
+ *  faut Cloudflare Pages ou Vercel Pro, et il faut en changer AVANT
+ *  l'indexation : déplacer un domaine déjà référencé coûte du référencement.
+ *
+ *  Cette page est opposable : si l'hébergeur change, elle change avec lui. */
 export const HEBERGEUR = { nom: 'Vercel', region: 'cdg1', zone: 'Paris' } as const;

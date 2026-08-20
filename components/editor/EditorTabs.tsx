@@ -25,9 +25,15 @@ export function EditorTabs({
   label: string;
   defaultValue?: string;
 }) {
+  /* Spread conditionnel : `onglets[0]?.value` peut être absent sur une liste
+     vide, et Radix traite `defaultValue={undefined}` autrement qu'une prop
+     absente — il bascule en mode non contrôlé. La distinction est réelle, on la
+     rend explicite plutôt que de la subir (D23). */
+  const valeurInitiale = defaultValue ?? onglets[0]?.value;
+
   return (
     <RadixTabs.Root
-      defaultValue={defaultValue ?? onglets[0]?.value}
+      {...(valeurInitiale === undefined ? {} : { defaultValue: valeurInitiale })}
       className="flex flex-col gap-4"
     >
       <RadixTabs.List

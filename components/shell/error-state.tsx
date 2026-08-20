@@ -17,7 +17,13 @@ import { exporterDirect } from '@/lib/features/backup';
    nulle part — c'est ce que l'utilisateur peut recopier dans un rapport, pas ce
    que l'application transmet (décision E). */
 
-export function ErrorState({ reset, digest }: { reset?: () => void; digest?: string }) {
+export function ErrorState({
+  reset,
+  digest,
+}: {
+  reset?: (() => void) | undefined;
+  digest?: string | undefined;
+}) {
   const ts = useTranslations('system');
   const [echecExport, setEchecExport] = useState(false);
 

@@ -84,7 +84,10 @@ describe('blocHoraire', () => {
   });
 
   it('n’a pas de bloc sans heure — la tâche est « toute la journée »', () => {
-    expect(blocHoraire({ time: undefined, duration: 60 })).toBeNull();
+    /* Sans la CLÉ, et non avec une clé à `undefined` (D23) : c'est ainsi qu'une
+       tâche sans heure est réellement écrite en base depuis que les éditeurs
+       omettent les champs vides. Le test doit éprouver la forme qui existe. */
+    expect(blocHoraire({ duration: 60 })).toBeNull();
   });
 
   /* Tronquer plutôt que masquer : faire disparaître un évènement ferait croire

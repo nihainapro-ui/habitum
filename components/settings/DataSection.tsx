@@ -2,7 +2,7 @@
 
 import { useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { Download, RotateCcw, Upload } from 'lucide-react';
+import { Download, Loader2, RotateCcw, Upload } from 'lucide-react';
 import { useStore } from '@/lib/store';
 import { telechargerJson } from '@/lib/features/backup';
 import { ImportError, MAX_IMPORT_BYTES, type ImportReport } from '@/lib/data';
@@ -39,6 +39,12 @@ export function DataSection() {
   const [rapport, setRapport] = useState<ImportReport | null>(null);
   const [erreur, setErreur] = useState<string | null>(null);
   const [restauree, setRestauree] = useState(false);
+  /* Tâche 8.2 (plan 8, § 8.5) — l'import d'une grosse sauvegarde prend des
+     DIZAINES DE SECONDES, et l'écran ne disait rien pendant tout ce temps :
+     ni sablier, ni bouton grisé. Mesuré à 32 s sur un fichier de 2 Mo. Une
+     interface muette sur une opération longue, c'est une interface qu'on croit
+     plantée — et l'utilisateur ferme l'onglet AU MILIEU d'une écriture. */
+  const [enCours, setEnCours] = useState(false);
 
   const exporter = async () => {
     try {
@@ -60,6 +66,7 @@ export function DataSection() {
       setErreur(ts('impTooBig'));
       return;
     }
+    setEnCours(true);
     try {
       setRapport(await importJson(await f.text()));
       setErreur(null);
@@ -68,6 +75,10 @@ export function DataSection() {
          le libellé traduit correspondant, jamais le message technique. */
       const code = e instanceof ImportError ? e.code : 'FORMAT';
       setErreur(code === 'TOO_BIG' ? ts('impTooBig') : ts(`imp_${code}` as 'imp_JSON'));
+    } finally {
+      /* `finally` : un import qui échoue doit rendre l'interface, sinon le
+         refus laisse les boutons grisés pour toujours. */
+      setEnCours(false);
     }
   };
 
@@ -95,11 +106,22 @@ export function DataSection() {
       </div>
 
       <div className="flex flex-wrap gap-2">
+        {/* Les deux boutons sont DÉSACTIVÉS pendant l'import. Ce n'est pas
+            cosmétique : relancer un import par-dessus un import en cours
+            reprendrait une copie de secours au milieu de l'écriture
+            précédente. `opacity` suit l'état, pour que la raison du blocage se
+            voie au lieu de se deviner. */}
         <button
           type="button"
           onClick={() => void exporter()}
+          disabled={enCours}
           className={bouton}
-          style={{ borderColor: 'var(--line)', color: 'var(--txt2)' }}
+          style={{
+            borderColor: 'var(--line)',
+            color: 'var(--txt2)',
+            opacity: enCours ? 0.45 : 1,
+            cursor: enCours ? 'progress' : 'pointer',
+          }}
         >
           <Download size={13} aria-hidden="true" />
           {t('exportBtn')}
@@ -108,8 +130,14 @@ export function DataSection() {
         <button
           type="button"
           onClick={() => fichier.current?.click()}
+          disabled={enCours}
           className={bouton}
-          style={{ borderColor: 'var(--line)', color: 'var(--txt2)' }}
+          style={{
+            borderColor: 'var(--line)',
+            color: 'var(--txt2)',
+            opacity: enCours ? 0.45 : 1,
+            cursor: enCours ? 'progress' : 'pointer',
+          }}
         >
           <Upload size={13} aria-hidden="true" />
           {t('importBtn')}
@@ -134,6 +162,22 @@ export function DataSection() {
       <span className="text-[11.5px]" style={{ color: 'var(--mut)' }}>
         {ts('impMerge')}
       </span>
+
+      {/* ANNONCÉ, pas seulement affiché : `role="status"` place le message dans
+          une région live polie, donc un lecteur d'écran le lit sans qu'on ait
+          à déplacer le focus. Une opération de trente secondes qui ne dit rien
+          à qui ne voit pas l'écran est une opération qui n'existe pas. */}
+      {enCours ? (
+        <p
+          role="status"
+          data-testid="import-busy"
+          className="m-0 flex items-center gap-2 text-[12px]"
+          style={{ color: 'var(--acc2)' }}
+        >
+          <Loader2 size={13} aria-hidden="true" className="motion-safe:animate-spin" />
+          {ts('impBusy')}
+        </p>
+      ) : null}
 
       {erreur ? (
         <p role="alert" className="m-0 text-[12px]" style={{ color: 'var(--bad)' }}>

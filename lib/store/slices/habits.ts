@@ -68,9 +68,16 @@ export const createHabitsSlice: StateCreator<AppState, [], [], HabitsActions> = 
       set((s) => ({
         habits: s.habits.filter((x) => x.id !== id),
         notes: s.notes.filter((n) => !(n.kind === 'habit' && n.habitId === id)),
-        goals: s.goals.map((g) =>
-          g.sourceHabitId === id ? { ...g, sourceHabitId: undefined } : g,
-        ),
+        /* Le store doit refléter EXACTEMENT ce que le dépôt vient d'écrire :
+           la clé est RETIRÉE, pas posée à `undefined` (D23, voir le contrat de
+           `UpdatePatch`). Sans ce soin, l'objet en mémoire et la ligne en base
+           divergeraient sur la seule chose qui les distingue — et c'est
+           précisément ce que la synchronisation lira un jour. */
+        goals: s.goals.map((g) => {
+          if (g.sourceHabitId !== id) return g;
+          const { sourceHabitId: _detache, ...reste } = g;
+          return reste;
+        }),
         logIndex: new Map([...s.logIndex].filter(([cle]) => !cle.startsWith(prefixe))),
       }));
     });

@@ -65,11 +65,19 @@ export function GoalEditor({ id, onClose }: { id: string | null; onClose: () => 
       category: valeurs.category,
       target: valeurs.target,
       unit: valeurs.unit,
-      sourceHabitId: valeurs.sourceHabitId || undefined,
-      start: valeurs.start || undefined,
-      deadline: valeurs.deadline || undefined,
-      window: valeurs.kind === 'reduce' ? valeurs.window : undefined,
-      milestones: valeurs.kind === 'milestones' ? valeurs.milestones : undefined,
+      /* Omis, jamais posés à `undefined` — D23. L'objet part en base : dans
+         IndexedDB, une clé absente et une clé qui vaut `undefined` ne se
+         lisent pas pareil, et le modèle vise la synchronisation, où l'écart
+         entre « jamais renseigné » et « effacé » décide de la fusion.
+
+         `window` et `milestones` ne concernent d'ailleurs qu'un type
+         d'objectif chacun : les omettre ailleurs, plutôt que d'y écrire
+         `undefined`, dit exactement ce que le modèle veut dire. */
+      ...(valeurs.sourceHabitId ? { sourceHabitId: valeurs.sourceHabitId } : {}),
+      ...(valeurs.start ? { start: valeurs.start } : {}),
+      ...(valeurs.deadline ? { deadline: valeurs.deadline } : {}),
+      ...(valeurs.kind === 'reduce' ? { window: valeurs.window } : {}),
+      ...(valeurs.kind === 'milestones' ? { milestones: valeurs.milestones } : {}),
       current: goal?.current ?? 0,
     };
 

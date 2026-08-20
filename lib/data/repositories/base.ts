@@ -24,7 +24,23 @@ export type CreateInput<T extends Versioned> = Omit<
 > &
   Partial<Pick<T, 'id'>>;
 
-export type UpdatePatch<T extends Versioned> = Partial<Omit<T, 'id' | 'createdAt'>>;
+/** Correctif d'écriture. Une clé posée à `undefined` DÉTACHE le champ.
+ *
+ *  `exactOptionalPropertyTypes` (D23) force à choisir, et c'est tout l'intérêt :
+ *  sans lui, `{ sourceHabitId: undefined }` voulait dire deux choses à la fois —
+ *  « ne touche pas à ce champ » ou « efface-le » — et la ligne écrite en base
+ *  gardait la clé avec une valeur `undefined`, ce qui n'est ni l'un ni l'autre.
+ *
+ *  Le contrat est donc explicite : **clé absente = ne pas toucher, clé à
+ *  `undefined` = retirer le champ**. `update` supprime réellement la clé, elle
+ *  ne l'écrase pas. C'est la distinction dont la synchronisation aura besoin :
+ *  « jamais renseigné » et « effacé » ne se fusionnent pas de la même façon.
+ *
+ *  Cas d'usage réel : supprimer une habitude détache les objectifs qu'elle
+ *  alimentait (`lib/store/slices/habits.ts`). */
+export type UpdatePatch<T extends Versioned> = {
+  [K in keyof Omit<T, 'id' | 'createdAt'>]?: T[K] | undefined;
+};
 
 /** CRUD commun : identifiant, horodatages, suppression logique.
  *  Aucune entité ne réimplémente cela — c'est ainsi qu'on garantit que
@@ -68,6 +84,12 @@ export function makeRepo<T extends Versioned>(entityTable: EntityTable<T, 'id'>)
         createdAt: row.createdAt,
         updatedAt: nowIso(),
       } as T;
+      /* Une clé posée à `undefined` est RETIRÉE, pas écrasée : c'est le contrat
+         de `UpdatePatch`. Le spread ci-dessus l'aurait laissée dans l'objet
+         avec une valeur `undefined`, que `put` aurait fidèlement écrite. */
+      for (const cle of Object.keys(patch) as (keyof T)[]) {
+        if (patch[cle as keyof typeof patch] === undefined) delete next[cle];
+      }
       await table.put(next);
       return next;
     },

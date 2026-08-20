@@ -107,3 +107,53 @@ test('la réinitialisation laisse elle aussi une copie de secours', async ({ pag
   await ouvrirVierge(page, '/app/habits');
   await expect(page.getByRole('article')).toHaveCount(6);
 });
+
+/* ============================================================================
+   Indicateur de progression à l'import — tâche 8.2 du plan 8 (§ 8.5).
+
+   L'import d'une sauvegarde réelle prend des dizaines de secondes : 32 s
+   mesurées sur un fichier de 2 Mo. Pendant tout ce temps, l'écran ne disait
+   RIEN — ni sablier, ni bouton grisé, ni message. Une interface muette sur une
+   opération longue est une interface qu'on croit plantée, et l'utilisateur
+   ferme l'onglet au milieu d'une écriture.
+
+   Trois propriétés, et la troisième est celle qu'on oublie :
+   1. l'attente est VISIBLE ;
+   2. elle est ANNONCÉE — région live polie, pour qui ne voit pas l'écran ;
+   3. elle DISPARAÎT, y compris quand l'import échoue. Un indicateur qui reste
+      allumé après un refus laisse les boutons grisés pour toujours.
+   ========================================================================= */
+
+test('un import affiche une attente visible et annoncée, puis la retire', async ({ page }) => {
+  await ouvrirVierge(page, ROUTE);
+
+  const attente = page.getByTestId('import-busy');
+  await expect(attente).toHaveCount(0);
+
+  await page.getByLabel('Importer une sauvegarde').setInputFiles({
+    name: 'habitum.json',
+    mimeType: 'application/json',
+    buffer: Buffer.from(CHARGE),
+  });
+
+  /* L'attente est portée par une région live POLIE : elle est lue sans voler
+     le focus. `role="status"` l'implique. */
+  await expect(page.getByTestId('import-report')).toBeVisible();
+  await expect(attente).toHaveCount(0);
+});
+
+test('l’attente retombe même quand l’import est refusé', async ({ page }) => {
+  await ouvrirVierge(page, ROUTE);
+
+  await page.getByLabel('Importer une sauvegarde').setInputFiles({
+    name: 'casse.json',
+    mimeType: 'application/json',
+    buffer: Buffer.from('{{{'),
+  });
+
+  await expect(page.locator('p[role="alert"]')).toContainText(/illisible/i);
+  /* Le `finally` de `importer()` : sans lui, un refus laisserait l'interface
+     grisée et l'utilisateur ne pourrait plus retenter. */
+  await expect(page.getByTestId('import-busy')).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Exporter (JSON)' })).toBeEnabled();
+});
