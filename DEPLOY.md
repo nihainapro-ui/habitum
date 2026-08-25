@@ -38,8 +38,15 @@ tests, build. GitHub Actions est gratuit sur dépôt public.
    d'environnement ; **la vitrine en demande une** (voir ci-dessous).
 3. Déployer.
 
-`vercel.json` fixe la région (`cdg1`) et empêche l'indexation du prototype
-(`/prototype/*` en `noindex`).
+`vercel.json` ne fixe que deux choses : le framework et la région (`cdg1`).
+
+Le `noindex` du prototype ne vient PAS de là — c'est `next.config.mjs` qui pose
+`X-Robots-Tag: noindex, nofollow` sur `/prototype/:path*`, avec sa propre CSP, et
+`app/robots.ts` qui l'ajoute au `Disallow`. Le savoir évite de chercher au mauvais
+endroit le jour où l'archive apparaîtrait dans un moteur.
+
+`NEXT_PUBLIC_BUILD_DATE` n'est pas à poser : `next.config.mjs` la calcule à la
+compilation. C'est elle que la page « À propos » affiche.
 
 Alternatives gratuites équivalentes : Cloudflare Pages, Netlify.
 

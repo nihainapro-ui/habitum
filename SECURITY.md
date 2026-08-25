@@ -65,6 +65,15 @@ charge encore ses polices depuis `fonts.googleapis.com` : défaut connu, suivi s
   passage à un `nonce` est couplé à la décision sur le rendu statique (défaut `D12`) et sera
   tranché en même temps. Risque résiduel mesuré : le produit ne rend aucun HTML d'origine
   utilisateur et ne charge aucun script tiers.
-- Quatre vulnérabilités npm connues (`postcss`, `sharp` via `next`, `next-intl`), dont trois
-  hautes. Leurs correctifs sont des montées majeures, planifiées en phase « Qualité » lorsque les
-  tests de parcours pourront détecter une régression. Suivi sous la référence `D11`.
+- **`D11` est fermée depuis le 25 août 2026 : plus aucune vulnérabilité haute**, et la CI
+  échoue désormais à `--audit-level=high`. Les quatre hautes étaient dans `postcss` et
+  `sharp` **imbriqués sous `next`**, pas dans `next` lui-même : un bloc `overrides` les
+  remonte sans la montée majeure, qui avait été tentée le 18 août puis annulée parce
+  qu'elle coûtait le fonctionnement hors ligne.
+
+  Subsiste **une modérée** sur `next-intl@3`, laissée sciemment : ses deux avis visent
+  l'API de navigation de la bibliothèque — ce dépôt n'a aucun `middleware` et n'importe ni
+  `next-intl/navigation` ni `createNavigation` — et `experimental.messages.precompile`,
+  qui n'est pas utilisé. La surface d'attaque décrite n'existe pas ici. Elle disparaîtra
+  avec `next-intl@4`, lui-même suspendu à `next@16`, lui-même suspendu à une version de
+  `@serwist/next` compatible.

@@ -1,4 +1,9 @@
-import { version as versionApplication } from '@/package.json';
+/* Import PAR DÉFAUT, pas nommé. Le build du 25 août 2026 avertissait :
+   « Should not import the named export 'version' from default-exporting module
+   (only default export is available soon) ». C'est un avertissement aujourd'hui
+   et une rupture demain — un JSON n'expose proprement que son export par
+   défaut. Corrigé avant que ça casse, pas après. */
+import paquet from '@/package.json';
 import { DB_VERSION } from '@/lib/storage/keys';
 
 /* ============================================================================
@@ -38,7 +43,7 @@ export interface Version {
    absente doit se voir comme absente. Afficher la date du jour à la place
    serait exactement le chiffre fabriqué qu'on s'interdit. */
 export const VERSION: Version = {
-  app: versionApplication,
+  app: paquet.version,
   schema: DB_VERSION,
   builtAt: process.env.NEXT_PUBLIC_BUILD_DATE ?? null,
 };

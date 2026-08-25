@@ -367,11 +367,25 @@ test('un import de 2 Mo aboutit, et restitue ce qu’il a lu', async ({ page }, 
    Ce qui a déjà été corrigé, et qui ne suffit pas : `logs.bulkPut` par lots de
    10 000 au lieu d'un bloc unique (90 s → 27 s sur 219 000 lignes, mesuré).
 
-   Ce qui reste : chaque ligne du journal entretient trois index secondaires
-   (`habitId`, `date`, `updatedAt`) en plus de sa clé primaire composite
-   `[habitId+date]` — c'est là que part le temps d'écriture, et le réduire
-   touche au schéma Dexie, donc à une migration. À instruire, pas à bricoler
-   en fin de phase.
+   CE QUI RESTE — et le dossier se trompait, profilé le 25 août 2026 :
+
+   Ce commentaire accusait les trois index secondaires (`habitId`, `date`,
+   `updatedAt`) et prescrivait une migration Dexie pour les retirer. Mesuré, en
+   IndexedDB brut, sur 43 691 lignes : composite + 3 index = 33 995 ms ;
+   composite SANS index = 36 221 ms. Retirer les index ne gagne RIEN.
+
+   Le temps est ailleurs, et il est massif : 35 798 ms sur 36 453 observés sont
+   dans la transaction d'écriture — 99,6 %. La copie de secours coûte 12 ms et
+   `rechargerDonnees()` 13 ms, quand le dossier les désignait aussi.
+
+   Ce qui pèse est le NOMBRE de lignes : ~0,8 ms par `put`, quelle que soit la
+   forme du schéma. Le cas le plus favorable mesuré — clé simple, aucun index —
+   donne encore 20 147 ms, quatre fois le budget. Aucun réglage du schéma
+   n'atteint la cible.
+
+   Le seul levier est donc la FORME du journal : une ligne par (habitude, jour)
+   fait 43 691 écritures là où le prototype gardait `ov` en un seul objet.
+   C'est une décision de conception, pas une migration à ajouter.
 
    `fixme` plutôt qu'un seuil abaissé en silence : le budget du plan reste
    ÉCRIT ici, et ce test repassera au vert le jour où il sera tenu. Un seuil
@@ -398,9 +412,13 @@ test.fixme('un import de 2 Mo tient le budget de 5 s du plan', async ({ page }, 
 
    Ce qui reste, et qui demande une reprise du chemin de restauration :
    - la COPIE DE SECOURS prise avant tout import ré-exporte les 10,7 Mo et les
-     réécrit dans `meta` en un seul objet, avant même que l'import commence ;
-   - `rechargerDonnees()` relit tout et reconstruit l'index du journal derrière ;
-   - il n'y a AUCUN indicateur de progression, que le plan demandait pourtant.
+     réécrit dans `meta` en un seul objet, avant même que l'import commence.
+     Ici, contrairement au cas des 2 Mo, la base de départ est PLEINE : c'est
+     le seul contexte où ce coût est réel (12 ms sur un compte vierge) ;
+   - `rechargerDonnees()` relit tout et reconstruit l'index du journal derrière
+     (13 ms sur un compte vierge — à re-mesurer à pleine charge) ;
+   - l'indicateur de progression, lui, EXISTE depuis le 20 août : attente
+     visible, bouton grisé, message en région live polie.
 
    `fixme` plutôt que suppression : le test reste dans le rapport, il documente
    le défaut avec ses chiffres, et il repassera au rouge le jour où quelqu'un

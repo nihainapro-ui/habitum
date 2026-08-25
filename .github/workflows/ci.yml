@@ -51,12 +51,20 @@ jobs:
       # Les sept contrôles : typecheck, lint, format, libellés, jetons, tests, build.
       - run: npm run verify
       - name: Vulnérabilités
-        # D11 — quatre vulnérabilités connues (postcss, sharp via next, next-intl),
-        # dont trois hautes. Leurs correctifs sont des montées MAJEURES (next@16,
-        # next-intl@4), planifiées en phase « Qualité » quand l'e2e couvrira huit
-        # parcours et pourra détecter une régression.
-        # Le seuil remonte à `high` dès que l'issue D11 est fermée.
-        run: npm audit --audit-level=critical
+        # D11 — FERMÉE le 25 août 2026. Les quatre vulnérabilités hautes étaient
+        # dans `postcss` et `sharp` IMBRIQUÉS SOUS `next`, pas dans `next` : elles
+        # se corrigent par `overrides` (package.json), sans la montée majeure qui
+        # avait été tentée puis annulée le 18 août parce qu'elle coûtait le
+        # fonctionnement hors ligne.
+        #
+        # Reste une MODÉRÉE sur `next-intl@3`, hors surface ici : ses deux avis
+        # visent l'API de navigation next-intl — ce dépôt n'a aucun `middleware`
+        # ni `createNavigation` — et `experimental.messages.precompile`, non
+        # utilisé. Le seuil est donc à `high`, comme le plan 8 le demandait.
+        #
+        # Ce contrôle interroge le registre : une haute publiée demain rougit la
+        # CI sans qu'une ligne du dépôt ait changé. C'est voulu.
+        run: npm audit --audit-level=high
 
   secrets:
     name: secrets

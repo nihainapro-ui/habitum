@@ -1,10 +1,151 @@
 # Journal des modifications
 
-## 2026-08-25 — Revue d'état : un contrôle qui ne prouvait plus rien
+## 2026-08-25 — D11 fermée, et un contrôle qui ne prouvait plus rien
 
-Passe de vérification avant mise en service. `npm run verify` vert — **475 tests**,
-36 fichiers. Rien à reprendre côté produit ; un défaut d'OUTILLAGE trouvé en exécutant la
-chaîne plutôt qu'en la lisant.
+Passe de vérification avant mise en service, puis fermeture de **D11**. `npm run verify`
+vert — **479 tests**, 37 fichiers ; `npm run test:e2e` : **625 passés, 0 échec**. Deux
+défauts trouvés en exécutant la chaîne plutôt qu'en la lisant : un contrôle d'outillage
+qui ne prouvait plus rien, et une montée majeure qu'on croyait obligatoire.
+
+### En ligne — 8.9, et un défaut que seul un vrai déploiement pouvait montrer
+
+**https://habitum-one.vercel.app** — Vercel Hobby, région `cdg1`, décision C appliquée.
+
+**Le premier build a échoué, et c'était notre faute, pas celle de Vercel.**
+
+    Failed to collect configuration for /en/comparisons/[creneau]
+    TypeError: Invalid URL — input: ''
+
+`NEXT_PUBLIC_SITE_URL` avait été créée avec un champ **vide**. Or :
+
+```ts
+process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
+```
+
+`??` ne se déclenche que sur `null` et `undefined`, **jamais sur `''`**. `BASE_SITE` valait donc
+la chaîne vide, et `new URL(chemin, '')` levait `ERR_INVALID_URL` au fond de la collecte de
+pages. Le message ne nommait **ni la variable, ni le fichier, ni ce qu'on attendait** :
+quarante secondes de build pour apprendre qu'un champ était vide.
+
+Une variable d'environnement déclarée mais vide est l'erreur la plus banale d'une mise en
+ligne. Aucun test ne la couvrait, parce que tous nos essais posaient soit une vraie valeur,
+soit rien du tout — jamais la chaîne vide, qui est pourtant l'état par défaut d'un formulaire.
+
+`BASE_SITE` passe donc par une fonction, et trois règles :
+
+1. **vide ou blanc == absente** — repli sur le local, comme si rien n'avait été posé ;
+2. **présente mais invalide == échec immédiat, qui se nomme** — mieux vaut un build rouge
+   lisible qu'une vitrine annonçant `localhost` à tous les moteurs ;
+3. **on rend l'ORIGINE** — la barre finale est retirée au lieu d'être interdite. Une consigne
+   qu'un humain doit tenir à la main est une consigne qui sera oubliée ; `new URL().origin` la
+   rend sans objet, et `DEPLOY.md` n'a plus à la répéter.
+
+**Huit tests** verrouillent le tout, dont celui de la chaîne vide. Build rejoué avec
+`NEXT_PUBLIC_SITE_URL=""` : vert.
+
+**Corrigé dans la foulée, parce que le même build l'annonçait :** `lib/version.ts` importait
+`version` en export NOMMÉ depuis `package.json` — « only default export is available soon ».
+Un avertissement aujourd'hui, une rupture à la prochaine montée. Passé en import par défaut.
+
+**Les onze vérifications post-déploiement, exécutées :**
+
+| Bloc | Résultat |
+|---|---|
+| 11 routes applicatives + 14 URL de vitrine | ✅ 200 |
+| `noindex` sur `/app`, vitrine indexable | ✅ |
+| `robots.txt`, `sitemap.xml` — bon domaine, aucun `localhost` | ✅ |
+| Six en-têtes de sécurité, `X-Powered-By` absent | ✅ |
+| PWA — manifeste, trois icônes, `sw.js`, `start_url` | ✅ |
+| **Hors ligne, sur la production** | ✅ |
+| **Export → réinitialisation → import** | ✅ |
+| FR ↔ EN sur les onze vues, trois thèmes | ✅ |
+
+46 contrôles HTTP par `scripts/verif-production.mjs`, puis 14 tests de navigateur pointés sur
+la production (`BASE_URL=…`). La **sonde périodique est armée** : `SITE_URL` est posée, le
+workflow s'exécute toutes les six heures et ouvre une issue critique si le site ne répond plus.
+
+Restent, et ils demandent une main humaine : la note `securityheaders.com`, un rollback
+réellement exécuté une fois, et le tag `v1.0.0`. La Search Console attend délibérément que le
+domaine définitif soit tranché — déplacer un domaine déjà indexé coûte du référencement.
+
+### Fermé — D11 : zéro vulnérabilité haute, sans la montée majeure (8.6)
+
+La tentative du 18 août visait la mauvaise cible, et c'est ce qui l'a fait échouer. Les
+quatre vulnérabilités hautes ne sont **pas dans `next`** : ce sont `postcss@8.4.31` et
+`sharp@0.34.5`, IMBRIQUÉS sous lui. On les remonte par `overrides` sans toucher à Next.
+
+| Paquet | Avant | Après |
+|---|---|---|
+| `postcss` | 8.4.31 | 8.5.26 |
+| `nanoid` | 3.3.17 | 3.3.18 |
+| `sharp` | 0.34.5 | 0.35.3 |
+
+`npm audit --audit-level=high` sort désormais en **0**, et le seuil de la CI y est remonté —
+il était à `critical` depuis le premier jour, avec sa date et son motif.
+
+**Ce que la montée du 18 août coûtait, et que celle-ci ne coûte pas.** Les deux régressions
+qui avaient fait annuler `next@16` étaient le service worker qui ne prenait plus le contrôle
+et la vitrine qui téléchargeait les dix fichiers de polices. Les deux contrôles ont été
+rejoués NOMMÉMENT, pas déduits d'une suite verte : « le service worker s'enregistre et prend
+le contrôle », « l'application fonctionne hors ligne », et les cinq contrôles de polices —
+onze tests, tous verts.
+
+**Deux raisons qui rendent l'échange peu risqué**, et qui sont écrites dans `package.json`
+à côté du bloc :
+
+- **`sharp` n'est jamais appelé.** `next/image` n'apparaît nulle part dans le dépôt. Le
+  paquet est installé et ne sert à rien — c'est une dépendance optionnelle de `next`.
+- **La modérée `next-intl` qui subsiste est hors surface.** Ses deux avis visent l'API de
+  navigation next-intl — ce dépôt n'a **aucun `middleware`** et n'importe ni
+  `next-intl/navigation` ni `createNavigation` — et `experimental.messages.precompile`, non
+  utilisé. Le produit ne se sert que de `useTranslations`, `getMessages` et
+  `getRequestConfig`.
+
+Les `overrides` sont un emplâtre, et le commentaire de `package.json` le dit : ils partent le
+jour où `next@16` passe. Ce jour dépend toujours de `@serwist/next`, qui en est à `9.5.12`
+en stable, sans version compatible Next 16.
+
+### Profilé — 8.5 : le dossier accusait les mauvaises causes, les trois
+
+La lenteur de l'import était documentée depuis le 17 août avec trois causes présumées. Elles
+ont été **mesurées** avant d'ouvrir le chantier ; les trois tombent.
+
+Import de 2 Mo (43 691 entrées) sur un compte vierge, build de production :
+
+| Phase | Coût |
+|---|---:|
+| Copie de secours | **12 ms** |
+| Analyse et validation | 69 ms |
+| **Transaction d'écriture** | **35 798 ms** |
+| `rechargerDonnees()` | **13 ms** |
+
+**99,6 % du temps est dans l'écriture.** Les causes 2 et 3 du dossier — la copie de secours
+qui ré-exporte tout, la relecture derrière — coûtent 25 ms à elles deux sur ce cas.
+
+La cause 1 ne tient pas davantage. Expérience isolée en IndexedDB brut, mêmes 43 691 lignes :
+
+| Forme | Coût |
+|---|---:|
+| Clé composite + 3 index secondaires | 33 995 ms |
+| Clé composite, **aucun index** | 36 221 ms |
+| **Clé simple**, aucun index | **20 147 ms** |
+
+**Retirer les trois index secondaires ne gagne rien** — l'écart est du bruit. La migration
+Dexie que la recette prescrivait aurait coûté un chantier et une migration de schéma pour
+zéro gain. Et même la forme la plus favorable donne 20 s, quatre fois le budget de 5 s :
+**aucun réglage du schéma n'atteint la cible.**
+
+Ce qui pèse est le NOMBRE de lignes — ~0,8 ms par `put`, quelle que soit la forme. Le seul
+levier restant est donc la **forme du journal** : une ligne par (habitude, jour) fait 43 691
+écritures là où le prototype gardait `ov` en un seul objet. C'est une décision de conception,
+pas une migration à ajouter — et elle n'est pas prise ici.
+
+C'est la **deuxième fois** que ce chemin dément une hypothèse écrite : la première accusait
+`zod`, qui ne coûte que 246 ms sur 219 000 entrées. La leçon vaut d'être notée deux fois.
+
+L'horloge simulée de Playwright a été écartée comme cause : sans elle, 33 995 ms au lieu de
+34 325. Les commentaires des deux tests `fixme` portent désormais ces chiffres — c'est là
+qu'on les lira.
 
 ### Corrigé — `npm run test:e2e` exécutait la non-régression visuelle
 

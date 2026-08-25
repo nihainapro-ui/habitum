@@ -52,6 +52,12 @@
     "zod": "^3.24.1",
     "zustand": "^5.0.3"
   },
+  "_commentaire_overrides": "D11, 25 août 2026 — les quatre vulnérabilités HAUTES n'étaient pas dans `next` mais dans postcss et sharp IMBRIQUÉS sous lui. On les remonte ici plutôt que par next@16, dont la montée a été tentée et annulée le 18 août : elle coûtait le service worker et le budget de polices de la vitrine. sharp n'est de toute façon jamais appelé — `next/image` n'apparaît nulle part. À retirer le jour où next@16 passe, pas avant.",
+  "overrides": {
+    "postcss": "^8.5.25",
+    "nanoid": "^3.3.18",
+    "sharp": "^0.35.3"
+  },
   "devDependencies": {
     "@axe-core/playwright": "^4.13.0",
     "@eslint/eslintrc": "^3.2.0",

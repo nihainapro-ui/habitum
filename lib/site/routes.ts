@@ -104,8 +104,54 @@ export function adresseDe(chemin: string): Adresse | undefined {
 }
 
 /** Base absolue des URL. `NEXT_PUBLIC_SITE_URL` est déjà déclarée dans
- *  `.env.example` : on l'utilise, on n'en crée pas une seconde. */
-export const BASE_SITE = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000';
+ *  `.env.example` : on l'utilise, on n'en crée pas une seconde.
+ *
+ *  POURQUOI CE N'EST PAS UN SIMPLE `??` — défaut trouvé au premier déploiement
+ *  réel, le 25 août 2026. Une variable d'environnement DÉCLARÉE MAIS VIDE est
+ *  l'erreur la plus banale d'une mise en ligne, et `??` ne la voit pas : il ne
+ *  se déclenche que sur `null` et `undefined`, jamais sur `''`. `BASE_SITE`
+ *  valait donc la chaîne vide, et `new URL(chemin, '')` levait
+ *  `ERR_INVALID_URL` au fond de la collecte de pages :
+ *
+ *      Failed to collect configuration for /en/comparisons/[creneau]
+ *      TypeError: Invalid URL — input: ''
+ *
+ *  Le message ne nommait NI la variable, NI le fichier, NI ce qu'on attendait.
+ *  Quarante secondes de build pour apprendre qu'un champ était vide.
+ *
+ *  Trois règles en découlent :
+ *  1. vide ou blanc == absente, donc repli sur le local, comme si rien n'avait
+ *     été posé ;
+ *  2. une valeur PRÉSENTE mais invalide échoue TÔT et se nomme — mieux vaut un
+ *     build rouge lisible qu'une vitrine qui annonce `localhost` aux moteurs ;
+ *  3. on rend l'ORIGINE, ce qui retire la barre finale au lieu de l'interdire.
+ *     Une consigne qu'un humain doit respecter à la main est une consigne qui
+ *     sera oubliée ; `new URL().origin` la rend sans objet. */
+function baseDuSite(): string {
+  const brut = process.env.NEXT_PUBLIC_SITE_URL?.trim();
+  if (!brut) return 'http://localhost:3000';
+
+  let adresse: URL;
+  try {
+    adresse = new URL(brut);
+  } catch {
+    throw new Error(
+      `NEXT_PUBLIC_SITE_URL invalide : « ${brut} ». Attendu une URL absolue, ` +
+        'par exemple https://exemple.tld — la barre finale, elle, est retirée toute seule.',
+    );
+  }
+
+  if (adresse.protocol !== 'https:' && adresse.protocol !== 'http:') {
+    throw new Error(
+      `NEXT_PUBLIC_SITE_URL doit être en http ou https : « ${brut} » est en ` +
+        `« ${adresse.protocol} ».`,
+    );
+  }
+
+  return adresse.origin;
+}
+
+export const BASE_SITE = baseDuSite();
 
 export const absolu = (chemin: string): string => new URL(chemin, BASE_SITE).toString();
 
