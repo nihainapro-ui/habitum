@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { estMemeOrigine } from './helpers/app';
 
 /* Vitrine — tâche 7.1.
  *
@@ -147,12 +148,12 @@ test('le 404 n’est pas indexable', async ({ page }) => {
   for (const contenu of contenus) expect(contenu).toContain('noindex');
 });
 
-test('la vitrine n’émet aucune requête vers un domaine tiers', async ({ page }) => {
+test('la vitrine n’émet aucune requête vers un domaine tiers', async ({ page, baseURL }) => {
   const tiers: string[] = [];
   page.on('request', (r) => {
     const url = new URL(r.url());
     if (url.protocol === 'data:' || url.protocol === 'blob:') return;
-    if (url.hostname === 'localhost' || url.hostname === '127.0.0.1') return;
+    if (estMemeOrigine(url, baseURL)) return;
     tiers.push(r.url());
   });
 

@@ -68,6 +68,34 @@ Restent, et ils demandent une main humaine : la note `securityheaders.com`, un r
 réellement exécuté une fois, et le tag `v1.0.0`. La Search Console attend délibérément que le
 domaine définitif soit tranché — déplacer un domaine déjà indexé coûte du référencement.
 
+### Corrigé — deux des onze vérifications de 8.9 étaient INEXÉCUTABLES en production
+
+`playwright.config.ts` annonce `BASE_URL` comme le moyen de passer en production les quatre
+vérifications qui demandent un navigateur. Au premier usage réel, six tests ont rougi — et la
+liste des « requêtes tierces » qu'ils affichaient contenait… `https://habitum-one.vercel.app`.
+
+Le filtre codait l'origine en dur :
+
+```ts
+if (url.hostname === 'localhost' || url.hostname === '127.0.0.1') return;
+```
+
+Pointé ailleurs que sur la machine locale, le contrôle déclarait donc TIERCES les propres
+ressources du site. **Le test censé prouver la promesse produit — « rien ne sort de
+l'appareil » — était précisément celui qu'on ne pouvait pas passer là où elle engage.**
+
+`estMemeOrigine(url, baseURL)` déduit l'origine du `baseURL` de Playwright, et le contrôle des
+polices ne cherche plus `^http://localhost` mais la même origine, plus l'extension `.woff2`.
+Vérifié dans les DEUX contextes, ce qui est tout l'intérêt : **57 tests verts en local, 57
+verts contre la production.**
+
+**Le contrôle 10 reste ouvert, et pour la même raison de fond :** `lighthouserc.json` code lui
+aussi `localhost` en dur — dans ses cinq URL comme dans les motifs de son `assertMatrix`. Il
+n'existe donc aucun chemin outillé pour « Lighthouse en production ». S'y ajoute, sur cette
+machine, le plantage `EPERM` de Chrome au nettoyage de son dossier temporaire, déjà consigné le
+20 août : l'audit s'exécute et meurt en rendant ses résultats. Le score de production n'a donc
+pas été relevé, et il n'est pas déclaré.
+
 ### Fermé — D11 : zéro vulnérabilité haute, sans la montée majeure (8.6)
 
 La tentative du 18 août visait la mauvaise cible, et c'est ce qui l'a fait échouer. Les

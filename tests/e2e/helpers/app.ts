@@ -205,3 +205,20 @@ export async function verifierPaliers(page: Page, route: string): Promise<void> 
     expect(deborde, `débordement horizontal à ${largeur} px sur ${route}`).toBe(false);
   }
 }
+
+/** L'origine RÉELLEMENT testée, locale ou production.
+ *
+ *  Ces contrôles codaient `localhost` en dur. `playwright.config.ts` annonce
+ *  pourtant `BASE_URL` comme le moyen d'exécuter en production les quatre
+ *  vérifications du plan 8 § 8.9 qui demandent un navigateur — dont « aucune
+ *  requête tierce ». Pointé sur `https://habitum-one.vercel.app`, le contrôle
+ *  déclarait TIERCES les propres ressources du site et rougissait sur six
+ *  tests. Le contrôle censé prouver la promesse produit était donc le seul
+ *  qu'on ne pouvait pas passer là où elle engage.
+ *
+ *  Trouvé le 25 août 2026, au premier usage réel de `BASE_URL`. */
+export function estMemeOrigine(url: URL, baseURL: string | undefined): boolean {
+  if (url.hostname === 'localhost' || url.hostname === '127.0.0.1') return true;
+  if (baseURL === undefined) return false;
+  return url.origin === new URL(baseURL).origin;
+}

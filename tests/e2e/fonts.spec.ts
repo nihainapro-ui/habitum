@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { installer } from './helpers/app';
+import { estMemeOrigine, installer } from './helpers/app';
 
 /* Ce fichier vaut plus que les polices : il VERROUILLE LA PROMESSE PRODUIT.
    « Rien ne sort de l'appareil » (ADR-0002) était une phrase ; c'est
@@ -16,12 +16,12 @@ test.beforeEach(async ({ page }) => {
 const ROUTES = ['/app', '/app/today', '/app/habits', '/app/settings'];
 
 for (const route of ROUTES) {
-  test(`aucune requête vers un domaine tiers — ${route}`, async ({ page }) => {
+  test(`aucune requête vers un domaine tiers — ${route}`, async ({ page, baseURL }) => {
     const tiers: string[] = [];
     page.on('request', (r) => {
       const url = new URL(r.url());
       if (url.protocol === 'data:' || url.protocol === 'blob:') return;
-      if (url.hostname === 'localhost' || url.hostname === '127.0.0.1') return;
+      if (estMemeOrigine(url, baseURL)) return;
       tiers.push(r.url());
     });
 
@@ -36,14 +36,23 @@ test('Space Grotesk est réellement appliquée', async ({ page }) => {
   expect(famille).toMatch(/Space Grotesk/i);
 });
 
-test('les fichiers de police sont servis depuis le domaine, en woff2', async ({ page }) => {
-  const polices: string[] = [];
+test('les fichiers de police sont servis depuis le domaine, en woff2', async ({
+  page,
+  baseURL,
+}) => {
+  const polices: URL[] = [];
   page.on('response', (r) => {
-    if (r.request().resourceType() === 'font') polices.push(new URL(r.url()).origin);
+    if (r.request().resourceType() === 'font') polices.push(new URL(r.url()));
   });
 
   await page.goto('/app', { waitUntil: 'networkidle' });
-  for (const origine of polices) expect(origine).toMatch(/^http:\/\/localhost/);
+  for (const police of polices) {
+    expect(
+      estMemeOrigine(police, baseURL),
+      `police servie par une origine tierce : ${police.href}`,
+    ).toBe(true);
+    expect(police.pathname).toMatch(/\.woff2$/);
+  }
 });
 
 /* D8 — le prototype chargeait Google Fonts à chaque ouverture. Il est servi
