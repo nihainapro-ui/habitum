@@ -26,7 +26,23 @@ jobs:
         # 20 = plancher déclaré dans engines ; 22 = ce que Vercel construit.
         node: [20, 22]
     steps:
+      # `fetch-depth: 2` — et pas le clone superficiel par défaut.
+      #
+      # `tests/unit/hooks.test.ts` éprouve le garde-fou `pre-push` en lui
+      # soumettant un push NON FAST-FORWARD : il lui faut donc deux commits,
+      # `HEAD` et `HEAD~1`. Avec la profondeur 1 d'`actions/checkout`, le dépôt
+      # de CI n'en contient qu'un et `git rev-parse HEAD~1` échoue.
+      #
+      # Le défaut était LATENT depuis le 11 août 2026 : ce test est arrivé avec
+      # la révision de la phase 0, et le dernier push antérieur datait du
+      # 7 août. Toute la CI échouait depuis, sans que personne ne pousse pour
+      # s'en apercevoir — c'est exactement ce que l'alerte `main` rouge est là
+      # pour rendre impossible à manquer.
+      #
+      # Deux commits suffisent : on ne rapatrie pas l'historique entier pour un
+      # contrôle qui n'en regarde qu'un de plus.
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with: { fetch-depth: 2 }
       - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
           node-version: ${{ matrix.node }}

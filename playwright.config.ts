@@ -11,7 +11,18 @@ export default defineConfig({
      date figée du 5 août 2026 bascule d'un jour selon la machine, et les 62
      valeurs de référence cessent d'être comparables. */
   use: {
-    baseURL: 'http://localhost:3000',
+    /* `BASE_URL` permet de viser une PRODUCTION plutôt que la machine locale —
+       c'est ce qui rend exécutables les quatre vérifications post-déploiement
+       qui demandent un navigateur (tâche 8.9) : hors ligne, aller-retour
+       export/import, bascule FR↔EN, trois thèmes.
+
+           BASE_URL=https://exemple.tld npm run test:e2e
+
+       Les tests écrivent alors dans IndexedDB sur l'origine de production, mais
+       dans un contexte de navigateur ÉPHÉMÈRE créé par Playwright : rien n'est
+       envoyé nulle part, et rien ne survit à la fin du test. C'est la même
+       isolation qu'en local — l'origine change, pas la nature de l'exécution. */
+    baseURL: process.env.BASE_URL ?? 'http://localhost:3000',
     trace: 'on-first-retry',
     timezoneId: 'Europe/Paris',
     locale: 'fr-FR',
@@ -47,10 +58,17 @@ export default defineConfig({
      `reuseExistingServer: false` est délibéré : réutiliser un serveur déjà
      ouvert sur le port 3000 est exactement ce qui a masqué le défaut. En CI, la
      construction est déjà faite par le workflow ; en local, on la refait. */
-  webServer: {
-    command: process.env.CI ? 'npm run start' : 'npm run build && npm run start',
-    url: 'http://localhost:3000',
-    reuseExistingServer: false,
-    timeout: 180_000,
-  },
+  /* Aucun serveur à lancer quand on vise une production déjà en ligne : la
+     démarrer construirait l'application pour la laisser inutilisée, et
+     surtout Playwright attendrait un port que personne n'ouvrira. */
+  ...(process.env.BASE_URL
+    ? {}
+    : {
+        webServer: {
+          command: process.env.CI ? 'npm run start' : 'npm run build && npm run start',
+          url: 'http://localhost:3000',
+          reuseExistingServer: false,
+          timeout: 180_000,
+        },
+      }),
 });
