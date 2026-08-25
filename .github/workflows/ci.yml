@@ -146,17 +146,27 @@ jobs:
   visuel:
     needs: verify
     runs-on: ubuntu-latest
+    # DANS LE CONTENEUR OFFICIEL — le même que `npm run test:visual` en local.
+    #
+    # Première exécution de ce job, 25 août 2026 : 8 captures sur 33 en échec,
+    # 3 à 4 % de pixels d'écart pour un seuil de 2 %. Aucune régression du
+    # produit — simplement deux Linux qui ne dessinent pas les polices tout à
+    # fait pareil. Le socle sortait de l'image Playwright, `ubuntu-latest` le
+    # jugeait avec la sienne.
+    #
+    # Élargir la tolérance aurait « réglé » le symptôme en émoussant le
+    # contrôle, alors qu'il vient d'être calibré à la mesure (0,02, choisi
+    # parce que 0,2 et 0,05 laissaient passer une rotation de teinte de 40°).
+    # On supprime plutôt l'écart à sa source : celui qui PRODUIT le socle et
+    # celui qui le JUGE tournent désormais dans la même image.
+    #
+    # Ni `setup-node` ni `playwright install` : l'image apporte Node et les
+    # navigateurs. En ajouter d'autres réintroduirait exactement la divergence
+    # qu'on vient de retirer.
+    container: mcr.microsoft.com/playwright:v1.62.1-noble
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
-      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
-        with: { node-version: 22, cache: npm }
       - run: npm ci
-      - name: Cache des navigateurs Playwright
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
-        with:
-          path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
-      - run: npx playwright install --with-deps chromium
       - run: npm run build
       - run: npx playwright test --project=visual
       # L'écart se REGARDE. Un rapport qui dit « 3 % de pixels différents » sans

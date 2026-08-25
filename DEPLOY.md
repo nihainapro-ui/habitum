@@ -61,11 +61,45 @@ dépôt par une adresse de contact réelle.
 
 ### Vérifier après déploiement
 
+Le plan 8 § 8.9 en liste **onze**. Elles sont outillées, pas à cocher de mémoire — une
+vérification qui se fait une fois, le jour du lancement, par quelqu'un qui sait déjà ce
+qu'il cherche, ne protège pas le deuxième déploiement.
+
+**Les sept qui se décident sur une réponse HTTP** — les onze routes applicatives et
+quatorze URL de vitrine en 200, `noindex` sur `/app`, `robots.txt`, `sitemap.xml` sans
+`localhost`, `start_url` du manifeste, service worker servi, prototype servi :
+
+```bash
+node scripts/verif-production.mjs https://exemple.tld
+```
+
+Il sort en code 1 dès qu'un contrôle échoue, et il nomme lequel.
+
+**Les quatre qui demandent une page rendue** — hors ligne, aller-retour export/import,
+bascule FR↔EN, les trois thèmes — sont la suite e2e pointée sur la production :
+
+```bash
+BASE_URL=https://exemple.tld npm run test:e2e
+```
+
+Playwright ouvre alors un navigateur ÉPHÉMÈRE sur l'origine de production : les tests
+écrivent dans son IndexedDB, rien n'est envoyé nulle part, rien ne survit à la fin du test.
+Aucun serveur local n'est démarré quand `BASE_URL` est posée.
+
+**Les trois contrôles rapides à la main**, si on veut seulement un coup d'œil :
+
 ```bash
 curl -sI https://exemple.tld/app | grep -i x-robots-tag   # noindex, nofollow
 curl -s  https://exemple.tld/robots.txt                   # Disallow: /app
 curl -s  https://exemple.tld/sitemap.xml | head -3        # aucune URL localhost
 ```
+
+**Restent deux gestes que rien n'automatise** : la note **A** sur
+<https://securityheaders.com> (les en-têtes sont posés et testés en local par
+`headers.spec.ts`, mais la note est délivrée sur une URL publique), et un **rollback
+réellement exécuté** une fois — Vercel → Deployments → déploiement précédent →
+« Promote to Production ». Un rollback jamais essayé n'est pas un rollback,
+c'est une intention (`docs/RUNBOOK.md`).
 
 ## 3. Neon — seulement si une synchronisation multi-appareils est décidée
 

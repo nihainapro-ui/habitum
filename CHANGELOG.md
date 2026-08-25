@@ -1,5 +1,49 @@
 # Journal des modifications
 
+## 2026-08-25 — Revue d'état : un contrôle qui ne prouvait plus rien
+
+Passe de vérification avant mise en service. `npm run verify` vert — **475 tests**,
+36 fichiers. Rien à reprendre côté produit ; un défaut d'OUTILLAGE trouvé en exécutant la
+chaîne plutôt qu'en la lisant.
+
+### Corrigé — `npm run test:e2e` exécutait la non-régression visuelle
+
+`playwright test` sans argument exécute les **trois** projets, `visual` compris. Le commentaire
+de `tests/e2e/visual/vues.spec.ts` § 3 affirmait pourtant que ces fichiers en étaient « exclus »,
+et le job `visuel` de la CI est décrit comme séparé de `e2e` — la configuration, elle, ne
+séparait rien.
+
+Ce que cela coûtait, mesuré : sur Windows, `npm run test:e2e` cherche un socle `-win32` qui
+n'existe pas. Playwright ne s'arrête pas là — **il l'écrit**, signale 33 échecs, et la seconde
+exécution passe au VERT en comparant Windows à Windows. Le contrôle survit à sa propre
+raison d'être : il ne compare plus rien au socle Linux de la CI, et il l'annonce en vert.
+`.gitignore` empêchait déjà ce faux socle d'entrer au dépôt — mais c'est le second garde-fou,
+et le premier manquait.
+
+En CI le job `e2e` rejouait donc les 33 captures que le job `visuel` refait juste après.
+
+`test:e2e` nomme désormais ses deux projets (`desktop`, `mobile`). Vérifié par énumération :
+**644 tests** pour `npm run test:e2e`, **33** pour `--project=visual`, 677 au total — la somme
+est exacte, aucun test n'est tombé du partage.
+
+### Corrigé — trois affirmations périmées dans `docs/`
+
+- `docs/RECETTE-2026-08-17.md` § 8 disait encore « aucun indicateur de progression » à l'import.
+  Il existe depuis le 20 août : attente visible, boutons grisés, message en région live polie
+  (`import-busy`). L'attente est **dite** ; elle n'est toujours pas raccourcie, et le § 8 reste
+  ouvert sur ce point.
+- Le tableau d'avancement de `2026-08-06-habitum-programme.md` portait « ⬜ à faire » sur les
+  plans 6, 7 et 8, livrés respectivement les 13, 15 et 20 août. Les quatre réserves du plan 8 y
+  sont maintenant nommées avec ce que chacune demande.
+
+### Vérifié en amont, pas supposé
+
+`@serwist/next` n'a **toujours pas** de version stable compatible Next 16 : dernière stable
+`9.5.12`, seule une `10.0.0-preview.14` existe. Le blocage de la tâche 8.6 est donc extérieur au
+dépôt, et la décision d'annuler la montée du 18 août tient sans réexamen.
+
+---
+
 ## 2026-08-20 — Phase 7 : ce qui pouvait être clos l'a été
 
 Suite directe de l'entrée du 17 août. Quatre points restaient à ma portée sans personne ni

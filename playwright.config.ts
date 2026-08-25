@@ -43,6 +43,16 @@ export default defineConfig({
       use: { ...devices['Desktop Chrome'], viewport: { width: 1440, height: 900 } },
     },
     { name: 'mobile', testIgnore: '**/visual/**', use: { ...devices['Pixel 7'] } },
+    /* Le projet `visual` existe, mais `npm run test:e2e` ne le NOMME PAS : le
+       script cite explicitement `desktop` et `mobile`. Sans cela, `playwright
+       test` exécute les trois projets, et sur une machine Windows ou macOS la
+       comparaison cherche un socle `-win32` / `-darwin` qui n'existe pas —
+       Playwright l'ÉCRIT alors, signale 33 échecs, et la seconde exécution
+       passe au vert en comparant Windows à Windows. Un contrôle vert qui ne
+       prouve plus rien est pire que le contrôle absent. `.gitignore` empêche ce
+       faux socle d'entrer au dépôt ; c'est le second garde-fou, pas le premier.
+       On l'exécute par `npm run test:visual` (conteneur officiel), et en CI par
+       le job `visuel`, qui nomme ce projet. */
     {
       name: 'visual',
       testMatch: '**/visual/**/*.spec.ts',

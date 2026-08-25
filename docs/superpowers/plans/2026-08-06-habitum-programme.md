@@ -341,10 +341,20 @@ Elles bloquent un plan chacune. Aucune n'est technique.
 | 3 · État & coque | 4 j | ✅ livré (8 août 2026) | 42 % → 48 % |
 | 4 · Système visuel | 5 j | ✅ livré (12 août 2026) | 48 % → 56 % |
 | 5 · Les 11 vues | 15 j | ✅ livré (13 août 2026) | 56 % → 80 % |
-| 6 · Fiabilisation & PWA | 6 j | ⬜ à faire | 80 % → 91 % |
-| 7 · Vitrine & SEO | 3 j | ⬜ à faire | 91 % → 95 % |
-| 8 · Qualité & lancement | 7 j | ⬜ à faire | 95 % → **100 % — v1.0** |
-| **TOTAL** | **53,5 j** | **6 plans sur 9** | |
+| 6 · Fiabilisation & PWA | 6 j | ✅ livré (13 août 2026) | 80 % → 91 % |
+| 7 · Vitrine & SEO | 3 j | ✅ livré (15 août 2026) | 91 % → 95 % |
+| 8 · Qualité & lancement | 7 j | 🟨 livré sauf 4 réserves (20 août 2026) | 95 % → **98 %** |
+| **TOTAL** | **53,5 j** | **8 plans sur 9, le neuvième aux trois quarts** | |
+
+Les quatre réserves du plan 8, et ce que chacune demande — aucune n'est un travail de code
+qui nous appartienne :
+
+| Réserve | Ce qu'il faut | Où |
+|---|---|---|
+| 8.3 — trois parcours au lecteur d'écran | une personne qui écoute (NVDA, VoiceOver) | `docs/a11y/rapport-lecteur-ecran.md` § 2 |
+| 8.7 — cinq tests utilisateurs | cinq personnes | `docs/recherche/protocole-tests-utilisateurs.md` |
+| 8.9 — mise en ligne, 11 vérifications, rollback éprouvé | des accès d'hébergeur | `DEPLOY.md` |
+| 8.6 — `next@16` / `next-intl@4` | **bloqué en amont** : `@serwist/next` n'a pas de version stable compatible Next 16 (dernière stable `9.5.12`, `next >=14` annoncé mais le service worker ne prend plus le contrôle) | `CHANGELOG.md`, 8.6 |
 
 > Le tableau était resté à « ⬜ à faire » sur toute la ligne alors que cinq plans étaient livrés :
 > corrigé à la sortie du plan 5. Les dates sont celles des entrées de `CHANGELOG.md`, qui numérote
