@@ -1,5 +1,42 @@
 # Journal des modifications
 
+## 2026-08-27 (soir) — onze vérifications sur onze, et le ménage des dépendances
+
+### Lighthouse en production : la onzième est tombée
+
+`lighthouserc.cjs` savait lire `BASE_URL` depuis le matin, mais **rien ne la lui passait** —
+l'outillage était prêt à moitié. Le workflow prend désormais l'URL en entrée de
+`workflow_dispatch`, et saute `npm run build` quand on vise une production déjà en ligne :
+construire l'application pour la laisser inutilisée coûterait plusieurs minutes d'Actions
+pour rien.
+
+Mesuré sur `ubuntu-latest`, où Chrome ne meurt pas en `EPERM` : **cinq URL de production ×
+trois passes, quinze relevés, toutes les assertions tenues.** Le budget de performance est
+donc vérifié là où les gens l'utilisent. **La tâche 8.9 est complète : 11/11.**
+
+### Dépendances : trois montées sur quatre, la quatrième écartée par la mesure
+
+- `vitest` 3.2.7 → **4.1.11**, avec `@vitest/coverage-v8` monté **en même temps**. C'est ce
+  qui manquait à la PR Dependabot et la faisait échouer : les deux paquets doivent avancer
+  ensemble. Personne n'avait à débattre de cet échec, il fallait juste le lire.
+- `@types/node` 22 → **26.4.0**
+- `lucide-react` 0.474 → **1.34.0**
+
+**TypeScript 7 est écarté, et pas par prudence.** Il révèle d'abord un vrai durcissement :
+cinq erreurs `TS2882` sur les imports CSS pris pour leur effet de bord, que TypeScript 5
+acceptait en silence. Un `declare module '*.css'` les lève, le typecheck passe. Mais la
+chaîne s'arrête un cran plus loin :
+
+    Failed to load plugin '@typescript-eslint' : typescript-eslint does not support TS 7.0.
+
+Même nature que `next@16` face à `@serwist/next` : extérieur au dépôt. La déclaration CSS a
+été **retirée** plutôt que laissée en place — un fichier qui ne sert à rien aujourd'hui, posé
+pour une version qu'on ne peut pas adopter, est du décor.
+
+**Zéro PR ouverte, zéro issue ouverte, zéro vulnérabilité, zéro alerte CodeQL.**
+
+---
+
 ## 2026-08-27 — 8.9 close à un point près : dix vérifications sur onze
 
 ### Le blocage de Vercel, expliqué par sa disparition
@@ -25,7 +62,8 @@ fichier **suivi**, et le seul endroit où les variables attendues sont document�
 sont retirées ; `.vercel/` était déjà couvert, les fichiers d'environnement réels aussi.
 
 Le fichier étant en CRLF, le défaut s'est d'abord caché : `git check-ignore` répondait « non
-ignoré », parce que le motif écrit par la CLI portait un `` final et ne matchait rien. Il se
+ignoré », parce que le motif écrit par la CLI portait un `
+` final et ne matchait rien. Il se
 serait réveillé à la première normalisation des fins de ligne. Le commentaire laissé sur place
 dit de revérifier après chaque `vercel link`.
 
