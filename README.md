@@ -52,6 +52,7 @@ Le prototype, lui, n'a besoin de rien : ouvrir
 | `npm run check:tokens` | jetons de design conformes au prototype |
 | `npm run check:modernist` | jetons Modernist de la vitrine conformes au système livré |
 | `npm run check:fonts` | polices auto-hébergées conformes aux paquets @fontsource |
+| `npm run lighthouse` | budget de performance — `BASE_URL=https://… ` pour viser la production |
 | `npm run check:icons` | icônes d'installation conformes aux jetons |
 | `npm run icons` | régénère `public/icons/` et `app/apple-icon.png` |
 | **`npm run verify`** | **les contrôles ci-dessus — à passer avant toute livraison** |

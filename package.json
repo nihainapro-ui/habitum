@@ -28,7 +28,8 @@
     "prepare": "node scripts/install-hooks.mjs",
     "hooks:install": "node scripts/install-hooks.mjs",
     "check:modernist": "node scripts/extract-modernist-tokens.mjs --check",
-    "check:fonts": "node scripts/extract-fonts.mjs --check"
+    "check:fonts": "node scripts/extract-fonts.mjs --check",
+    "lighthouse": "npx --yes @lhci/cli@0.15.x autorun"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
