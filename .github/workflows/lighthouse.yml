@@ -10,6 +10,15 @@ name: Lighthouse
 on:
   pull_request:
   workflow_dispatch:
+    inputs:
+      base_url:
+        description: >-
+          URL à mesurer. Vide = la construction locale, comportement des PR.
+          Renseignée = une PRODUCTION déjà en ligne, ce que demande la
+          vérification 10 du plan 8 § 8.9 — et qu'aucun chemin outillé ne
+          permettait avant le 27 août 2026.
+        required: false
+        default: ''
 
 permissions:
   contents: read
@@ -29,10 +38,17 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: npm run build
-      # `autorun` démarre le serveur, collecte trois passes par URL, applique
-      # `lighthouserc.json` et échoue si un seuil n'est pas tenu.
+      # La construction ne sert QUE si l'on mesure la machine locale. Viser une
+      # production déjà en ligne tout en construisant l'application pour la
+      # laisser inutilisée coûterait plusieurs minutes d'Actions pour rien.
+      - if: inputs.base_url == ''
+        run: npm run build
+      # `autorun` collecte trois passes par URL, applique `lighthouserc.cjs` et
+      # échoue si un seuil n'est pas tenu. Le serveur local n'est démarré que
+      # lorsque `BASE_URL` est vide — c'est la configuration qui le décide.
       - run: npx --yes @lhci/cli@0.15.x autorun
+        env:
+          BASE_URL: ${{ inputs.base_url }}
       # Le rapport part en ARTEFACT, pas sur un stockage public tiers : la
       # promesse « aucune donnée ne sort » vaut aussi pour l'outillage.
       - name: Rapports
