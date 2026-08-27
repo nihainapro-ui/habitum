@@ -56,3 +56,9 @@ Thumbs.db
 # cette raison ; ce qui suit empêche une exécution directe de polluer le socle.
 tests/e2e/visual/socle/*-win32.png
 tests/e2e/visual/socle/*-darwin.png
+
+# `vercel link` (27 août 2026) a ajouté ici `.vercel` et `.env*`. Les deux sont
+# RETIRÉS : `.vercel/` est déjà couvert ligne 31, les fichiers d'environnement
+# réels lignes 23-25 — et surtout `.env*` avale `.env.example`, qui est SUIVI et
+# qui est le seul endroit où les variables attendues sont documentées.
+# La CLI ne réécrira ces lignes qu'au prochain `vercel link` : les revérifier.
