@@ -44,9 +44,19 @@ describe('pollution de prototype', () => {
      réaffecte. Ce test constate le résultat qui compte : après import,
      `Object.prototype` est intact. */
   it('une charge portant __proto__ ne touche pas Object.prototype', async () => {
-    const charge = JSON.parse(
-      JSON.stringify(enveloppe()).replace('{', '{"__proto__":{"pollue":"oui"},'),
-    ) as unknown;
+    /* La clé hostile est PRÉFIXÉE au JSON, elle n'est pas substituée dedans.
+       Deux raisons, et la seconde n'est pas cosmétique :
+
+       1. il faut passer par `JSON.parse` — un littéral `{ __proto__: … }` écrit
+          en TypeScript AFFECTE le prototype au lieu de poser une propriété
+          propre, et le test ne mesurerait alors plus rien ;
+       2. la version précédente faisait `.replace('{', …)`, que CodeQL relève en
+          `js/incomplete-sanitization` — « ne remplace que la première
+          occurrence ». Ici c'était voulu, mais un code qui RESSEMBLE à une
+          sanitisation incomplète finit par être lu comme tel, par une machine
+          comme par un humain. Découper explicitement dit l'intention. */
+    const enveloppeJson = JSON.stringify(enveloppe());
+    const charge = JSON.parse(`{"__proto__":{"pollue":"oui"},${enveloppeJson.slice(1)}`) as unknown;
 
     await importFromJson(charge);
 

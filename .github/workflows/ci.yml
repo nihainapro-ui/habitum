@@ -57,10 +57,12 @@ jobs:
         # avait été tentée puis annulée le 18 août parce qu'elle coûtait le
         # fonctionnement hors ligne.
         #
-        # Reste une MODÉRÉE sur `next-intl@3`, hors surface ici : ses deux avis
-        # visent l'API de navigation next-intl — ce dépôt n'a aucun `middleware`
-        # ni `createNavigation` — et `experimental.messages.precompile`, non
-        # utilisé. Le seuil est donc à `high`, comme le plan 8 le demandait.
+        # La modérée `next-intl@3` est tombée le 27 août : `next-intl@4` monte
+        # SEUL, sans `next@16`. `npm audit` rend « found 0 vulnerabilities ».
+        # Le seuil reste à `high`, comme le plan 8 le demandait, plutôt qu'à
+        # `moderate` : on est à zéro avec de la marge, et un seuil plus serré
+        # ferait rougir la CI sur des avis publiés ailleurs, sans qu'une ligne
+        # du dépôt ait bougé. Le durcir se décide, il ne se subit pas.
         #
         # Ce contrôle interroge le registre : une haute publiée demain rougit la
         # CI sans qu'une ligne du dépôt ait changé. C'est voulu.

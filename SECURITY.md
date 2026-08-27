@@ -77,9 +77,9 @@ charge encore ses polices depuis `fonts.googleapis.com` : défaut connu, suivi s
   remonte sans la montée majeure, qui avait été tentée le 18 août puis annulée parce
   qu'elle coûtait le fonctionnement hors ligne.
 
-  Subsiste **une modérée** sur `next-intl@3`, laissée sciemment : ses deux avis visent
-  l'API de navigation de la bibliothèque — ce dépôt n'a aucun `middleware` et n'importe ni
-  `next-intl/navigation` ni `createNavigation` — et `experimental.messages.precompile`,
-  qui n'est pas utilisé. La surface d'attaque décrite n'existe pas ici. Elle disparaîtra
-  avec `next-intl@4`, lui-même suspendu à `next@16`, lui-même suspendu à une version de
-  `@serwist/next` compatible.
+  **Depuis le 27 août 2026 : `npm audit` rend « found 0 vulnerabilities ».** La modérée
+  `next-intl@3` est tombée, et pas comme on le croyait : `next-intl@4` monte **seul**, sans
+  `next@16`. Le dossier du 18 août les tenait pour liées ; l'essai a montré que non.
+  Éprouvé avant d'être livré — 487 tests unitaires, 625 tests e2e, et le contrôle
+  « aucune page de vitrine ne charge le registre sombre » rejoué nommément, puisque c'est
+  celui que la montée de `next@16` avait cassé.
