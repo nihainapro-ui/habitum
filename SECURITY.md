@@ -44,6 +44,12 @@ charge encore ses polices depuis `fonts.googleapis.com` : défaut connu, suivi s
 
 ## Limitations connues et assumées
 
+- **CodeQL : ACTIVÉ le 27 août 2026** (configuration par défaut, suites `javascript-typescript`
+  et `actions`). Il était listé ici comme indisponible — c'était vrai en dépôt privé sur un plan
+  gratuit, ça ne l'est plus. `eslint-plugin-security` reconnaît des motifs ; CodeQL fait
+  l'analyse de flux inter-procédurale que ces motifs ne voient pas. Les deux se complètent au
+  lieu de se remplacer.
+
 - **Protection de branche : POSÉE le 25 août 2026, côté serveur.** Le dépôt est passé en
   **public** ce jour-là, ce qui a levé la restriction du plan gratuit. `main` refuse
   désormais le *force push* et la suppression **chez GitHub**, où `git push --no-verify`
@@ -59,9 +65,7 @@ charge encore ses polices depuis `fonts.googleapis.com` : défaut connu, suivi s
   - une fusion faite depuis l'interface web de GitHub ne passe par aucun hook. C'est là que
     l'alerte sur `main` rouge prend le relais : elle ne bloque pas, elle rend l'échec impossible
     à ne pas voir ;
-  - `eslint-plugin-security` reconnaît des motifs ; il ne fait pas l'analyse de flux
-    inter-procédurale de CodeQL. Le dépôt étant public, CodeQL est désormais **disponible**
-    et gratuit : c'est une amélioration ouverte, pas une impossibilité.
+  - une fusion faite depuis l'interface web de GitHub ne passe par aucun hook.
 
 - `script-src 'unsafe-inline'` dans la CSP : sans cette tolérance, Next.js ne s'hydrate pas. Le
   passage à un `nonce` est couplé à la décision sur le rendu statique (défaut `D12`) et sera
