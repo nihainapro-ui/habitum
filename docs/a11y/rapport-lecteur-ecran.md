@@ -46,6 +46,17 @@ les trois thèmes, compte peuplé comme compte vierge.
 
 ## 2. Ce qui demande une oreille humaine — **NON FAIT**
 
+> **Mise à jour du 25 août 2026 — portée révisée.** L'application n'a qu'un seul
+> utilisateur, son propriétaire. Les trois parcours ci-dessous ne conditionnent donc plus la
+> livraison : ils deviennent exigibles le jour où quelqu'un d'autre s'en sert, ou
+> immédiatement si le propriétaire utilise lui-même un lecteur d'écran.
+>
+> **Ce qui ne change pas :** tout le § 1 reste vérifié à chaque exécution, et le § 3 reste un
+> écart chiffré, pas une opinion. Une application à un seul utilisateur n'est pas une
+> application dispensée d'être utilisable — elle est seulement dispensée de PROUVER à
+> d'autres qu'elle l'est. La distinction compte : on ne retire aucun contrôle automatique, on
+> suspend une campagne manuelle dont le bénéficiaire n'existe pas encore.
+
 Les trois parcours au lecteur d'écran prévus par le plan 8 § 8.3 étape 2 **n'ont pas été
 passés**. Ils exigent NVDA sous Windows et VoiceOver sous macOS, pilotés par une personne qui
 écoute : aucune automatisation ne peut établir qu'une annonce est *compréhensible*, seulement

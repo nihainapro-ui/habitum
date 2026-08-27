@@ -44,22 +44,24 @@ charge encore ses polices depuis `fonts.googleapis.com` : défaut connu, suivi s
 
 ## Limitations connues et assumées
 
-- **Pas de protection de branche côté serveur, pas de contrôles obligatoires, pas de CodeQL.**
-  Le dépôt est privé sur un plan GitHub gratuit : ces trois fonctions y sont indisponibles.
-  Elles ont été remplacées le 11 août 2026 par des équivalents qui, eux, fonctionnent en
-  privé — hook `pre-push`, alerte automatique sur `main` rouge, analyse statique par ESLint
-  (voir ci-dessus).
+- **Protection de branche : POSÉE le 25 août 2026, côté serveur.** Le dépôt est passé en
+  **public** ce jour-là, ce qui a levé la restriction du plan gratuit. `main` refuse
+  désormais le *force push* et la suppression **chez GitHub**, où `git push --no-verify`
+  ne peut rien. Les deux garanties du hook existent donc maintenant là où elles engagent.
 
-  **Ce que les équivalents ne font pas, et il faut le savoir :**
-  - un hook s'exécute chez celui qui pousse : `git push --no-verify` le contourne. Sur un dépôt
-    mono-contributeur c'est un garde-fou, pas une barrière ;
+  **Ce qui n'est délibérément PAS exigé : les contrôles de statut obligatoires.** Sur un
+  dépôt mono-contributeur qui pousse directement sur `main`, les rendre obligatoires est un
+  cercle vicieux — les contrôles ne s'exécutent qu'après le push qu'ils bloqueraient. Le
+  hook `pre-push`, qui exige `npm run verify` vert **avant** que le code quitte la machine,
+  reste donc le contrôle de fond, et il garde sa limite : `--no-verify` le contourne.
+
+  **Ce qui reste hors de portée :**
   - une fusion faite depuis l'interface web de GitHub ne passe par aucun hook. C'est là que
     l'alerte sur `main` rouge prend le relais : elle ne bloque pas, elle rend l'échec impossible
     à ne pas voir ;
   - `eslint-plugin-security` reconnaît des motifs ; il ne fait pas l'analyse de flux
-    inter-procédurale de CodeQL.
-
-  Tout redeviendrait disponible si le dépôt passait en public. Ce n'est pas prévu.
+    inter-procédurale de CodeQL. Le dépôt étant public, CodeQL est désormais **disponible**
+    et gratuit : c'est une amélioration ouverte, pas une impossibilité.
 
 - `script-src 'unsafe-inline'` dans la CSP : sans cette tolérance, Next.js ne s'hydrate pas. Le
   passage à un `nonce` est couplé à la décision sur le rendu statique (défaut `D12`) et sera

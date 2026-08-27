@@ -2,19 +2,23 @@
 # ---------------------------------------------------------------------------
 # Garde-fou de `main`, côté client.
 #
-# GitHub refuse la protection de branche sur un dépôt PRIVÉ en plan gratuit
-# (HTTP 403 : « Upgrade to GitHub Pro or make this repository public »). Le
-# dépôt reste privé par décision du 7 août 2026 ; la protection est donc posée
-# là où elle reste possible : avant que le code quitte la machine.
+# Ce hook est né d'une impossibilité : GitHub refusait la protection de branche
+# sur un dépôt PRIVÉ en plan gratuit. Le dépôt est PUBLIC depuis le 25 août
+# 2026, et la protection est désormais posée CHEZ GITHUB : `main` y refuse le
+# force push et la suppression, où `--no-verify` ne peut rien.
 #
-# Ce que ce hook fait, et que la protection serveur faisait :
-#   1. refuse un push sur `main` si `npm run verify` n'est pas vert ;
-#   2. refuse un push non fast-forward sur `main` (réécriture d'historique).
+# Ce hook garde pourtant tout son sens, parce qu'il fait ce que la protection
+# serveur ne fait PAS ici :
+#   1. il refuse un push sur `main` si `npm run verify` n'est pas vert. Les
+#      contrôles de statut obligatoires ne peuvent pas rendre ce service à un
+#      dépôt qui pousse directement sur `main` : ils s'exécutent APRÈS le push
+#      qu'ils devraient bloquer ;
+#   2. il refuse un push non fast-forward — redondant avec GitHub désormais,
+#      mais il échoue en une seconde et en local, au lieu d'un aller-retour.
 #
-# Ce qu'il ne fait PAS, et il faut le savoir : il s'exécute chez celui qui
-# pousse, et `git push --no-verify` le contourne. Sur un dépôt
-# mono-contributeur, c'est un garde-fou, pas une barrière — et c'est écrit tel
-# quel dans SECURITY.md plutôt que sous-entendu.
+# Sa limite reste la même, et elle est écrite plutôt que sous-entendue : il
+# s'exécute chez celui qui pousse, donc `git push --no-verify` le contourne.
+# Pour le point 2, GitHub reprend maintenant le relais ; pour le point 1, non.
 #
 # Installé par `scripts/install-hooks.mjs`, lui-même appelé par `npm install`.
 # ---------------------------------------------------------------------------

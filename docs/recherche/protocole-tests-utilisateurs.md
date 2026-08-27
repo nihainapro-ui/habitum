@@ -1,7 +1,23 @@
 # Protocole — tests utilisateurs Habitum
 
 **Établi le 17 août 2026**, phase 7 tâche 8.7 (plan 8).
-**État : NON PASSÉ.** Le protocole est prêt ; les séances demandent cinq personnes réelles.
+
+> **SANS OBJET depuis le 25 août 2026 — décision du propriétaire : l'application n'a qu'un
+> seul utilisateur, lui-même.**
+>
+> Ce protocole existait parce que la **décision E** a tranché contre la télémétrie : rien ne
+> remonte, donc ces séances étaient la seule source d'information sur ce que des gens font
+> réellement du produit. Cet argument tombe quand il n'y a pas de « gens » : le propriétaire
+> est l'utilisateur, il découvre chaque friction en s'en servant, et il n'a besoin de personne
+> pour la lui rapporter.
+>
+> **Le document n'est pas supprimé, et c'est délibéré.** Le jour où l'application est ouverte
+> à quelqu'un d'autre, la tâche 8.7 redevient exigible telle quelle — et un protocole écrit
+> vaut mieux qu'un protocole à réinventer. Ce qui suit reste donc valable ; c'est son
+> déclenchement qui est suspendu, pas son contenu.
+
+**État : non passé, et désormais sans objet.** Le protocole est prêt ; les séances
+demanderaient cinq personnes réelles.
 
 ---
 

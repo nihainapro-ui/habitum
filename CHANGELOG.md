@@ -7,6 +7,60 @@ vert — **479 tests**, 37 fichiers ; `npm run test:e2e` : **625 passés, 0 éch
 défauts trouvés en exécutant la chaîne plutôt qu'en la lisant : un contrôle d'outillage
 qui ne prouvait plus rien, et une montée majeure qu'on croyait obligatoire.
 
+### Le dépôt passe en PUBLIC, et trois choses se règlent d'un coup
+
+**Découvert en révisant la portée : les pages opposables du site affirmaient quelque chose de
+faux.** La politique de confidentialité et les mentions légales — servies publiquement —
+disaient « le code d'Habitum est **public** sous licence MIT : github.com/nihainapro-ui/habitum.
+Vous pouvez le lire, le modifier, le construire et l'héberger vous-même ». Le pied de page y
+renvoyait, et le JSON-LD déclarait `codeRepository`. **Le dépôt était privé : tous ces liens
+étaient un 404 pour quiconque n'était pas son propriétaire.**
+
+C'est exactement le défaut que ce dépôt s'interdit ailleurs — « une page opposable qui donne un
+contact injoignable est pire qu'une page qui n'en donne pas » — appliqué cette fois à l'argument
+central de la vitrine.
+
+Le dépôt est donc **public** depuis le 25 août 2026. Vérifié avant de publier : seul
+`.env.example` est suivi, avec un `localhost` en valeur ; aucun motif de secret dans l'arbre ;
+et `gitleaks` analyse l'**historique complet** (`fetch-depth: 0`), vert.
+
+Trois conséquences, toutes acquises par le même geste :
+
+1. **Les pages légales disent vrai.**
+2. **Les minutes GitHub Actions deviennent illimitées.** Un dépôt privé plafonne à 2 000
+   minutes par mois sur le plan gratuit, et cette CI fait tourner six jobs dont `e2e` et
+   `visuel`. La contrainte « tout doit rester gratuit » tient désormais sans arithmétique.
+3. **La protection de branche est POSÉE**, côté serveur — l'écart `0.1` du plan 0, ouvert
+   depuis le 11 août parce que GitHub la refusait sur un dépôt privé gratuit. `main` refuse le
+   *force push* et la suppression **chez GitHub**, là où `git push --no-verify` ne peut rien.
+
+**Ce qui n'est délibérément pas exigé : les contrôles de statut obligatoires.** Sur un dépôt
+mono-contributeur qui pousse directement sur `main`, ils forment un cercle vicieux — ils
+s'exécutent après le push qu'ils devraient bloquer. Le hook `pre-push` reste donc le contrôle
+de fond, avec sa limite écrite. `SECURITY.md` et le hook lui-même portent le nouvel état ;
+CodeQL, indisponible en privé, devient une amélioration ouverte au lieu d'une impossibilité.
+
+### Portée révisée — un seul utilisateur, et deux tâches qui perdent leur objet
+
+Le propriétaire a tranché : **l'application n'est destinée qu'à lui.** Deux tâches du plan 8
+avaient été écrites pour un produit ayant un public.
+
+- **8.7 — cinq tests utilisateurs : SANS OBJET.** Leur justification était la décision E : sans
+  télémétrie, ces séances étaient la seule source d'information sur ce que des gens font du
+  produit. L'argument tombe quand il n'y a pas de « gens ». Le protocole n'est pas supprimé —
+  il redevient exigible tel quel le jour où quelqu'un d'autre s'en sert.
+- **8.3 — trois parcours au lecteur d'écran : portée révisée.** Ils ne conditionnent plus la
+  livraison, et redeviennent exigibles si l'application s'ouvre à d'autres, ou immédiatement si
+  le propriétaire utilise lui-même un lecteur d'écran. **Aucun contrôle automatique n'est
+  retiré** : les onze vues × trois thèmes restent auditées par axe à chaque exécution, et
+  l'écart chiffré sur la taille de confort des cibles reste écrit. Une application à un seul
+  utilisateur n'est pas dispensée d'être utilisable ; elle est dispensée de le PROUVER à
+  d'autres.
+
+Viser « 100 % du plan 8 » n'avait plus de sens tel quel : le plan a été écrit pour un produit
+destiné à des tiers. Ce qui est écrit ici vaut mieux qu'un pourcentage obtenu en cochant des
+cases vides.
+
 ### En ligne — 8.9, et un défaut que seul un vrai déploiement pouvait montrer
 
 **https://habitum-one.vercel.app** — Vercel Hobby, région `cdg1`, décision C appliquée.
