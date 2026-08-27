@@ -1,5 +1,78 @@
 # Journal des modifications
 
+## 2026-08-27 — 8.9 close à un point près : dix vérifications sur onze
+
+### Le blocage de Vercel, expliqué par sa disparition
+
+Deux commits — `2686f7f` et `c80dc68` — étaient restés en **`Blocked`**, jamais construits.
+Sur un plan Hobby, Vercel refuse un déploiement dont il ne rattache pas l'auteur au
+propriétaire du compte. Aucune métadonnée Git ne les distinguait pourtant des autres : auteur
+et committer identiques sur les quatre derniers commits, vérifié.
+
+**Ce qui les distinguait, c'est la date : ils ont été poussés quand le dépôt était PRIVÉ.**
+Depuis son passage en public, les déploiements par `git push` repassent en `Ready` — `98dbc57`,
+`e3c360a` et `41a0bfb` l'ont fait sans intervention. Le blocage n'a donc pas été contourné, il
+a cessé d'exister.
+
+Entre-temps, le déploiement est passé par `vercel deploy --prod`, qui attribue le déploiement
+au compte **connecté** plutôt qu'à l'auteur du commit. Cette voie reste utile le jour où le
+blocage reviendrait.
+
+### Un piège que `vercel link` pose dans `.gitignore`
+
+La CLI y écrit deux lignes : `.vercel` et **`.env*`**. La seconde avale `.env.example` — un
+fichier **suivi**, et le seul endroit où les variables attendues sont documentées. Les deux
+sont retirées ; `.vercel/` était déjà couvert, les fichiers d'environnement réels aussi.
+
+Le fichier étant en CRLF, le défaut s'est d'abord caché : `git check-ignore` répondait « non
+ignoré », parce que le motif écrit par la CLI portait un `` final et ne matchait rien. Il se
+serait réveillé à la première normalisation des fins de ligne. Le commentaire laissé sur place
+dit de revérifier après chaque `vercel link`.
+
+### Dix vérifications sur onze, et la onzième est écrite comme ouverte
+
+| # | Vérification | |
+|---|---|---|
+| 1 | 11 routes applicatives + 14 URL de vitrine | ✅ 200 |
+| 2 | **PWA installable** | ✅ installée à la main, sur téléphone |
+| 3 | **Hors ligne effectif** | ✅ éprouvé sur la production |
+| 4 | Export → réinitialisation → import | ✅ |
+| 5 | Bascule FR ↔ EN | ✅ |
+| 6 | Les trois thèmes | ✅ |
+| 7 | **`securityheaders.com`** | ✅ **note A** |
+| 8 | Aucune requête tierce | ✅ |
+| 9 | `robots.txt` et `sitemap.xml` | ✅ |
+| 10 | **Lighthouse en production** | ❌ **ouverte** |
+| 11 | Sonde périodique | ✅ verte |
+
+Plus **le rollback, réellement exécuté** : le site est repassé au build de 07:41 — vérifié
+répondant en 200, vitrine et application — puis revenu à celui de 08:24. Un rollback jamais
+essayé n'est pas un filet ; celui-ci a été essayé au calme plutôt qu'en panique.
+
+**La onzième reste ouverte, et pour une raison structurelle :** `lighthouserc.json` code
+`localhost` en dur dans ses cinq URL comme dans les motifs de son `assertMatrix`. Il n'existe
+aucun chemin outillé vers une URL de production — le même défaut que celui corrigé le 25 août
+sur les contrôles de requêtes tierces. S'y ajoute, sur la machine de développement, le
+plantage `EPERM` de Chrome au nettoyage de son dossier temporaire. **Aucun score de production
+n'est donc relevé, et aucun n'est déclaré.**
+
+### CodeQL activé
+
+Listé jusqu'ici parmi les limitations assumées, au motif que GitHub le réserve aux dépôts
+publics sur un plan gratuit. Le motif a disparu avec le passage en public. Configuration par
+défaut posée, suites `javascript-typescript` et `actions`. `eslint-plugin-security` reconnaît
+des **motifs** ; CodeQL fait l'analyse de flux inter-procédurale que ces motifs ne voient pas.
+
+### Le suivi d'anomalies disait n'importe quoi
+
+**Onze issues ouvertes décrivaient toutes des défauts déjà corrigés** — entre le 8 et le 25
+août. `main est rouge`, `Aucune PWA`, `i18n inutilisée`, `4 vulnérabilités hautes`, `SEO nul`…
+Toutes fermées, chacune avec, dans son commentaire, ce qui l'a réglée et où le vérifier. **Zéro
+issue ouverte.** Un suivi qui ment est pire qu'un suivi vide : il fait rouvrir des chantiers
+terminés.
+
+---
+
 ## 2026-08-25 — D11 fermée, et un contrôle qui ne prouvait plus rien
 
 Passe de vérification avant mise en service, puis fermeture de **D11**. `npm run verify`
