@@ -2,7 +2,6 @@
 
 import { useMemo } from 'react';
 import { useDayAgenda, useJourAffiche } from '@/lib/store';
-import { ViewHeader } from '@/components/shell/view-header';
 import { DayNav } from './DayNav';
 import { DayStrip } from './DayStrip';
 import { FilterBar } from './FilterBar';
@@ -21,8 +20,6 @@ export function TodayView() {
 
   return (
     <div className="flex flex-col gap-4">
-      <ViewHeader titleKey="navToday" subKey="todaySub" />
-
       <div className="flex flex-wrap items-center gap-3">
         <DayNav />
         <div className="flex-1" />

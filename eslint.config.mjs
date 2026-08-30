@@ -14,6 +14,13 @@ const config = [
        (tâche 5.7). Le source est `app/sw.ts`, lui bien linté ; linter la sortie
        minifiée d'un outil tiers ne dit rien sur notre code et fait échouer
        `verify` sur des motifs qu'on ne peut pas corriger. */
+    /* `test-results/` est le dépôt de traces de Playwright. Un seul test en
+       échec y écrit les RESSOURCES de la page — le bundle de l'application, et
+       tout ce qu'un navigateur a chargé. Linté, ce JavaScript minifié produit
+       des milliers de problèmes sur du code qui n'est pas le nôtre : mesuré à
+       3 885 après une campagne rouge. Même raison que `.next/**` juste
+       au-dessus : le lint local virait au rouge alors que la CI, sur checkout
+       propre, restait verte. */
     ignores: [
       '.next/**',
       'node_modules/**',
@@ -21,6 +28,8 @@ const config = [
       'public/sw.js',
       'docs/**',
       'next-env.d.ts',
+      'test-results/**',
+      'playwright-report/**',
     ],
   },
   ...compat.extends('next/core-web-vitals', 'next/typescript'),
@@ -103,8 +112,14 @@ const config = [
         {
           noStrings: true,
           /* Ponctuation, symboles et NOM DU PRODUIT : rien de tout cela ne se
-             traduit. « Habitum » est une marque, pas un libellé. */
-          allowedStrings: ['Habitum', '·', '—', '–', '/', ':', '%', '✕', '◉', '←', '→'],
+             traduit. « Habitum » est une marque, pas un libellé.
+
+             `◆` est la marque réduite du badge de démonstration sous 1200 px
+             (`data-demo-mark` du prototype) ; elle est doublée d'un texte
+             masqué, c'est lui qui porte le sens.
+             `⌘K` est une TOUCHE, pas une phrase : le raccourci s'écrit de la
+             même façon dans les deux langues. */
+          allowedStrings: ['Habitum', '·', '—', '–', '/', ':', '%', '✕', '◉', '◆', '⌘K', '←', '→'],
           ignoreProps: true,
         },
       ],

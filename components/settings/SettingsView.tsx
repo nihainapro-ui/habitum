@@ -6,7 +6,6 @@ import { Panel, Segmented, Switch } from '@/components/ui';
 import type { WeekStart } from '@/lib/domain';
 import { useSettings, useStore } from '@/lib/store';
 import { clearErrorLog, readErrorLog, type ErreurJournalisee } from '@/lib/logger';
-import { ViewHeader } from '@/components/shell/view-header';
 import { FeedbackSettings } from './FeedbackSettings';
 import { NotificationSetting } from './NotificationSetting';
 import { DataSection } from './DataSection';
@@ -49,8 +48,6 @@ export function SettingsView() {
 
   return (
     <div className="flex max-w-[760px] flex-col gap-4">
-      <ViewHeader titleKey="navSettings" subKey="settingsSub" />
-
       <Panel title={t('appearanceSec')}>
         <div className="flex flex-col gap-5">
           <ThemeSwitcher />

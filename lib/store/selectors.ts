@@ -12,12 +12,14 @@ import {
   focusMinutes,
   isScheduled,
   N_BEST,
+  progression,
   N_STREAK,
   sumValues,
   today,
   type DayRatio,
   type EntreeJour,
   type Habit,
+  type Progression,
   type Task,
 } from '@/lib/domain';
 import { cacheDerive } from './derived';
@@ -152,3 +154,65 @@ export const useToast = () => useStore((s) => s.ui.toast);
 export const useIsDemo = () => useStore((s) => s.isDemo);
 export const useActiveProfile = () =>
   useStore((s) => s.profiles.find((p) => p.id === s.activeProfileId) ?? null);
+
+/** Progression de la coque — indice de l'en-tête, niveau et rang du rail.
+ *
+ *  MÉMORISÉ SUR LES RÉFÉRENCES, et ce n'est pas une optimisation de confort.
+ *
+ *  Le rail et l'en-tête sont montés sur les onze vues. Abonnés directement aux
+ *  collections, ils se redessinaient à chaque écriture du store. Recalculer
+ *  sans mémoriser était pire encore : `progression` traverse 120 jours, et
+ *  chaque jour balaie toutes les habitudes. Mesuré sur le jeu de charge —
+ *  200 habitudes × 3 ans — cela faisait **450 ms par interaction** là où le
+ *  budget en accorde 100 (`tests/e2e/charge.spec.ts`).
+ *
+ *  La clé est faite des QUATRE RÉFÉRENCES d'entrée, plus la date du jour. Le
+ *  store remplace ses collections à chaque écriture (`set` immuable, y compris
+ *  `logIndex`, reconstruit par `avecEntree`) : une donnée qui change change
+ *  donc au moins une référence, et la valeur mémorisée ne peut pas être
+ *  périmée. La date, elle, ne dépend d'aucune écriture — sans elle, l'indice
+ *  resterait celui de la veille après minuit sur une application laissée
+ *  ouverte.
+ *
+ *  Effet de bord utile : la référence rendue est stable, donc la coque ne se
+ *  redessine que lorsqu'un des chiffres affichés change réellement.
+ *
+ *  Pourquoi pas `cacheDerive` : il est invalidé par habitude et par date, et
+ *  `hydrate()` ne le vide pas. Une valeur GLOBALE mémorisée avant hydratation y
+ *  resterait périmée — exactement le chiffre faux que CLAUDE.md § 3 interdit. */
+interface MemoProgression {
+  log: unknown;
+  habits: unknown;
+  tasks: unknown;
+  sessions: unknown;
+  jour: string;
+  valeur: Progression;
+}
+
+let memoProgression: MemoProgression | null = null;
+
+export const useProgression = (): Progression =>
+  useStore((s) => {
+    const jour = dateKey(today());
+    const m = memoProgression;
+    if (
+      m &&
+      m.log === s.logIndex &&
+      m.habits === s.habits &&
+      m.tasks === s.tasks &&
+      m.sessions === s.sessions &&
+      m.jour === jour
+    ) {
+      return m.valeur;
+    }
+    const valeur = progression(s.logIndex, s.habits, s.tasks, s.sessions);
+    memoProgression = {
+      log: s.logIndex,
+      habits: s.habits,
+      tasks: s.tasks,
+      sessions: s.sessions,
+      jour,
+      valeur,
+    };
+    return valeur;
+  });

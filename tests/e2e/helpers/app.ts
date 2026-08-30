@@ -1,5 +1,6 @@
 import { expect, type Page } from '@playwright/test';
 import { DB_NAME } from '@/lib/storage/keys';
+import { PERIODE_BATTEMENT_MS } from '@/lib/domain';
 import type { LogEntry } from '@/lib/domain';
 import {
   DEMO_NOW,
@@ -39,9 +40,42 @@ export const DATE_FIGEE = new Date('2026-08-05T07:00:00.000Z');
 /** Date-clé du jour figé, telle que la calcule `dateKey()`. */
 export const JOUR_FIGE = '2026-08-05';
 
+/* Pages dont l'horloge est INSTALLÉE (`clock.install` + `pauseAt`), par
+   opposition à `setFixedTime` qui ne remplace que la date. Seules les
+   premières suspendent `requestAnimationFrame` — et c'est ce qui rend la
+   frame ci-dessous nécessaire. */
+const horlogesPilotables = new WeakSet<Page>();
+
+/** Laisse passer UNE frame d'animation, si l'horloge de la page est pilotée.
+ *
+ *  POURQUOI CETTE FONCTION EXISTE, en entier — elle a coûté une demi-journée.
+ *
+ *  React sert la coque puis, quand celle-ci est assez grande, DIFFÈRE le
+ *  contenu de la vue dans un `<div hidden id="S:0">` qu'un script inline
+ *  vient replacer. Depuis React 19, ce replacement n'est pas immédiat : il est
+ *  mis en file et exécuté au prochain `requestAnimationFrame` (`$RT`).
+ *
+ *  `clock.install()` + `pauseAt()` remplacent `requestAnimationFrame` par une
+ *  version qui n'avance qu'à la demande. La frame n'arrive donc JAMAIS, le
+ *  bloc différé reste dans le document, et la vue existe en DEUX exemplaires :
+ *  celui que React a rendu côté client, et l'orphelin masqué. Tout localisateur
+ *  en mode strict échoue alors sur « resolved to 2 elements » — un échec qui
+ *  ne décrit rien du produit, puisqu'un vrai navigateur rend cette frame en
+ *  quelques millisecondes. Vérifié : hors horloge figée, l'élément est unique.
+ *
+ *  ON AVANCE D'UN BATTEMENT ENTIER, pas de 16 ms. Une frame de 16 ms suffirait
+ *  à débloquer `$RT`, mais elle DÉPHASERAIT le minuteur : son battement est
+ *  posé au montage, alors que `startedAt` est pris au clic. Décaler le second
+ *  de 16 ms sans décaler le premier fait lire 4 secondes là où le test en
+ *  attend 5 — mesuré. Un multiple de la période laisse les deux alignés. */
+const laisserPasserUneFrame = async (page: Page): Promise<void> => {
+  if (horlogesPilotables.has(page)) await page.clock.runFor(PERIODE_BATTEMENT_MS);
+};
+
 /** Attend que la coque ait amorcé la base et hydraté le store. */
 export const attendreHydratation = async (page: Page): Promise<void> => {
   await expect(page.locator('[data-hydrated="true"]')).toBeAttached();
+  await laisserPasserUneFrame(page);
 };
 
 /** Ouvre une route et attend que l'application réponde. */
@@ -125,6 +159,7 @@ const poserHorloge = async (page: Page, pilotable: boolean): Promise<void> => {
   }
   await page.clock.install({ time: DATE_FIGEE });
   await page.clock.pauseAt(DATE_FIGEE);
+  horlogesPilotables.add(page);
 };
 
 /** Lignes `meta` d'un compte DÉJÀ accueilli.

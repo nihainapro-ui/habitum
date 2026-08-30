@@ -1,6 +1,7 @@
 @import 'tailwindcss';
 @import './tokens.css';
 @import './theme.css';
+@import './motion.css';
 
 html,
 body {
@@ -30,12 +31,47 @@ a:hover {
   background: rgba(var(--glow), 0.32);
 }
 
+/* 04-DESIGN-TOKENS.md § Formes et profondeur : défilement 7 px, pouce
+   rgba(120,190,255,.28) → .5 au survol, rayon 99 px.
+
+   Le pouce est peint par `background-clip: content-box` derrière une bordure
+   transparente de 2 px : c'est ce qui lui donne sa marge sans réduire la
+   surface cliquable, qui reste celle des 7 px. Les deux couleurs sont écrites
+   en dur et non en jetons — le prototype fait de même, parce que la barre doit
+   rester lisible dans les trois thèmes, y compris `clinical` où `--line`
+   virerait au bleu sombre sur fond clair. */
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(120, 190, 255, 0.28);
+  border: 2px solid transparent;
+  background-clip: content-box;
+  border-radius: 99px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(120, 190, 255, 0.5);
+  background-clip: content-box;
+}
+
+/* 04-DESIGN-TOKENS.md § Mouvement : la préférence système neutralise TOUT.
+   `animation-iteration-count: 1` autant que la durée — une animation infinie
+   ramenée à 1 ms tourne toujours en boucle, mille fois par seconde, et coûte
+   plus cher immobile qu'en mouvement. C'est le piège de ce bloc.
+
+   La portée inclut `::before` / `::after`, que le prototype n'atteint pas :
+   les pseudo-éléments décoratifs animent aussi. */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {
-    animation-duration: 0.01ms !important;
-    transition-duration: 0.01ms !important;
+    animation-duration: 0.001s !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001s !important;
     scroll-behavior: auto !important;
   }
 }

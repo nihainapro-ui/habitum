@@ -6,7 +6,7 @@ import { groupTasks, GROUPES_TACHE, type GroupeTache } from '@/lib/domain';
 import { useSettings, useStore } from '@/lib/store';
 import { EmptyState } from '@/components/shell/empty-state';
 import { PrimaryButton } from '@/components/shell/primary-button';
-import { ViewHeader } from '@/components/shell/view-header';
+import { ViewActions } from '@/components/shell/view-actions';
 import { ShoppingList } from './ShoppingList';
 import { TaskItem } from './TaskItem';
 
@@ -38,7 +38,7 @@ export function TasksView() {
 
   return (
     <div className="flex flex-col gap-4">
-      <ViewHeader titleKey="navTasks" subKey="tasksSub" actions={nouveau} />
+      <ViewActions>{nouveau}</ViewActions>
 
       <div className="grid grid-cols-1 items-start gap-4 min-[1060px]:grid-cols-[minmax(0,1fr)_300px]">
         <div className="flex min-w-0 flex-col gap-4">

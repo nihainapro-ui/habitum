@@ -12,7 +12,6 @@ import {
   today,
 } from '@/lib/domain';
 import { useStore } from '@/lib/store';
-import { ViewHeader } from '@/components/shell/view-header';
 import { useLocaleSwitcher } from '@/components/shell/locale-provider';
 import { MoodPicker } from './MoodPicker';
 
@@ -87,8 +86,6 @@ export function NotesView() {
 
   return (
     <div className="flex flex-col gap-4">
-      <ViewHeader titleKey="navNotes" subKey="notesSub" />
-
       <div className="grid grid-cols-1 items-start gap-4 min-[1060px]:grid-cols-[minmax(0,1fr)_320px]">
         <div className="flex min-w-0 flex-col gap-4">
           <Panel

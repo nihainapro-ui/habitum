@@ -1,0 +1,313 @@
+/* --------------------------------------------------------------------------
+   Habitum — mouvement de l'application (REGISTRE SOMBRE UNIQUEMENT).
+
+   Source      : public/prototype/Habitum.dc.html, <helmet> lignes 10–86.
+   Table       : docs/handoff/04-DESIGN-TOKENS.md § Mouvement.
+
+   Ce fichier n'est importé que par `globals.css`, donc uniquement par le
+   groupe `(app)`. La vitrine est en Modernist et n'anime rien : lui servir ces
+   images-clés lui ferait télécharger du mouvement qu'elle n'utilise pas.
+
+   POURQUOI DES IMAGES-CLÉS NOMMÉES plutôt que des utilitaires Tailwind :
+   le prototype déclenche ses animations depuis des styles EN LIGNE calculés
+   (`animation:'breathe '+(3+(i%5)*.65)+'s ...'`), parce que la durée dépend de
+   la donnée. Un utilitaire fige la durée à la compilation ; une image-clé
+   nommée se laisse composer. ADR-0005 § styles en ligne.
+
+   Le bloc `prefers-reduced-motion` de `globals.css` les neutralise toutes —
+   c'est lui qui rend ce fichier sûr, et il doit le rester.
+   -------------------------------------------------------------------------- */
+
+/* --- Entrées ------------------------------------------------------------ */
+
+/* .4s — entrée de vue */
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* .35s — carte */
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* .3s — case cochée. Le dépassement à 1.18 est la signature du geste :
+   sans lui, la coche apparaît au lieu d'être posée. */
+@keyframes pop {
+  0% {
+    transform: scale(0.6);
+  }
+  60% {
+    transform: scale(1.18);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* .25s — toast. Le `translate(-50%)` est porté par l'animation ET par le
+   style de repos : un toast centré par `left:50%` perdrait son centrage
+   pendant les 250 ms de l'entrée. */
+@keyframes slideup {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 16px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+/* .3s — tiroirs et feuilles latérales */
+@keyframes slidein {
+  from {
+    opacity: 0;
+    transform: translateX(34px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* .3s — navigation de mois, dans le sens du geste (`calDir`).
+   Deux noms par sens, alternés : rejouer une animation exige de CHANGER son
+   nom, sinon le navigateur considère qu'elle tourne déjà et ne la relance
+   pas. C'est pour cela qu'il y en a quatre et non deux. */
+@keyframes slR1 {
+  from {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes slR2 {
+  from {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes slL1 {
+  from {
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes slL2 {
+  from {
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Cellules de grille (calendrier, matrice) — même raison d'être en double. */
+@keyframes cellIn1 {
+  from {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes cellIn2 {
+  from {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* --- Boucles ------------------------------------------------------------ */
+
+/* 2s infinite — minuteur actif, nœuds de la constellation, halo de la jauge */
+@keyframes breathe {
+  0%,
+  100% {
+    opacity: 0.5;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.06);
+  }
+}
+
+/* 1.2s linear — les deux sens servent : deux anneaux concentriques qui
+   tournent dans le même sens ne se lisent pas comme deux anneaux. */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes spinr {
+  to {
+    transform: rotate(-360deg);
+  }
+}
+
+/* Pastille d'état de l'en-tête */
+@keyframes flick {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+/* Curseur maison */
+@keyframes curPulse {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* --- Décor SVG et fonds ------------------------------------------------- */
+
+@keyframes scan {
+  0% {
+    transform: translateY(-100%);
+  }
+  100% {
+    transform: translateY(2400%);
+  }
+}
+
+@keyframes sweep {
+  0% {
+    transform: translateX(-120%);
+  }
+  100% {
+    transform: translateX(320%);
+  }
+}
+
+/* Liens de la constellation : le tiret court, il ne se dessine pas. */
+@keyframes dash {
+  to {
+    stroke-dashoffset: -320;
+  }
+}
+
+@keyframes flow {
+  to {
+    stroke-dashoffset: -160;
+  }
+}
+
+/* Tracé neuronal : celui-là SE DESSINE, une fois. */
+@keyframes trace {
+  from {
+    stroke-dashoffset: 900;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes drift {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  33% {
+    transform: translate3d(6vw, -4vh, 0);
+  }
+  66% {
+    transform: translate3d(-5vw, 5vh, 0);
+  }
+}
+
+@keyframes grid {
+  to {
+    transform: translateY(64px);
+  }
+}
+
+/* --- Écran de démarrage — ~2s, une fois par session --------------------- */
+
+@keyframes bootOut {
+  0%,
+  72% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+
+@keyframes bootRing {
+  0% {
+    transform: rotate(0);
+    opacity: 0.2;
+  }
+  30% {
+    opacity: 1;
+  }
+  100% {
+    transform: rotate(720deg);
+    opacity: 0.2;
+  }
+}
+
+@keyframes bootBar {
+  0% {
+    width: 0;
+  }
+  100% {
+    width: 100%;
+  }
+}
+
+@keyframes bootTxt {
+  0% {
+    opacity: 0;
+    letter-spacing: 0.6em;
+  }
+  40% {
+    opacity: 1;
+    letter-spacing: 0.28em;
+  }
+  100% {
+    opacity: 1;
+    letter-spacing: 0.28em;
+  }
+}

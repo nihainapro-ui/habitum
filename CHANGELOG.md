@@ -1,5 +1,184 @@
 # Journal des modifications
 
+## 2026-08-27 (nuit) — la coque prend enfin le système visuel du prototype
+
+### Ce qui n'allait pas, et qui ne se voyait dans aucun contrôle
+
+`check:tokens`, `check:modernist`, `check:fonts` : les trois au vert. La vitrine, mesurée dans la
+page rendue, ne portait **aucun** rayon d'angle, **aucun** texte centré, **aucun** filet aminci,
+**aucun** débordement à 1280 px. Le registre Modernist est conforme, et l'était déjà.
+
+L'application, elle, ne l'était pas — et le code le disait tout haut. `components/shell/rail.tsx`
+portait depuis le début : « *Les icônes Lucide arrivent avec le système visuel (phase 3, tâche
+3.6)* ». La phase n'a jamais eu lieu. Le rail était une **barre de texte de 228 px sans une seule
+icône**, là où `tests/visual/reference/01-dash.png` montre un rail d'icônes de 72 px ; l'en-tête
+affichait une date là où la référence affiche le titre de la vue, un indice et un bouton dégradé.
+Et le dépôt ne contenait **aucun `@keyframes`** : les animations du § Mouvement n'existaient pas,
+le bloc `prefers-reduced-motion` neutralisait du vide.
+
+Rien de cela n'était détectable par les contrôles en place : ils vérifient les JETONS, pas leur
+emploi. Un jeton juste peut n'être utilisé nulle part.
+
+### La coque, portée
+
+**Rail** (`rail.tsx`, `marque.tsx`, `rail-footer.tsx`) — deux états, un seul seuil, `BP_TABLET` =
+**1060 px**, la valeur du prototype : replié à 72 px en icônes seules en dessous, déplié à 252 px
+au-dessus. Le choix se fait en **CSS** (`min-[1060px]:`) et non en JavaScript comme dans le
+prototype : les pages sont prérendues (D12), un rail dimensionné après montage s'afficherait
+déplié puis se replierait à chaque chargement. ADR-0005 l'autorise explicitement — « au portage,
+Tailwind et les classes reprennent ce rôle ».
+
+S'y ajoutent la marque (anneau conique tournant + glyphe), la carte d'expérience, les titres de
+groupe en micro-libellé mono, le filet d'état qui se rétracte à zéro plutôt que de disparaître, et
+le pied — bascule de thème et de langue.
+
+**En-tête** (`header.tsx`) — le titre de la vue **remonte dans la barre**, avec son sur-titre, la
+pastille d'état, la pilule de profil, le mode zen, l'indice `IDX`, la recherche et le bouton
+« Nouveau ». C'est le prototype qui en décide (`<h1>{{ head.title }}</h1>` vit dans `data-topbar`),
+et ce n'est pas cosmétique : les onze vues commencent alors par leur donnée. `ViewHeader` devient
+donc `ViewActions` et ne porte plus que les actions propres à la vue.
+
+**Mouvement** (`styles/motion.css`) — les images-clés du helmet, plus la barre de défilement de
+7 px. Et une correction dans `prefers-reduced-motion` : il neutralisait la DURÉE sans toucher
+`animation-iteration-count`. Une animation infinie ramenée à 1 ms tourne toujours en boucle, mille
+fois par seconde ; elle coûte plus cher immobile qu'en mouvement.
+
+### L'indice de l'en-tête n'est pas un chiffre décoratif
+
+`lib/domain/progression.ts`, porté de `coreVals()` au chiffre près, avec ses douze tests. Chaque
+terme vient du journal réel — occurrences faites et prévues sur 120 jours, meilleur record, minutes
+de sessions **enregistrées**. Un compte vierge donne xp 0, niveau 1.
+
+Un nombre surprend, et il est verrouillé par un test qui l'explique : **un compte vierge affiche
+« IDX 16 », pas « IDX 0 »**. L'indice vaut `ratio·580 + série·12 + niveau·16`, et le niveau
+plancher est 1. Les deux premiers termes sont bien nuls. Sans ce test, un lecteur pressé
+« corrigerait » l'anomalie en forçant 0, et ferait diverger l'indice sur toute la plage.
+
+### Deux affirmations fausses de `05-SPEC-VUES.md`, corrigées
+
+1. **L'ordre de navigation annoncé n'était pas celui du prototype.** Le rail y place `profile` en
+   tête du groupe « Focus », avant `timer` — la silhouette précède le chronomètre dans
+   `01-dash.png`. L'ordre porté est `… stats · profile · timer · notes · settings`.
+2. **L'en-tête ne porte pas la date**, il porte le titre. La date appartient au héros du tableau
+   de bord.
+
+### Le piège de la recette : une horloge figée empêche React de finir son travail
+
+Trois tests du minuteur sont tombés, et le message ne parlait pas du minuteur :
+`getByTestId('elapsed')` **resolved to 2 elements**.
+
+La coque étant plus grande, React DIFFÈRE désormais le contenu de la vue dans un
+`<div hidden id="S:0">` qu'un script inline vient replacer. Depuis React 19, ce replacement est mis
+en file et exécuté au prochain `requestAnimationFrame`. Or `clock.install()` + `pauseAt()`
+remplacent `requestAnimationFrame` par une version qui n'avance qu'à la demande : la frame
+n'arrivait jamais, le bloc différé restait dans le document, et la vue existait en deux exemplaires
+— celui rendu par le client, et l'orphelin masqué.
+
+**Le produit n'a jamais eu ce défaut** : hors horloge figée, l'élément est unique — vérifié.
+`attendreHydratation` laisse donc passer une frame. Et elle en laisse passer **une entière**, pas
+16 ms : le battement du minuteur est posé au montage alors que `startedAt` est pris au clic, et
+décaler le second sans décaler le premier fait lire 4 secondes là où le test en attend 5. D'où la
+remontée de `PERIODE_BATTEMENT_MS` dans `lib/domain/timer.ts`, que la vue et le harnais lisent
+maintenant au même endroit.
+
+### Deux régressions d'accessibilité, trouvées par axe et corrigées
+
+- **Boutons sans nom accessible.** Sous 640 px, « Nouveau » perdait son libellé et la pilule de
+  profil se réduisait à son avatar `aria-hidden` : deux commandes muettes sur les onze vues. Un
+  `aria-label` sur chacune — elles ont un rôle, l'attribut y est licite, contrairement au `<span>`
+  du badge de démonstration qui passe, lui, par un texte masqué.
+- **Encre en dur sur un aplat d'accent.** J'avais écrit `#04060d` sur le dégradé du bouton
+  « Nouveau » et sur la pastille de profil. C'est exactement le défaut que la tâche 8.3 avait
+  corrigé : ce noir suppose une teinte claire dessous, vrai dans `neural` et `plasma`, faux dans
+  `clinical` dont les accents sont sombres. Les deux passent par `ENCRE_SUR_TEINTE`.
+
+### L'infobulle qui ne s'ouvrait plus, et qui n'avait rien d'une infobulle
+
+Le symptôme n'a rien à voir avec sa cause, alors il est écrit en entier dans
+`components/ui/Tooltip.tsx`. En résumé : avec la coque agrandie, l'infobulle cessait de s'ouvrir
+quand le focus arrivait **en tabulant depuis le haut de la page**. Au survol, elle s'ouvrait. Au
+clavier depuis `<main>`, elle s'ouvrait. Cinq fois sur cinq depuis `<body>`, non.
+
+Écartés par la mesure, dans l'ordre : le nombre de tabulations (identique depuis `<main>`, qui
+marche), la vitesse, l'attente de l'hydratation, le remplacement du nœud DOM, `:focus-visible`
+(vrai au moment de l'événement), et l'événement lui-même — un `onFocus` posé à la main partait
+bien. Une bissection par retrait dans l'en-tête a donné des résultats contradictoires, ce qui
+était le vrai indice : ce n'était aucun élément en particulier.
+
+La trace l'a dit : `onOpenChange(true)` **puis** `onOpenChange(false)`, dans la foulée, sans
+aucun `blur`. Radix ouvre puis se referme lui-même — sa couche de fermeture prend le focus du
+déclencheur, qui vit hors du portail du contenu, pour un focus « à l'extérieur ».
+`onFocusOutside` n'étant pas exposé sur `Tooltip.Content`, on ne peut pas le lui dire.
+
+L'état est donc **contrôlé** dans la primitive, avec une règle qu'on peut lire : tant que le
+déclencheur garde le focus clavier, l'infobulle reste ouverte. C'est le contrat que le commentaire
+d'origine annonçait déjà ; il est maintenant tenu par du code plutôt que par une heuristique.
+
+### La coque ne se redessine plus à chaque écriture
+
+Le rail et l'en-tête s'étaient abonnés à `habits`, `tasks`, `sessions` et `logIndex` pour afficher
+l'indice et le niveau : ils se redessinaient donc à **chaque** écriture du store, sur les onze
+vues. `useProgression` (`lib/store/selectors.ts`) fait tourner le calcul mais compare le
+RÉSULTAT — la coque ne bouge que lorsqu'un chiffre affiché change.
+
+Pourquoi pas `cacheDerive` : il est invalidé par habitude et par date, et `hydrate()` ne le vide
+pas. Une valeur globale mémorisée avant hydratation y resterait périmée — le chiffre faux que
+CLAUDE.md § 3 interdit.
+
+### Deux défauts que seule la recette complète pouvait montrer
+
+**Le budget de charge, trois fois dépassé.** `charge.spec.ts` monte 200 habitudes sur 3 ans et
+accorde 100 ms à une interaction. On en mesurait **454**. La cause était la première version du
+sélecteur : il comparait le RÉSULTAT pour éviter les rendus inutiles, mais relançait le calcul à
+chaque écriture — et `progression` traverse 120 jours en balayant toutes les habitudes, soit
+24 000 évaluations par clic.
+
+`useProgression` mémorise donc sur les **quatre références d'entrée**, plus la date du jour. Le
+store remplace ses collections à chaque écriture — `logIndex` compris, reconstruit par
+`avecEntree` — donc une donnée qui change change au moins une référence : la valeur mémorisée ne
+peut pas être périmée. La date est dans la clé parce qu'elle, elle ne dépend d'aucune écriture :
+sans elle, l'indice resterait celui de la veille sur une application laissée ouverte.
+
+Mesuré après : **ouverture 904 ms** (contre 1 505, budget 1 500) et **interaction 97 ms**
+(contre 454, budget 100).
+
+**Un contraste sous le seuil, sur les onze vues.** La barre basse coloriait son entrée active en
+`--acc2` sur fond teinté. Cela tient dans `neural` et `plasma`, dont les accents sont
+fluorescents ; dans `clinical`, dont les accents sont foncés, cela donne **3,87:1** — sous les
+4,5 exigés pour du texte. axe le relevait sur chaque vue, en mobile uniquement, là où la barre
+basse remplace le rail.
+
+Le libellé passe en `--txt`. L'accent reste porté par l'icône, la bordure et le fond : à 3,87 il
+tient le seuil de **3:1 des éléments non textuels**. C'est le prototype qui est corrigé ici, pas
+le portage — même famille que les quatre couleurs de rôle du 12 août.
+
+### Un faux rouge de plus, fermé
+
+`test-results/` n'était pas exclu du lint. Une seule campagne en échec y écrit les ressources de la
+page — le bundle de l'application et tout ce que le navigateur a chargé — et `npm run lint` rendait
+alors **3 885 problèmes** sur du code qui n'est pas le nôtre. Même classe que `.next/**`, déjà
+exclu pour la même raison.
+
+### Deux valeurs du brief de design sont périmées — le dépôt a raison
+
+Signalé pour correction du document de référence, la mesure ayant tranché en faveur du dépôt :
+
+- **Thème `clinical`.** Le brief donne `--mut:#6c7d95`, `--acc2:#0aa9a0`, `--ok:#0f9d64`,
+  `--warn:#b26a00`, `--bad:#d32546`. Le prototype porte les valeurs corrigées le 12 août — quatre
+  couleurs de rôle échouaient à WCAG AA, et `04-DESIGN-TOKENS.md` en garde la table avant/après
+  avec les ratios.
+- **L'affiche rouge de la vitrine.** Le brief et le prototype disent `var(--color-accent)`
+  (`#ec3013`, 3,74:1). L'implémentation utilise `--color-accent-700` (`#ae1800`, 7,18:1 avec du
+  blanc) via `--fond-accent`. Restaurer l'accent pur ferait tomber `a11y.spec.ts`.
+
+### Ce qui reste
+
+Le tableau de bord n'est pas porté : héros avec anneau et constellation, matrice synaptique, tracé
+neuronal, charge par domaine. `stats` est déjà proche de sa référence. Les neuf autres vues sont à
+comparer une par une.
+
+---
+
 ## 2026-08-27 (soir) — onze vérifications sur onze, et le ménage des dépendances
 
 ### Lighthouse en production : la onzième est tombée

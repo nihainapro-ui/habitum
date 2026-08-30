@@ -16,7 +16,7 @@ import {
 import { useFocusMinutes, useStore, type Range } from '@/lib/store';
 import { COULEURS_CATEGORIE, Panel, Ring, Segmented } from '@/components/ui';
 import { EmptyState } from '@/components/shell/empty-state';
-import { ViewHeader } from '@/components/shell/view-header';
+import { ViewActions } from '@/components/shell/view-actions';
 import { useLocaleSwitcher } from '@/components/shell/locale-provider';
 import { Heatmap } from './Heatmap';
 
@@ -90,7 +90,6 @@ export function StatsView() {
   if (habits.length === 0) {
     return (
       <div className="flex flex-col gap-4">
-        <ViewHeader titleKey="navStats" subKey="statsSub" />
         <EmptyState titleKey="system.emStatsT" bodyKey="system.emStatsD" />
       </div>
     );
@@ -98,18 +97,14 @@ export function StatsView() {
 
   return (
     <div className="flex flex-col gap-4">
-      <ViewHeader
-        titleKey="navStats"
-        subKey="statsSub"
-        actions={
-          <Segmented<string>
-            label={t('activitySub')}
-            value={String(range)}
-            onChange={(v) => setRange(Number(v) as Range)}
-            options={FENETRES.map((f) => ({ value: String(f), label: `${f} ${t('days')}` }))}
-          />
-        }
-      />
+      <ViewActions>
+        <Segmented<string>
+          label={t('activitySub')}
+          value={String(range)}
+          onChange={(v) => setRange(Number(v) as Range)}
+          options={FENETRES.map((f) => ({ value: String(f), label: `${f} ${t('days')}` }))}
+        />
+      </ViewActions>
 
       <section
         className="rounded-panel flex flex-wrap items-center gap-6 border p-5"

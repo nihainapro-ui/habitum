@@ -1,11 +1,22 @@
 # 05 — Spécification des vues
 
 11 vues, sélectionnées par `state.view`. Coquille commune : rail de navigation à gauche (groupes
-« Espace / Suivi / Focus »), en-tête avec date et recherche, contenu principal, panneau d'analyse à
-droite sur les vues larges. Mode zen (`⌘\`) masque rail et panneau.
+« Espace / Suivi / Focus »), en-tête, contenu principal, panneau d'analyse à droite sur les vues
+larges. Mode zen (`⌘\`) masque rail et panneau.
 
-Navigation (ordre du prototype) :
-`dash · today · cal · habits · tasks · goals · stats · timer · notes · settings · profile`
+> **Corrigé au portage de la coque.** Deux affirmations de ce paragraphe étaient fausses.
+>
+> 1. **L'ordre ci-dessous n'est pas celui du prototype.** Le rail y place `profile` EN TÊTE du
+>    groupe « Focus », avant `timer` — visible dans `tests/visual/reference/01-dash.png`, où la
+>    silhouette précède le chronomètre. L'ordre réellement porté est donc :
+>    `dash · today · cal · habits · tasks · goals · stats · profile · timer · notes · settings`.
+>    Il est déclaré une seule fois, dans `components/shell/nav-items.ts`.
+> 2. **L'en-tête ne porte pas la date, il porte le TITRE de la vue** et son sur-titre
+>    (`<h1>{{ head.title }}</h1>` dans `data-topbar`). La date appartient au héros du tableau de
+>    bord. C'est ce qui permet aux onze vues de commencer par leur donnée plutôt que par un titre.
+
+Navigation (ordre du prototype, corrigé) :
+`dash · today · cal · habits · tasks · goals · stats · profile · timer · notes · settings`
 
 Raccourcis globaux : `⌘K`/`Ctrl+K` palette · `Escape` ferme palette/modale/éditeur ·
 `⌘\` mode zen · `Tab` piégé dans les modales ouvertes.

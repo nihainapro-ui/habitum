@@ -6,7 +6,6 @@ import { Upload } from 'lucide-react';
 import { champStyle, Panel, Switch } from '@/components/ui';
 import { activeHabits, bestStreakOverall, perfectDays, splitHeuresMinutes } from '@/lib/domain';
 import { useFocusMinutes, useSettings, useStore } from '@/lib/store';
-import { ViewHeader } from '@/components/shell/view-header';
 import { Avatar } from './Avatar';
 
 /* Vue « Profil » — 05-SPEC-VUES.md § 11.
@@ -81,8 +80,6 @@ export function ProfileView() {
 
   return (
     <div className="flex max-w-[860px] flex-col gap-4">
-      <ViewHeader titleKey="navProfile" subKey="settingsSub" />
-
       <Panel title={tp('identity')}>
         <div className="flex flex-wrap items-center gap-4">
           <Avatar

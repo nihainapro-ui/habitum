@@ -17,3 +17,4 @@ export * from './reminders';
 export * from './recurrence';
 export * from './cache';
 export * from './catalog';
+export * from './progression';

@@ -6,7 +6,7 @@ import { sortHabitsCatalog } from '@/lib/domain';
 import { useStore } from '@/lib/store';
 import { EmptyState } from '@/components/shell/empty-state';
 import { PrimaryButton } from '@/components/shell/primary-button';
-import { ViewHeader } from '@/components/shell/view-header';
+import { ViewActions } from '@/components/shell/view-actions';
 import { HabitCard } from './HabitCard';
 
 /* Vue « Habitudes » — le catalogue. 05-SPEC-VUES.md § 4.
@@ -30,7 +30,7 @@ export function HabitsView() {
 
   return (
     <div className="flex flex-col gap-4">
-      <ViewHeader titleKey="navHabits" subKey="habitsSubT" actions={nouveau} />
+      <ViewActions>{nouveau}</ViewActions>
 
       {triees.length === 0 ? (
         <EmptyState titleKey="app.emHabitsT" bodyKey="app.emHabitsD" action={nouveau} />

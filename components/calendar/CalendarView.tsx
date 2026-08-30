@@ -6,7 +6,7 @@ import { useTranslations } from 'next-intl';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useStore } from '@/lib/store';
 import { Segmented } from '@/components/ui';
-import { ViewHeader } from '@/components/shell/view-header';
+import { ViewActions } from '@/components/shell/view-actions';
 import { AgendaList } from './AgendaList';
 import { MonthGrid } from './MonthGrid';
 import { TimeGrid } from './TimeGrid';
@@ -71,25 +71,21 @@ export function CalendarView() {
 
   return (
     <div className="flex flex-col gap-4">
-      <ViewHeader
-        titleKey="navCal"
-        subKey="calSub"
-        actions={
-          etroit ? null : (
-            <Segmented<ModeCalendrier>
-              label={t('calMode')}
-              value={mode}
-              onChange={setMode}
-              options={[
-                { value: 'month', label: t('calMonth') },
-                { value: 'week', label: t('calWeek') },
-                { value: 'day', label: t('calDay') },
-                { value: 'agenda', label: t('calAgenda') },
-              ]}
-            />
-          )
-        }
-      />
+      {etroit ? null : (
+        <ViewActions>
+          <Segmented<ModeCalendrier>
+            label={t('calMode')}
+            value={mode}
+            onChange={setMode}
+            options={[
+              { value: 'month', label: t('calMonth') },
+              { value: 'week', label: t('calWeek') },
+              { value: 'day', label: t('calDay') },
+              { value: 'agenda', label: t('calAgenda') },
+            ]}
+          />
+        </ViewActions>
+      )}
 
       <div className="flex items-center gap-2">
         <button

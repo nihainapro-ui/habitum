@@ -11,6 +11,7 @@ import {
   formatChrono,
   INTERVAL,
   focusTargets,
+  PERIODE_BATTEMENT_MS,
   phaseRatio,
   PRESETS_COUNTDOWN,
   remainingMs,
@@ -23,7 +24,6 @@ import {
 import { useFocusMinutes, useSettings, useStore } from '@/lib/store';
 import { preparerAudio } from '@/lib/features/feedback';
 import { Panel } from '@/components/ui';
-import { ViewHeader } from '@/components/shell/view-header';
 import { TimerDial } from './TimerDial';
 
 /* Vue « Focus » — 05-SPEC-VUES.md § 9, corrige B5.
@@ -31,8 +31,6 @@ import { TimerDial } from './TimerDial';
    Le rendu périodique est PUREMENT d'affichage : il redessine, et demande au
    store de constater si le seuil de phase est franchi. Aucun compteur n'avance
    ici. C'est ce qui rend la dérive impossible plutôt que faible. */
-
-const PERIODE_MS = 250;
 
 const CLES_MODE: Record<TimerMode, string> = {
   pomo: 'tmPomodoro',
@@ -80,7 +78,7 @@ export function TimerView() {
     const battement = setInterval(() => {
       setMaintenant(Date.now());
       void tickTimer();
-    }, PERIODE_MS);
+    }, PERIODE_BATTEMENT_MS);
     return () => clearInterval(battement);
   }, [tickTimer]);
 
@@ -118,8 +116,6 @@ export function TimerView() {
 
   return (
     <div className="flex flex-col gap-4">
-      <ViewHeader titleKey="navTimer" subKey="timerSub" />
-
       {restauree ? (
         <p
           role="status"

@@ -18,7 +18,6 @@ import {
 import { useDayRatio, useFocusMinutes, useStore } from '@/lib/store';
 import { CategoryGlyph, Panel, Ring } from '@/components/ui';
 import { EmptyState } from '@/components/shell/empty-state';
-import { ViewHeader } from '@/components/shell/view-header';
 import { RowCheck } from '@/components/today/RowCheck';
 
 /* Vue « Tableau de bord » — 05-SPEC-VUES.md § 1.
@@ -86,8 +85,6 @@ export function DashView() {
 
   return (
     <div className="flex flex-col gap-4">
-      <ViewHeader titleKey="navDash" subKey="dashSub" />
-
       {/* D8 — refusable, et il ne revient pas. */}
       {rappel ? (
         <section

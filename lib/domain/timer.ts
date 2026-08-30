@@ -148,3 +148,15 @@ export function formatChrono(ms: number): string {
   const deux = (n: number) => String(n).padStart(2, '0');
   return h > 0 ? `${h}:${deux(m)}:${deux(s)}` : `${deux(m)}:${deux(s)}`;
 }
+
+/** Période du battement d'affichage du minuteur, en millisecondes.
+ *
+ *  Elle ne fait avancer AUCUN compteur — le temps se lit sur l'horloge murale
+ *  (`elapsedMs`). Elle dit seulement à quelle cadence l'écran se redessine et
+ *  demande au store de constater un franchissement de phase.
+ *
+ *  Elle vit ici plutôt que dans `TimerView` parce que deux lecteurs en ont
+ *  besoin : la vue, et le harnais de recette, qui doit avancer une horloge
+ *  figée d'un nombre ENTIER de battements sous peine de déphaser `startedAt`
+ *  par rapport à la grille de ticks (`tests/e2e/helpers/app.ts`). */
+export const PERIODE_BATTEMENT_MS = 250;

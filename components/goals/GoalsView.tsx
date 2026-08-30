@@ -4,7 +4,7 @@ import { useTranslations } from 'next-intl';
 import { useStore } from '@/lib/store';
 import { EmptyState } from '@/components/shell/empty-state';
 import { PrimaryButton } from '@/components/shell/primary-button';
-import { ViewHeader } from '@/components/shell/view-header';
+import { ViewActions } from '@/components/shell/view-actions';
 import { GoalCard } from './GoalCard';
 
 /* Vue « Objectifs » — 05-SPEC-VUES.md § 7. */
@@ -22,7 +22,7 @@ export function GoalsView() {
 
   return (
     <div className="flex flex-col gap-4">
-      <ViewHeader titleKey="navGoals" subKey="goalsSub" actions={nouveau} />
+      <ViewActions>{nouveau}</ViewActions>
 
       {goals.length === 0 ? (
         <EmptyState titleKey="app.emGoalsT" bodyKey="app.emGoalsD" action={nouveau} />
