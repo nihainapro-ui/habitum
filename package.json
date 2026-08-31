@@ -34,7 +34,8 @@
     "paquet:sync": "npm run paquet:web && cap sync android",
     "paquet:apk": "npm run paquet:sync && cd packaging/android && gradlew assembleDebug",
     "icons:android": "node scripts/icones-android.mjs",
-    "check:icons:android": "node scripts/icones-android.mjs --check"
+    "check:icons:android": "node scripts/icones-android.mjs --check",
+    "paquet:verifier": "node scripts/verifier-paquet.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

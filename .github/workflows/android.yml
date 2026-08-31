@@ -70,6 +70,17 @@ jobs:
       - name: Vérifier les icônes de lancement
         run: node scripts/icones-android.mjs --check
 
+      # LE contrôle qui manquait. Le premier APK ouvrait un écran noir, et rien
+      # ne pouvait le voir : `verify` construit l'application WEB, la recette
+      # e2e la sert par un serveur HTTP ordinaire, et les deux étaient vertes.
+      # Celui-ci sert le paquet comme Capacitor le sert — avec sa règle du
+      # `index.html` de racine pour tout chemin sans extension — et exige que
+      # quelque chose s'affiche.
+      - name: Vérifier que le paquet s’affiche
+        run: |
+          npx playwright install --with-deps chromium
+          node scripts/verifier-paquet.mjs
+
       - name: Construire l’APK de débogage
         working-directory: packaging/android
         run: ./gradlew --no-daemon assembleDebug

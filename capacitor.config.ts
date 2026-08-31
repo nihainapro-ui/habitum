@@ -48,6 +48,16 @@ const config: CapacitorConfig = {
        `http://` Android les restreint, et la base de l'application — tout le
        produit — ne survivrait pas. */
     androidScheme: 'https',
+
+    /* DÉMARRER DIRECTEMENT SUR L'APPLICATION, et sur un chemin qui contient un
+       POINT. Les deux comptent.
+       Capacitor ouvre `/` par défaut, donc la page d'entrée du paquet, qui ne
+       fait que rediriger : un aller-retour visible au lancement. Et surtout,
+       son serveur d'assets sert le `index.html` DE LA RACINE pour tout chemin
+       dont le dernier segment n'a pas d'extension — viser `app/` reviendrait
+       donc à redemander cette page d'entrée, indéfiniment. C'est exactement ce
+       qui a produit un écran noir à la première installation. */
+    appStartPath: 'app/index.html',
   },
 };
 
