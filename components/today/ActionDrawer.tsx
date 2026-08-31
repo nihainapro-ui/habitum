@@ -22,6 +22,12 @@ import { Sheet } from '@/components/ui';
 
 export interface ActionsTiroir {
   onComplete: () => void;
+  /** Ouvre l'éditeur de l'entité. Optionnel par prudence de typage, mais les
+   *  deux appelants le fournissent : sans lui, la vue Aujourd'hui était le seul
+   *  endroit du produit où l'on ne pouvait RIEN corriger — or c'est celui où
+   *  l'on passe le plus de temps. Les vues Habitudes, Tâches et Objectifs
+   *  avaient leur crayon depuis toujours ; cette ligne-ci ne l'avait pas. */
+  onEdit?: () => void;
   onSkip?: () => void;
   onSnooze?: () => void;
   onDelete: () => void;
@@ -58,6 +64,14 @@ export function ActionDrawer({ name, actions }: { name: string; actions: Actions
             <Menu.Item className={item} onSelect={actions.onComplete}>
               {t('markDone')}
             </Menu.Item>
+
+            {/* Deuxième, et non en bas : après « réussi », corriger est ce
+                qu'on vient chercher le plus souvent dans ce menu. */}
+            {actions.onEdit ? (
+              <Menu.Item className={item} onSelect={actions.onEdit}>
+                {t('edit')}
+              </Menu.Item>
+            ) : null}
 
             {actions.onSkip ? (
               <Menu.Item className={item} onSelect={actions.onSkip}>

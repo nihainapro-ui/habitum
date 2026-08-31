@@ -51,6 +51,7 @@ function LigneHabitude({ entree, date, cochable }: ProprietesLigne) {
   const skipHabit = useStore((s) => s.skipHabit);
   const deleteHabit = useStore((s) => s.deleteHabit);
   const saveHabitNote = useStore((s) => s.saveHabitNote);
+  const openEditor = useStore((s) => s.openEditor);
   const note = useStore((s) => s.notes.find((n) => n.kind === 'habit' && n.habitId === h.id));
 
   const quantitatif = QUANTITATIFS.has(h.goal.kind);
@@ -102,6 +103,7 @@ function LigneHabitude({ entree, date, cochable }: ProprietesLigne) {
           name={h.name}
           actions={{
             onComplete: () => void toggleHabit(h.id, date),
+            onEdit: () => openEditor({ kind: 'habit', id: h.id }),
             onSkip: () => void skipHabit(h.id, date),
             onDelete: () => void deleteHabit(h.id),
             note: note?.body ?? '',

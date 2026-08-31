@@ -1,4 +1,4 @@
-/* Anti-clignotement de thème.
+/* Anti-clignotement des préférences d'apparence — thème ET visibilité du rail.
 
    Ce fichier est servi depuis le MÊME DOMAINE et chargé de façon bloquante
    dans <head> : il pose `data-theme` avant la première peinture. Sans lui,
@@ -16,6 +16,13 @@
     var m = document.cookie.match(/(?:^|; )habitum\.theme=([^;]*)/);
     var t = m ? decodeURIComponent(m[1]) : null;
     if (THEMES.indexOf(t) >= 0) document.documentElement.setAttribute('data-theme', t);
+
+    /* Visibilité du rail (`lib/rail.ts`). Même exigence : les pages sont
+       prérendues, un rail masqué après montage clignoterait à chaque
+       chargement. L'attribut n'est posé que pour MASQUER — voir `applyRail`. */
+    var r = document.cookie.match(/(?:^|; )habitum\.rail=([^;]*)/);
+    if (r && decodeURIComponent(r[1]) === 'off')
+      document.documentElement.setAttribute('data-rail', 'off');
   } catch {
     /* Cookies refusés : on garde le thème par défaut. Ne jamais faire
        échouer le chargement de la page pour une préférence d'apparence. */

@@ -65,6 +65,19 @@ a:hover {
 
    La portée inclut `::before` / `::after`, que le prototype n'atteint pas :
    les pseudo-éléments décoratifs animent aussi. */
+/* Rail masqué à la demande (`lib/rail.ts`).
+
+   UNE SEULE RÈGLE, et en CSS plutôt qu'en React : l'attribut est posé avant la
+   première peinture par `public/theme.js`, donc le rail n'apparaît jamais pour
+   disparaître ensuite. Le composant continue d'être rendu — c'est `display`
+   qui le retire, de l'écran comme de l'arbre d'accessibilité.
+
+   Sous 768 px la règle ne sert à rien : le rail y est déjà masqué et c'est la
+   barre basse qui navigue. Le réglage n'est donc offert que sur bureau. */
+[data-rail='off'] [data-testid='rail'] {
+  display: none;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

@@ -36,6 +36,7 @@ function LigneTache({ entree, cochable }: ProprietesLigne) {
   /* Cocher une tâche, c'est la cocher POUR CE JOUR : une tâche récurrente
      n'est pas terminée, elle est faite aujourd'hui (tâche 5.6). */
   const toggleTaskOn = useStore((s) => s.toggleTaskOn);
+  const openEditor = useStore((s) => s.openEditor);
   const toggleSubTask = useStore((s) => s.toggleSubTask);
   const snoozeTask = useStore((s) => s.snoozeTask);
   const deleteTask = useStore((s) => s.deleteTask);
@@ -76,6 +77,7 @@ function LigneTache({ entree, cochable }: ProprietesLigne) {
           name={k.name}
           actions={{
             onComplete: () => void toggleTaskOn(k.id, entree.date),
+            onEdit: () => openEditor({ kind: 'task', id: k.id }),
             onSnooze: () => void snoozeTask(k.id),
             onDelete: () => void deleteTask(k.id),
             note: k.note,

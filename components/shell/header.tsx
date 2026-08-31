@@ -2,9 +2,11 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { Maximize2, Menu, Plus, Search } from 'lucide-react';
+import { Maximize2, Menu, PanelLeft, PanelLeftClose, Plus, Search } from 'lucide-react';
 import { useProgression, useStore } from '@/lib/store';
+import { applyRail, readRailCookie, type EtatRail } from '@/lib/rail';
 import { ENCRE_SUR_TEINTE } from '@/components/ui/encre';
 import { itemActif } from './nav-items';
 
@@ -52,6 +54,21 @@ export function Header() {
   const openEditor = useStore((s) => s.openEditor);
   const menuOpen = useStore((s) => s.ui.menuOpen);
   const setMenuOpen = useStore((s) => s.setMenuOpen);
+
+  /* Lecture APRÈS montage, comme `RailFooter` le fait pour le thème : la
+     préférence n'existe que dans le navigateur, la lire au rendu divergerait à
+     l'hydratation. Ce que l'état sert ici est l'ICÔNE du bouton, pas la
+     visibilité du rail — celle-ci est déjà tranchée avant la première peinture
+     par `public/theme.js`, donc rien ne clignote. */
+  const [rail, setRail] = useState<EtatRail>('on');
+  useEffect(() => {
+    setRail(readRailCookie());
+  }, []);
+  const basculerRail = () => {
+    const prochain: EtatRail = rail === 'off' ? 'on' : 'off';
+    setRail(prochain);
+    applyRail(prochain);
+  };
 
   const item = itemActif(pathname);
 
@@ -155,6 +172,30 @@ export function Header() {
         <ProfilePastille level={prog.level} />
         <span className="hidden min-w-0 truncate min-[1200px]:inline">{t('app.navProfile')}</span>
       </Link>
+
+      {/* Masquer le rail — BUREAU SEULEMENT. Sous 768 px il n'est pas rendu, et
+          c'est la barre basse qui navigue : l'interrupteur n'y aurait rien à
+          masquer. `aria-pressed` dit l'état, l'icône le montre. */}
+      <button
+        type="button"
+        onClick={basculerRail}
+        aria-pressed={rail === 'off'}
+        aria-label={rail === 'off' ? t('app.railShow') : t('app.railHide')}
+        title={rail === 'off' ? t('app.railShow') : t('app.railHide')}
+        className="hidden h-[34px] w-[34px] flex-none cursor-pointer place-items-center rounded-[10px] border md:grid"
+        style={{
+          borderColor: rail === 'off' ? 'var(--acc2)' : 'var(--line)',
+          background: rail === 'off' ? 'rgba(var(--glow),.2)' : 'var(--panel2)',
+          color: rail === 'off' ? 'var(--acc2)' : 'var(--txt2)',
+          transition: 'border-color .2s,background .2s,color .2s',
+        }}
+      >
+        {rail === 'off' ? (
+          <PanelLeft size={15} strokeWidth={1.8} aria-hidden="true" />
+        ) : (
+          <PanelLeftClose size={15} strokeWidth={1.8} aria-hidden="true" />
+        )}
+      </button>
 
       <button
         type="button"

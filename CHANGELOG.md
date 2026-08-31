@@ -1,5 +1,43 @@
 # Journal des modifications
 
+## 2026-08-31 (suite 4) — Corriger depuis Aujourd'hui, et rendre la largeur au contenu
+
+### La seule vue où l'on ne pouvait rien corriger
+
+Habitudes, Tâches et Objectifs ont leur crayon depuis toujours. Les lignes de la vue
+**Aujourd'hui**, elles, n'avaient qu'un tiroir d'actions : réussi, passer, reporter, note,
+supprimer. On pouvait tout faire d'une entité SAUF la corriger — là précisément où l'on
+passe le plus de temps.
+
+« Modifier » entre dans `ActionDrawer`, en **deuxième** position et non en bas : après
+« réussi », corriger est ce qu'on vient chercher le plus souvent dans ce menu. Un seul
+composant, les deux types de lignes en héritent.
+
+### Masquer le rail, pas le replier
+
+La demande était « masquer », et c'est la bonne : le repli en icônes se fait déjà tout seul
+sous 1060 px, et ce seuil est la référence visuelle validée. Ce qui manquait, c'est de
+rendre la largeur au contenu **sans quitter la navigation** — le mode zen emporte aussi
+l'en-tête et la barre basse.
+
+Un interrupteur dans l'en-tête, bureau seulement : sous 768 px le rail n'est pas rendu et
+c'est la barre basse qui navigue, un bouton n'y aurait rien à masquer.
+
+**La préférence vit dans un COOKIE, pas dans IndexedDB**, et c'est la même raison que pour
+le thème : elle doit être lue AVANT la première peinture. Les pages sont prérendues (D12) —
+un rail masqué depuis un `useEffect` s'afficherait, puis disparaîtrait sous les yeux de
+l'utilisateur à chaque chargement. `public/theme.js` pose donc l'attribut, et une règle CSS
+unique fait le reste. Le test le vérifie explicitement en rechargeant la page ; un
+`useEffect` l'aurait passé tout en faisant clignoter l'application.
+
+Le retour reste dans l'en-tête, toujours atteignable : masquer ne doit pas être un
+cul-de-sac. Un test le garde.
+
+### Vérification
+
+`npm run verify` vert · dix contrôles neufs dans `tests/e2e/edition-et-rail.spec.ts`,
+verts sur les deux projets.
+
 ## 2026-08-31 (suite 3) — Le bas de page ne guillotine plus
 
 ### Ce que montrait la capture
