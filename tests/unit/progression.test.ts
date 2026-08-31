@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { NB_RANGS, progression } from '@/lib/domain';
+import { bestStreakOverall, NB_RANGS, progression } from '@/lib/domain';
 import type { Session } from '@/lib/domain';
 import {
   DEMO_NOW,
@@ -199,5 +199,40 @@ describe('progression — jeu de démonstration', () => {
 
     expect(plein.xp).toBeGreaterThan(vide.xp);
     expect(plein.index).toBeGreaterThan(vide.index);
+  });
+});
+
+describe('progression — record injecté', () => {
+  /* Le sixième paramètre existe pour une seule raison : `bestStreakOverall`
+     balaie 365 jours par habitude et pesait 87 % du coût de cette fonction,
+     appelée à chaque écriture par la coque. `useProgression` l'injecte donc
+     depuis `cacheDerive`. Ces deux tests tiennent les deux bouts du contrat —
+     sans eux, l'optimisation pourrait mentir sans que rien ne le dise. */
+
+  it('injecter ce que le calcul aurait trouvé ne change RIEN', () => {
+    /* La propriété qui rend l'optimisation légitime. Si elle tombe, c'est que
+       le cache et le calcul ont divergé, et l'en-tête affiche un chiffre faux
+       (CLAUDE.md § 3). */
+    const calcule = progression(log, habits, tasks, sessions, DEMO_NOW);
+    const injecte = progression(
+      log,
+      habits,
+      tasks,
+      sessions,
+      DEMO_NOW,
+      bestStreakOverall(log, habits, DEMO_NOW),
+    );
+
+    expect(injecte).toEqual(calcule);
+  });
+
+  it('le paramètre est bien LU, pas ignoré', () => {
+    /* Le pendant du test précédent : si `progression` ignorait l'argument, le
+       test ci-dessus passerait pour une mauvaise raison — il ne prouverait
+       plus rien. Le record vaut 40 points d'expérience l'unité. */
+    const reference = progression(log, habits, tasks, sessions, DEMO_NOW, 0);
+    const majore = progression(log, habits, tasks, sessions, DEMO_NOW, 10);
+
+    expect(majore.xp - reference.xp).toBe(400);
   });
 });

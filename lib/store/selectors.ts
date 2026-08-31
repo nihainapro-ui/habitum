@@ -177,9 +177,28 @@ export const useActiveProfile = () =>
  *  Effet de bord utile : la référence rendue est stable, donc la coque ne se
  *  redessine que lorsqu'un des chiffres affichés change réellement.
  *
- *  Pourquoi pas `cacheDerive` : il est invalidé par habitude et par date, et
- *  `hydrate()` ne le vide pas. Une valeur GLOBALE mémorisée avant hydratation y
- *  resterait périmée — exactement le chiffre faux que CLAUDE.md § 3 interdit. */
+ *  CE MÉMO NE SUFFIT PAS, et la première version de ce sélecteur le prouvait.
+ *  Sa clé contient `logIndex`, que `avecEntree` RECONSTRUIT à chaque écriture :
+ *  il n'évite donc que les appels répétés sur un même état — le rail et
+ *  l'en-tête, montés ensemble — jamais le recalcul qui suit une coche. Mesuré
+ *  sur le jeu de charge : interaction à 193 ms pour un budget de 100, contre
+ *  54 ms avant que la coque n'affiche ces chiffres.
+ *
+ *  D'où le RECORD PASSÉ PAR `cacheDerive`, qui porte 87 % de ce coût (76 ms
+ *  sur 87). Ce n'est pas un motif nouveau : `useHabitMetrics` mémorise déjà
+ *  `bestStreak` sous exactement cette clé — `(habitId, 'best', N_BEST)`.
+ *  `progression` était le seul endroit qui le calculait hors du cache.
+ *
+ *  Une version précédente de ce commentaire écartait `cacheDerive` au motif
+ *  que « `hydrate()` ne le vide pas ». C'EST FAUX : `store.ts` l'appelle en
+ *  tête de `hydrate()`, avant même de lire la base. L'objection valait pour la
+ *  progression ENTIÈRE — une valeur globale, qu'aucune invalidation par
+ *  habitude ne rattrape — pas pour un terme par habitude ; c'est bien pourquoi
+ *  seul le record y passe, et pourquoi les deux autres sont recalculés.
+ *
+ *  Reste le chemin de complétion en fond, qui remplace `logIndex` sans vider le
+ *  cache. Il est sûr ici : la fenêtre d'ouverture vaut `N_STREAK` (420 jours),
+ *  choisie plus profonde que toute métrique affichée — dont le record, à 365. */
 interface MemoProgression {
   log: unknown;
   habits: unknown;
@@ -193,7 +212,8 @@ let memoProgression: MemoProgression | null = null;
 
 export const useProgression = (): Progression =>
   useStore((s) => {
-    const jour = dateKey(today());
+    const maintenant = today();
+    const jour = dateKey(maintenant);
     const m = memoProgression;
     if (
       m &&
@@ -205,7 +225,25 @@ export const useProgression = (): Progression =>
     ) {
       return m.valeur;
     }
-    const valeur = progression(s.logIndex, s.habits, s.tasks, s.sessions);
+    /* Le record, habitude par habitude, sous la clé de `useHabitMetrics` : une
+       coche n'invalide que l'habitude cochée (`setLogValue` -> `invalidateHabit`),
+       les 199 autres restent mémorisées. */
+    const meilleurRecord = s.habits.reduce(
+      (max, h) =>
+        Math.max(
+          max,
+          cacheDerive.get(h.id, 'best', N_BEST, () => bestStreak(s.logIndex, h)),
+        ),
+      0,
+    );
+    const valeur = progression(
+      s.logIndex,
+      s.habits,
+      s.tasks,
+      s.sessions,
+      maintenant,
+      meilleurRecord,
+    );
     memoProgression = {
       log: s.logIndex,
       habits: s.habits,

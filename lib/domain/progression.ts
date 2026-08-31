@@ -50,13 +50,34 @@ export interface Progression {
 
 /** Progression complète. `sessions` est la liste ENTIÈRE : l'expérience se
  *  cumule sur toute la vie du compte, contrairement à l'indice qui, lui,
- *  regarde les 120 derniers jours. */
+ *  regarde les 120 derniers jours.
+ *
+ *  `meilleurRecord` EST INJECTABLE, et ce n'est pas de la souplesse gratuite.
+ *  `bestStreakOverall` balaie 365 jours PAR HABITUDE : mesuré sur le jeu de
+ *  charge — 200 habitudes × 3 ans — il coûte 76 ms des 87 ms de cette
+ *  fonction, soit 87 % du total. Or la coque appelle `progression` à chaque
+ *  écriture du store, et le budget d'interaction est de 100 ms
+ *  (`tests/e2e/charge.spec.ts`).
+ *
+ *  Ce terme est le seul qui puisse être mémorisé sans mentir : il ne dépend
+ *  que du journal D'UNE habitude, donc `cacheDerive` l'invalide habitude par
+ *  habitude — cocher `h1` ne recalcule pas `h2` (ADR-0004). Les deux autres
+ *  termes, eux, changent à chaque écriture pour de bonnes raisons et sont
+ *  recalculés : `daysBack` agrège toutes les habitudes sur 120 jours (16 ms),
+ *  `currentStreak` ne remonte que la série en cours (1 ms).
+ *
+ *  `lib/domain` ne peut pas atteindre `cacheDerive` lui-même — il vit dans
+ *  `lib/store`, et le domaine n'importe jamais la persistance (CLAUDE.md § 2).
+ *  D'où l'injection, avec un défaut qui garde la fonction autonome : appelée à
+ *  cinq arguments, elle calcule tout elle-même, et ses douze tests n'ont pas
+ *  bougé. Le seul appelant qui injecte est `useProgression`. */
 export function progression(
   log: LogIndex,
   habits: readonly Habit[],
   tasks: readonly Task[],
   sessions: readonly Session[],
   now: Date = today(),
+  meilleurRecord: number = bestStreakOverall(log, habits, now),
 ): Progression {
   let fait = 0;
   let prevu = 0;
@@ -65,7 +86,6 @@ export function progression(
     prevu += j.scheduled;
   }
 
-  const meilleurRecord = bestStreakOverall(log, habits, now);
   const meilleureSerie = habits.reduce((max, h) => Math.max(max, currentStreak(log, h, now)), 0);
   const minutes = sessions.reduce((a, s) => a + (Number(s.minutes) || 0), 0);
 

@@ -121,28 +121,49 @@ l'indice et le niveau : ils se redessinaient donc à **chaque** écriture du sto
 vues. `useProgression` (`lib/store/selectors.ts`) fait tourner le calcul mais compare le
 RÉSULTAT — la coque ne bouge que lorsqu'un chiffre affiché change.
 
-Pourquoi pas `cacheDerive` : il est invalidé par habitude et par date, et `hydrate()` ne le vide
-pas. Une valeur globale mémorisée avant hydratation y resterait périmée — le chiffre faux que
-CLAUDE.md § 3 interdit.
+Le mémo est fait des **quatre références d'entrée**, plus la date du jour. Le store remplace ses
+collections à chaque écriture, donc une donnée qui change change au moins une référence ; et la
+date est dans la clé parce qu'elle, elle ne dépend d'aucune écriture — sans elle, l'indice
+resterait celui de la veille sur une application laissée ouverte.
 
-### Deux défauts que seule la recette complète pouvait montrer
+### Le budget de charge, dépassé puis rendu — et ce que la première version avait mal lu
 
-**Le budget de charge, trois fois dépassé.** `charge.spec.ts` monte 200 habitudes sur 3 ans et
-accorde 100 ms à une interaction. On en mesurait **454**. La cause était la première version du
-sélecteur : il comparait le RÉSULTAT pour éviter les rendus inutiles, mais relançait le calcul à
-chaque écriture — et `progression` traverse 120 jours en balayant toutes les habitudes, soit
-24 000 évaluations par clic.
+**Ce mémo ne suffisait pas, et le premier jet de cette entrée l'affirmait pourtant.** Il annonçait
+« ouverture 904 ms, interaction 97 ms ». Ces chiffres ne se reproduisent pas : rejoué sur la même
+machine, au même instant, contre `6ca74b9` comme témoin, on mesurait **ouverture 1 533 ms et
+interaction 193 ms**, pour des budgets de 1 500 et 100 — là où le témoin donnait 991 et 54. La
+régression était réelle, et c'est la recette complète qui l'a montrée.
 
-`useProgression` mémorise donc sur les **quatre références d'entrée**, plus la date du jour. Le
-store remplace ses collections à chaque écriture — `logIndex` compris, reconstruit par
-`avecEntree` — donc une donnée qui change change au moins une référence : la valeur mémorisée ne
-peut pas être périmée. La date est dans la clé parce qu'elle, elle ne dépend d'aucune écriture :
-sans elle, l'indice resterait celui de la veille sur une application laissée ouverte.
+La raison est que la clé du mémo contient `logIndex`, que `avecEntree` **reconstruit** à chaque
+écriture : il n'évite que les appels répétés sur un même état — le rail et l'en-tête, montés
+ensemble — jamais le recalcul qui suit une coche. Mesuré terme à terme sur le jeu de charge,
+`progression` coûte 87 ms, dont **76 dans `bestStreakOverall`** — 365 jours balayés par habitude,
+soit 87 % du total. `daysBack` en prend 16, `currentStreak` 1.
 
-Mesuré après : **ouverture 904 ms** (contre 1 505, budget 1 500) et **interaction 97 ms**
-(contre 454, budget 100).
+**`cacheDerive` avait été écarté sur une prémisse fausse.** Le commentaire disait « `hydrate()` ne
+le vide pas » ; `store.ts` l'appelle en tête de `hydrate()`, avant même de lire la base.
+L'objection valait pour la progression ENTIÈRE — une valeur globale, qu'aucune invalidation par
+habitude ne rattrape — pas pour un terme par habitude. Le record y passe donc désormais, sous
+exactement la clé que `useHabitMetrics` employait déjà, `(habitId, 'best', N_BEST)` :
+`progression` était le seul endroit du dépôt qui calculait `bestStreak` hors du cache. Cocher `h1`
+n'invalide que `h1` (ADR-0004) ; les 199 autres records restent mémorisés.
 
-**Un contraste sous le seuil, sur les onze vues.** La barre basse coloriait son entrée active en
+`lib/domain` ne peut pas atteindre `cacheDerive` (CLAUDE.md § 2), d'où un sixième paramètre
+**injectable** sur `progression`, avec un défaut qui garde la fonction autonome — ses douze tests
+n'ont pas bougé. Deux tests s'y ajoutent, et ils tiennent les deux bouts : injecter ce que le
+calcul aurait trouvé ne change rien, et le paramètre est bien lu. Sans le second, le premier
+passerait pour une mauvaise raison.
+
+Le chemin de complétion en fond remplace `logIndex` sans vider le cache ; il est sûr ici parce que
+la fenêtre d'ouverture vaut `N_STREAK` — 420 jours, choisie plus profonde que toute métrique
+affichée, dont le record à 365.
+
+Mesuré après, même machine, même test : **ouverture 852 ms** et **interaction 53 ms** — le coût de
+la coque par interaction est revenu à celui d'avant qu'elle n'affiche ces chiffres.
+
+### Un contraste sous le seuil, sur les onze vues
+
+La barre basse coloriait son entrée active en
 `--acc2` sur fond teinté. Cela tient dans `neural` et `plasma`, dont les accents sont
 fluorescents ; dans `clinical`, dont les accents sont foncés, cela donne **3,87:1** — sous les
 4,5 exigés pour du texte. axe le relevait sur chaque vue, en mobile uniquement, là où la barre
