@@ -104,9 +104,38 @@ const SECURITE = [
   },
 ];
 
+/* CONSTRUCTION EMPAQUETÉE — `HABITUM_EMPAQUETE=1`.
+ *
+ *  L'APK Android (et, plus tard, le bureau) embarque l'application ENTIÈRE :
+ *  aucun serveur, aucun domaine, rien qui dépende de Vercel. C'est ce que la
+ *  promesse local-first exige — un paquet qui aurait besoin du réseau pour
+ *  démarrer la contredirait.
+ *
+ *  Cela impose `output: 'export'`, et il faut savoir ce qu'on y perd :
+ *  `headers()` ci-dessous n'est PAS appliqué à un export statique. Next
+ *  l'ignore, avec un avertissement. Ce n'est pas grave DANS UN PAQUET — la CSP
+ *  et le `noindex` protègent d'un navigateur et d'un moteur de recherche, dont
+ *  aucun ne visite l'intérieur d'un APK — mais ce serait grave sur le web.
+ *  D'où le drapeau : la construction web par défaut ne change en RIEN, et
+ *  `headers.spec.ts` continue de l'imposer.
+ *
+ *  Le service worker est retiré du paquet : dans un APK tout est déjà local,
+ *  et un cache de second niveau ne ferait que servir des morceaux périmés. */
+const empaquete = process.env.HABITUM_EMPAQUETE === '1';
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+
+  ...(empaquete
+    ? {
+        output: 'export',
+        /* Sans barre oblique finale, `file://` ne résout pas `/app/today` vers
+           un document : le WebView cherche un fichier, pas un dossier. */
+        trailingSlash: true,
+        images: { unoptimized: true },
+      }
+    : {}),
 
   /* Tâche 7.1 — active `app/global-not-found.tsx`.
 
@@ -225,4 +254,7 @@ const nextConfig = {
   },
 };
 
-export default withSerwist(withNextIntl(nextConfig));
+/* Le service worker n'est compilé QUE pour le web. Dans un paquet, il n'a rien
+   à mettre en cache que le paquet ne contienne déjà — et il introduirait une
+   seconde source de vérité pour les mêmes fichiers. */
+export default empaquete ? withNextIntl(nextConfig) : withSerwist(withNextIntl(nextConfig));

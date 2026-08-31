@@ -1,0 +1,84 @@
+apply plugin: 'com.android.application'
+
+android {
+    namespace = "app.habitum"
+    compileSdk = rootProject.ext.compileSdkVersion
+    defaultConfig {
+        applicationId "app.habitum"
+        minSdkVersion rootProject.ext.minSdkVersion
+        targetSdkVersion rootProject.ext.targetSdkVersion
+        versionCode 1
+        versionName "1.0"
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        aaptOptions {
+             // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
+             // Default: https://android.googlesource.com/platform/frameworks/base/+/282e181b58cf72b6ca770dc7ca5f91f135444502/tools/aapt/AaptAssets.cpp#61
+            ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
+        }
+    }
+    /* SIGNATURE DE PUBLICATION — pilotée par l'ENVIRONNEMENT, jamais par un
+       fichier du dépôt.
+
+       Le magasin de clés ne doit exister ni ici, ni dans `gradle.properties`,
+       ni nulle part sous Git : quiconque l'obtient peut signer une contrefaçon
+       qu'Android installera par-dessus la vraie application sans un mot. Il
+       vit donc en secret de CI (`ANDROID_KEYSTORE_BASE64`) et n'est reconstitué
+       que le temps du run, hors de l'arbre de travail.
+
+       Le bloc est CONDITIONNEL : sans les variables, `assembleDebug` continue
+       de fonctionner pour quiconque veut essayer l'application, et seul
+       `assembleRelease` exige la clé. */
+    signingConfigs {
+        release {
+            def magasin = System.getenv("HABITUM_KEYSTORE")
+            if (magasin) {
+                storeFile file(magasin)
+                storePassword System.getenv("HABITUM_KEYSTORE_PASSWORD")
+                keyAlias System.getenv("HABITUM_KEY_ALIAS")
+                keyPassword System.getenv("HABITUM_KEY_PASSWORD")
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            /* Sans clé, on ne signe pas avec celle de DÉBOGAGE : un APK qui
+               paraît publiable mais porte la clé publique du débogage est pire
+               qu'un APK non signé, parce que rien ne le signale. */
+            if (System.getenv("HABITUM_KEYSTORE")) {
+                signingConfig signingConfigs.release
+            }
+        }
+    }
+}
+
+repositories {
+    flatDir{
+        dirs '../capacitor-cordova-android-plugins/src/main/libs', 'libs'
+    }
+}
+
+dependencies {
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
+    implementation "androidx.appcompat:appcompat:$androidxAppCompatVersion"
+    implementation "androidx.coordinatorlayout:coordinatorlayout:$androidxCoordinatorLayoutVersion"
+    implementation "androidx.core:core-splashscreen:$coreSplashScreenVersion"
+    implementation project(':capacitor-android')
+    testImplementation "junit:junit:$junitVersion"
+    androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
+    androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
+    implementation project(':capacitor-cordova-android-plugins')
+}
+
+apply from: 'capacitor.build.gradle'
+
+try {
+    def servicesJSON = file('google-services.json')
+    if (servicesJSON.text) {
+        apply plugin: 'com.google.gms.google-services'
+    }
+} catch(Exception e) {
+    logger.info("google-services.json not found, google-services plugin not applied. Push Notifications won't work")
+}

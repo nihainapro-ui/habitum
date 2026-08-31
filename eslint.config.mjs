@@ -30,6 +30,14 @@ const config = [
       'next-env.d.ts',
       'test-results/**',
       'playwright-report/**',
+      /* Sorties de l'empaquetage Android — même classe que `.next/**` :
+         `out/` est l'export statique, `packaging/www/` sa version triée, et le
+         projet natif en garde une COPIE dans ses assets. Sans ces trois lignes,
+         `npm run lint` rendait près de douze mille problèmes sur du code
+         construit, qui n'est pas le nôtre. */
+      'out/**',
+      'packaging/www/**',
+      'packaging/android/**',
     ],
   },
   ...compat.extends('next/core-web-vitals', 'next/typescript'),

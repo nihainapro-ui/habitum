@@ -62,3 +62,29 @@ tests/e2e/visual/socle/*-darwin.png
 # réels lignes 23-25 — et surtout `.env*` avale `.env.example`, qui est SUIVI et
 # qui est le seul endroit où les variables attendues sont documentées.
 # La CLI ne réécrira ces lignes qu'au prochain `vercel link` : les revérifier.
+
+# --- Empaquetage Android ---------------------------------------------------
+# Le PROJET natif (`packaging/android/`) est SUIVI : c'est du code, il porte le
+# nom de paquet, les icônes et le manifeste, et le regénérer à chaque
+# construction produirait un APK différent sans qu'on sache pourquoi.
+#
+# Ce qui suit ne l'est pas : ce sont des sorties, reconstruites par
+# `npm run paquet:sync`. `assets/public` en particulier est une COPIE de
+# `packaging/www` — la versionner doublerait 4,8 Mo dans l'historique à chaque
+# changement d'une seule vue.
+/out
+/packaging/www
+/packaging/android/.gradle
+/packaging/android/build
+/packaging/android/app/build
+/packaging/android/app/src/main/assets/public
+/packaging/android/app/src/main/assets/capacitor.config.json
+/packaging/android/app/src/main/assets/capacitor.plugins.json
+/packaging/android/capacitor-cordova-android-plugins
+/packaging/android/local.properties
+
+# Magasin de clés de signature. Il ne DOIT jamais entrer au dépôt : il est le
+# seul moyen de publier une mise à jour par-dessus une version installée, et
+# quiconque l'obtient peut signer une contrefaçon qu'Android acceptera.
+*.keystore
+*.jks

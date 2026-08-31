@@ -131,3 +131,82 @@ Le jour où c'est décidé :
   il doit être explicitement opt-in. Aucun fichier `sentry.*.config` n'est fourni pour ne pas
   suggérer le contraire.
 - **Analytique** — même raison. La promesse local-first se rompt à la première balise.
+
+## 5. APK Android — application autonome, gratuite
+
+L'APK ne contient pas une coquille qui ouvrirait le site : il contient **l'application
+entière**. Aucun serveur, aucun domaine, aucun `assetlinks.json`, aucune requête au
+démarrage. C'est ce que la promesse local-first exige — un paquet qui aurait besoin de
+joindre Vercel pour s'ouvrir la contredirait à moitié — et c'est aussi ce qui le rend
+éligible à F-Droid sans l'anti-feature « dépend d'un service réseau ».
+
+**Coût : zéro.** Construction en CI sur `ubuntu-latest`, distribution par GitHub Releases.
+Le Play Store (25 € une fois) reste facultatif : un APK se télécharge et s'installe
+directement.
+
+### Comment ça se construit
+
+```bash
+npm run paquet:web    # export statique + tri des fichiers -> packaging/www
+npm run paquet:sync   # + copie dans le projet natif
+npm run paquet:apk    # + Gradle (exige JDK 21 et le SDK Android)
+```
+
+`HABITUM_EMPAQUETE=1` bascule `next.config.mjs` sur `output: 'export'`. **La construction
+web par défaut n'est pas touchée** — et c'est important : `headers()` n'est PAS appliqué à
+un export statique, donc la CSP et le `noindex` de `/app` disparaîtraient si le drapeau
+fuyait. Ils n'ont aucun sens dans un APK, que ni navigateur ni moteur de recherche ne
+visite ; ils en ont tout sur le web, où `headers.spec.ts` les impose.
+
+Le paquet **exclut** l'archive du prototype — 773 Ko qui chargent React depuis `unpkg.com`,
+donc morts hors ligne — et la galerie `/dev`. Le point d'entrée est réécrit pour ouvrir
+`/app/` plutôt que la vitrine, qui n'a personne à convaincre dans une application déjà
+installée.
+
+Personne n'a besoin d'installer JDK ni SDK Android : le workflow `android.yml` construit
+un APK de **débogage** à chaque push et le publie en artefact du run. Il s'installe par
+chargement direct, et sert à essayer.
+
+### Publier une version signée
+
+Un APK de débogage ne peut pas servir de version distribuée : sa clé est celle, publique,
+du débogage Android. Pour une vraie publication, il faut un magasin de clés.
+
+```bash
+keytool -genkeypair -v -keystore habitum.keystore -alias habitum \
+  -keyalg RSA -keysize 4096 -validity 10000
+```
+
+> **Ce fichier ne se remplace pas.** Il est le seul moyen de publier une mise à jour
+> par-dessus une version installée : pour Android, une signature différente est une AUTRE
+> application. Perdu, tous les utilisateurs doivent désinstaller puis réinstaller — et
+> perdent leurs données, puisqu'elles vivent dans l'application. Le sauvegarder ailleurs
+> que sur la machine qui l'a créé. `.gitignore` refuse `*.keystore` et `*.jks` pour que
+> l'erreur soit impossible par inadvertance.
+
+Puis quatre secrets de dépôt :
+
+| Secret | Contenu |
+|---|---|
+| `ANDROID_KEYSTORE_BASE64` | `base64 -w0 habitum.keystore` |
+| `ANDROID_KEYSTORE_PASSWORD` | le mot de passe du magasin |
+| `ANDROID_KEY_ALIAS` | `habitum` |
+| `ANDROID_KEY_PASSWORD` | le mot de passe de la clé |
+
+Une étiquette `v*` déclenche alors la construction signée et attache l'APK à la version
+GitHub. **Sans ces secrets, l'étiquette ne casse rien** : l'APK de débogage est produit,
+l'étape de signature est sautée, et le run le dit en clair plutôt que d'échouer.
+
+### Ce que « gratuit » coûte ailleurs
+
+- **Android, installation directe** — « autoriser cette source » une fois. F-Droid
+  supprime cette friction, et la licence MIT y rend le produit éligible.
+- **iOS** — aucun `.ipa` gratuit n'existe : Apple impose 99 €/an pour toute distribution,
+  TestFlight compris, et un chargement direct avec un identifiant gratuit **expire au bout
+  de 7 jours**. La réponse gratuite sur iOS est la PWA — installée depuis Safari, elle est
+  plein écran, hors ligne, et échappe à la purge d'IndexedDB à 7 jours qui frappe les
+  sites ordinaires. Pour une application sans compte, cette dernière propriété n'est pas un
+  détail.
+- **Bureau** — non traité ici. Tauri (MIT/Apache-2.0) produirait des binaires de 5 à 10 Mo
+  et réutiliserait tel quel l'export statique posé pour Android. La signature, elle, est
+  payante : sans elle, Windows et macOS affichent un avertissement à la première ouverture.

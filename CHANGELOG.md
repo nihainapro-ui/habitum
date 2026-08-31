@@ -1,5 +1,98 @@
 # Journal des modifications
 
+## 2026-08-31 (suite) — Habitum s'installe : APK Android autonome, gratuit
+
+### Ce qui existait déjà, et que personne ne disait
+
+Habitum est une PWA complète depuis la phase 5 — manifeste `standalone`, trois icônes dont
+une masquable, service worker, fonctionnement hors ligne vérifié. Elle s'installe donc
+**déjà** sur bureau, Android et iOS, gratuitement, depuis le navigateur. Ce n'était écrit
+nulle part.
+
+Ce qui manquait, c'est un **fichier téléchargeable**.
+
+### APK autonome, et non coquille
+
+Deux façons de faire un APK, et elles ne disent pas la même chose du produit.
+
+Une *TWA* aurait emballé le site déployé : rapide, presque rien à changer. Mais l'APK
+aurait été **soudé à `habitum-one.vercel.app`** — le jour d'un vrai domaine, les paquets
+déjà installés continuent de pointer sur l'ancien —, il aurait eu besoin du réseau pour
+démarrer, et F-Droid l'aurait marqué « dépend d'un service réseau ». Or Habitum promet que
+rien ne sort de l'appareil. Un paquet qui appelle Vercel pour s'ouvrir contredit cette
+promesse à moitié.
+
+L'APK contient donc **l'application entière** : aucun serveur, aucun domaine, aucun
+`assetlinks.json`. Il démarre sans réseau, du premier lancement au millième.
+
+### Ce que l'export statique a demandé
+
+`HABITUM_EMPAQUETE=1` bascule `next.config.mjs` sur `output: 'export'`, et **rien d'autre
+ne change** — c'est le point qui gouverne la conception. `headers()` n'est pas appliqué à
+un export statique : la CSP et le `noindex` de `/app` disparaîtraient si le drapeau
+fuyait. Ils n'ont aucun sens dans un APK, que ni navigateur ni moteur ne visite ; ils en
+ont tout sur le web, où `headers.spec.ts` les impose. D'où le drapeau plutôt qu'une
+bascule globale.
+
+Le terrain s'est révélé meilleur que prévu : **aucun middleware** — l'i18n est un cookie lu
+dans le navigateur, décision D12 —, aucun route handler, aucun `next/image`, aucune API
+serveur. Un seul blocage réel : les deux images Open Graph n'avaient pas `force-static`,
+que `manifest.ts`, `robots.ts` et `sitemap.ts` déclarent depuis toujours. Une ligne
+chacune, vraie sans l'export aussi.
+
+Le paquet **exclut** l'archive du prototype — 773 Ko qui chargent React depuis
+`unpkg.com`, donc morts hors ligne — et la galerie `/dev`. Son point d'entrée est réécrit
+pour ouvrir `/app/` : à la racine de l'export vit la vitrine, qui n'a personne à convaincre
+dans une application déjà installée.
+
+### Construit en CI, parce que personne ne devrait installer le SDK Android
+
+Un APK demande JDK, SDK Android et Gradle — plusieurs gigaoctets que nul n'a besoin
+d'avoir pour travailler sur l'application web. `ubuntu-latest` les fournit déjà.
+`android.yml` produit un APK de débogage à chaque push, publié en artefact du run.
+
+Sur étiquette `v*` **et** si le magasin de clés est posé en secret, il construit une
+version signée et l'attache à la publication GitHub. Sans les secrets, l'étiquette ne casse
+rien : l'APK de débogage sort quand même, l'étape est sautée, et le run le dit. Un workflow
+rouge pour une option non configurée est un workflow qu'on cesse de lire.
+
+Le bloc de signature de Gradle est conditionné à l'environnement : sans clé, `release`
+n'est **pas** signé avec celle du débogage. Un APK qui paraît publiable mais porte la clé
+publique du débogage est pire qu'un APK non signé, parce que rien ne le signale.
+
+### Trois détails qui auraient coûté cher
+
+**`@capacitor/cli` traînait une vulnérabilité** — `xcode` → `uuid` < 11.1.1, modérée. Elle
+ne concerne que le chemin iOS, que nous n'empruntons pas, et n'entre pas dans l'APK. Un
+`overrides` sur `uuid` la ferme quand même : le dépôt tient un « zéro vulnérabilité » et
+ce n'était pas la peine de le perdre pour une dépendance de développement.
+
+**Les icônes de Capacitor** portaient son logo, et son fond adaptatif était BLANC — une
+pastille blanche sur le lanceur d'une application dont toute l'identité est sombre.
+`scripts/icones-android.mjs` les régénère depuis `public/icons/`, avec `--check` comme les
+autres contrôles du dépôt. Le plan avant part de `maskable-512.png` et non de l'icône
+simple : Android rogne jusqu'à 25 % de chaque côté d'une icône adaptative.
+
+**`HABITUM_EMPAQUETE=1 next build` est de la syntaxe POSIX** : `npm run` la passe à
+`cmd.exe` sous Windows, qui échoue. Le dépôt se développe sous Windows autant que sous
+Linux. `scripts/paquet.mjs` règle le problème en vingt lignes plutôt qu'en une dépendance.
+
+Et, même classe que le faux rouge de `test-results/` : `out/`, `packaging/www/` et le
+projet natif sortent du lint et de Prettier. Sans cela, `npm run lint` rendait **11 948
+problèmes** sur du code construit.
+
+### iOS reste sans fichier téléchargeable, et c'est définitif
+
+Apple impose le Developer Program — 99 €/an — pour toute distribution d'un `.ipa`,
+TestFlight compris. Un chargement direct avec un identifiant gratuit **expire au bout de
+7 jours**. Il n'existe aucune voie gratuite, y compris via les boutiques alternatives du
+DMA européen, qui exigent le même compte payant.
+
+La réponse gratuite sur iOS est donc la PWA, et elle est meilleure qu'un pis-aller :
+installée depuis Safari, elle échappe à la purge d'IndexedDB au bout de sept jours qui
+frappe les sites ordinaires. Pour une application local-first sans compte, cette propriété
+n'est pas un détail — c'est la survie des données.
+
 ## 2026-08-31 — deux réglages qui mentaient : le menu déroulant et le curseur
 
 ### Le panneau d'un `<select>` natif n'est pas une affaire de CSS

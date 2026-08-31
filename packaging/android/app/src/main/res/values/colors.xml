@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Couleurs natives — celles du thème `neural`, celui par défaut.
+
+     CE FICHIER MANQUAIT, et son absence aurait fait échouer la construction :
+     `styles.xml` référence `@color/colorPrimary`, `colorPrimaryDark` et
+     `colorAccent`, que le gabarit de Capacitor ne définit nulle part. Trouvé à
+     la lecture faute de pouvoir lancer Gradle ici.
+
+     Les valeurs viennent de `styles/tokens.css` — bloc `[data-theme='neural']`
+     — et non d'un choix fait ici : deux endroits qui décident de la même
+     couleur finissent toujours par diverger. Elles ne servent qu'au CADRE
+     natif — barre d'état, écran de lancement — jamais à l'interface, qui est
+     entièrement peinte par le WebView et suit les trois thèmes du produit. -->
+<resources>
+    <color name="colorPrimary">#04060D</color>
+    <color name="colorPrimaryDark">#04060D</color>
+    <color name="colorAccent">#22E0D0</color>
+
+    <!-- Fond de l'écran de lancement. Sans lui, Android peint du blanc avant
+         que le WebView arrive : un éclair aveuglant à chaque ouverture d'une
+         application dont l'identité est sombre. -->
+    <color name="habitum_fond">#04060D</color>
+</resources>

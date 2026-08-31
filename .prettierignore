@@ -16,3 +16,9 @@ styles/tokens.css
 styles/modernist-tokens.css
 public/sw.js
 public/swe-worker-*.js
+
+# Empaquetage Android : l'export statique, sa version triée, et le projet natif
+# — dont Gradle et Capacitor possèdent la mise en forme. Même raison que `.next`.
+out
+packaging/www
+packaging/android
