@@ -4,6 +4,10 @@ import { useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { Upload } from 'lucide-react';
 import { champStyle, Panel, Switch } from '@/components/ui';
+/* Importé directement plutôt que par le tonneau `@/components/ui` : le
+   périmètre de cette correction n'autorise pas `components/ui/index.ts`. */
+import { Select } from '@/components/ui/select';
+import { useCurseurPossible } from '@/components/shell/reticle-cursor';
 import { activeHabits, bestStreakOverall, perfectDays, splitHeuresMinutes } from '@/lib/domain';
 import { useFocusMinutes, useSettings, useStore } from '@/lib/store';
 import { Avatar } from './Avatar';
@@ -38,6 +42,7 @@ export function ProfileView() {
   const settings = useSettings();
 
   const focus = useFocusMinutes(365);
+  const curseurPossible = useCurseurPossible();
   const fichier = useRef<HTMLInputElement>(null);
   const [nouveau, setNouveau] = useState('');
   const [aSupprimer, setASupprimer] = useState<string | null>(null);
@@ -124,20 +129,12 @@ export function ProfileView() {
               <span className="text-[12px]" style={{ color: 'var(--txt2)' }}>
                 {tp('role')}
               </span>
-              <select
+              <Select
+                label={tp('role')}
                 value={String(actif?.role ?? 0)}
-                onChange={(e) =>
-                  actif && void updateProfile(actif.id, { role: Number(e.target.value) })
-                }
-                className="rounded-field w-full border outline-none"
-                style={champStyle}
-              >
-                {fonctions.map((nom, i) => (
-                  <option key={nom} value={i}>
-                    {nom}
-                  </option>
-                ))}
-              </select>
+                options={fonctions.map((nom, i) => ({ value: String(i), label: nom }))}
+                onChange={(v) => actif && void updateProfile(actif.id, { role: Number(v) })}
+              />
             </label>
 
             <span className="font-mono text-[11px]" style={{ color: 'var(--mut)' }}>
@@ -270,11 +267,18 @@ export function ProfileView() {
 
       <Panel title={tp('prefs')}>
         <div className="flex flex-col gap-4">
-          <Switch
-            label={tp('cursor')}
-            checked={settings.customCursor}
-            onChange={(v) => void setSetting('customCursor', v)}
-          />
+          {/* Sur pointeur grossier, la ligne est ABSENTE — pas grisée. Un
+              interrupteur désactivé doit dire pourquoi (tâche 5.4) ; un réglage
+              qui n'a aucun sens sur l'appareil n'a rien à expliquer, il n'a
+              rien à faire là. */}
+          {curseurPossible ? (
+            <Switch
+              label={tp('cursor')}
+              reason={tp('cursorHint')}
+              checked={settings.customCursor}
+              onChange={(v) => void setSetting('customCursor', v)}
+            />
+          ) : null}
 
           <div className="flex flex-col gap-2 border-t pt-4" style={{ borderColor: 'var(--line)' }}>
             <input

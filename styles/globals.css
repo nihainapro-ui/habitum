@@ -75,3 +75,51 @@ a:hover {
     scroll-behavior: auto !important;
   }
 }
+
+/* FILET des `<select>` natifs qui échapperaient à la conversion.
+   `components/ui/select.tsx` remplace ceux des vues, mais un formulaire non
+   porté peut en réintroduire un : le pire cas doit être DÉGRADÉ, pas blanc.
+
+   `color-scheme` est le seul levier qui agisse réellement sur le panneau
+   dessiné par le système d'exploitation. Il ne suffit pas — la couleur de la
+   ligne survolée reste celle de l'OS, et c'est précisément pourquoi le
+   composant existe — mais il évite le rectangle blanc opaque. */
+select {
+  color-scheme: dark;
+  background: var(--panel2);
+  color: var(--txt);
+  border: 1px solid var(--line);
+}
+[data-theme='clinical'] select {
+  color-scheme: light;
+}
+select option {
+  background: var(--bg2);
+  color: var(--txt);
+}
+
+/* CURSEUR RÉTICULE — `components/shell/reticle-cursor.tsx` pose et retire
+   `data-cursor` sur la racine ; cette règle est le seul endroit qui masque la
+   flèche du système.
+
+   La descendance est visée explicitement, et `!important` avec : les boutons
+   et les liens portent `cursor: pointer`, qui l'emporterait sinon sur la
+   racine. Un réticule qui laisse reparaître la flèche au survol du moindre
+   bouton n'aurait pas remplacé grand-chose.
+
+   Le composant retire l'attribut dans le NETTOYAGE de son effet : il ne peut
+   donc pas exister d'état où cette règle s'applique sans réticule dessiné —
+   l'utilisateur perdrait sa souris. */
+[data-cursor='reticle'],
+[data-cursor='reticle'] * {
+  cursor: none !important;
+}
+
+/* Le réticule n'a rien à faire sur une feuille imprimée, et `cursor: none`
+   n'y a aucun sens : à l'impression, on rend la main au système. */
+@media print {
+  [data-cursor],
+  [data-cursor] * {
+    cursor: auto !important;
+  }
+}

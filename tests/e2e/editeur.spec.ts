@@ -15,9 +15,13 @@ test.describe('éditeur', () => {
     await ouvrirVierge(page, ROUTE);
     await page.getByRole('button', { name: 'Nouvelle habitude' }).first().click();
 
+    /* Le menu n'est plus un `<select>` natif : ses options n'existent dans le
+       document QUE lorsqu'il est ouvert, et elles vivent dans un portail
+       ancré au `body`. On l'ouvre donc, et on compte les `role=option`. */
+    await page.getByRole('combobox', { name: 'Type d’objectif' }).click();
     const options = await page
-      .getByRole('combobox', { name: 'Type d’objectif' })
-      .locator('option')
+      .getByRole('listbox', { name: 'Type d’objectif' })
+      .getByRole('option')
       .count();
     expect(options).toBe(HABIT_GOAL_KINDS.length);
   });
@@ -106,7 +110,10 @@ test.describe('éditeur', () => {
     await page.getByRole('button', { name: 'Nouvelle habitude' }).first().click();
 
     await page.getByLabel('Nom', { exact: true }).fill('Routine du soir');
-    await page.getByLabel('Type d’objectif').selectOption('list');
+    /* Plus de `<select>` natif, donc plus de `selectOption` : on ouvre le menu
+       et on vise l'option par sa VALEUR, pas par son libellé traduit. */
+    await page.getByRole('combobox', { name: 'Type d’objectif' }).click();
+    await page.locator('[role="option"][data-value="list"]').click();
     await page.getByRole('button', { name: 'Enregistrer' }).click();
     await expect(page.getByText('Ajoutez au moins un sous-élément.')).toBeVisible();
 

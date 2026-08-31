@@ -14,6 +14,7 @@ import { BottomBar } from './bottom-bar';
 import { Header } from './header';
 import { LiveRegion } from './live-region';
 import { Rail } from './rail';
+import { ReticleCursor } from './reticle-cursor';
 import { ID_CONTENU, SkipLink } from './skip-link';
 import { ToastHost } from './toast-host';
 import { UpdateBanner } from './update-banner';
@@ -126,6 +127,10 @@ export function AppShell({ children }: { children: ReactNode }) {
       <EditorSheet />
       <CommandPalette />
       <UpdateBanner />
+      {/* Monté UNE fois, ici, et nulle part ailleurs : un réticule par vue en
+          dessinerait autant que de vues visitées. Il ne rend rien tant que le
+          réglage est coupé, et rien du tout sur pointeur grossier. */}
+      <ReticleCursor />
     </div>
   );
 }

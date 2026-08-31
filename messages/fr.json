@@ -386,6 +386,7 @@
     "avatar": "Avatar",
     "created": "Profil créé",
     "cursor": "Curseur réticule",
+    "cursorHint": "Remplace la flèche du système par un réticule qui suit la souris. Sans effet sur écran tactile.",
     "data": "Progression",
     "del": "Supprimer",
     "deleted": "Profil supprimé",

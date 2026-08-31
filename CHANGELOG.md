@@ -1,5 +1,120 @@
 # Journal des modifications
 
+## 2026-08-31 — deux réglages qui mentaient : le menu déroulant et le curseur
+
+### Le panneau d'un `<select>` natif n'est pas une affaire de CSS
+
+Fermé, le champ « Fonction » de la vue Profil était correctement thémé. Ouvert, son panneau
+était **blanc opaque**, ses libellés gris clair illisibles, et sa ligne survolée en `#0d6efd` —
+un bleu qui n'appartient à aucun des trois thèmes. Il ne changeait pas d'un pixel quand toute
+l'interface passait au magenta.
+
+Il n'y avait rien à corriger dans la feuille de style, et c'est le point : **ce panneau n'est
+pas dans le DOM.** Il est dessiné par le système d'exploitation. `option { background }` est
+ignoré ou partiellement appliqué selon l'OS, et aucune propriété n'atteint le fond de la liste
+ni la couleur de survol. Le prototype avait le même défaut ; chercher plus longtemps du côté du
+CSS aurait été du temps perdu.
+
+D'où `components/ui/select.tsx` : un combobox à nous, dont le panneau est un élément que nous
+peignons. La ligne active vaut `rgba(var(--glow), .16)` — bleue en `neural`, magenta en
+`plasma`, bleu profond en `clinical`. Elle suit le thème **par construction**, y compris changé
+menu ouvert, ce qu'un test vérifie explicitement.
+
+Il porte le contrat complet d'un `combobox` ARIA — `aria-expanded`, `aria-controls`,
+`aria-activedescendant`, `aria-selected` — et se pilote entièrement au clavier : flèches,
+`Début`/`Fin`, frappe au vol qui ignore accents et casse, `Entrée` qui valide, `Échap` qui ferme
+**en rendant le focus au bouton**, `Tab` qui valide puis laisse partir. Le panneau vit dans un
+portail à `z-index` 60 — au-dessus des tiroirs, boîtes et palette, tous à 50 — sinon le tiroir
+d'édition, en `overflow:hidden`, le couperait.
+
+Deux détails qui ne se voient qu'à l'usage. Le menu **se retourne vers le haut** quand le bas de
+la fenêtre est trop proche : sans cela on voyait deux options sur six, et rien ne le disait. Et
+l'option active est ramenée dans la vue en ajustant le `scrollTop` du panneau, **jamais** par
+`scrollIntoView`, qui aurait fait défiler la page derrière.
+
+Un piège, découvert en écrivant le test du retournement : le panneau doit être **monté avant
+d'être placé**. Mesuré avant son rendu, il a une hauteur de zéro — il tient donc toujours en
+bas, et ne se retourne jamais. D'où un rendu en deux temps, monté masqué puis posé.
+
+**Un second piège, plus grave, que seule la campagne complète pouvait montrer.** Le menu ne
+fonctionnait pas **dans le tiroir d'édition** — soit neuf des onze appels du composant. Radix
+pose `pointer-events: none` sur `<body>` tant qu'une boîte modale est ouverte, et ne le rend
+qu'à son propre contenu ; le panneau, porté par un portail vers `body`, vit hors de ce contenu
+et héritait du blocage. Le symptôme trompait : le panneau s'affichait bien au-dessus du tiroir,
+le `z-index` gagnait — mais chaque clic le traversait pour atterrir sur le tiroir. Aucun test de
+la vue Profil ne pouvait le voir, puisqu'elle n'a pas de tiroir. `pointer-events: auto` sur le
+panneau, et le test de l'éditeur le verrouille.
+
+Les deux `<select>` natifs du dépôt sont convertis. `styles/globals.css` garde malgré tout un
+filet `color-scheme` : `color-scheme` est le seul levier qui agisse sur le panneau natif, il ne
+suffit pas — la couleur de survol reste celle de l'OS — mais si un formulaire non porté en
+réintroduit un, le pire cas sera sombre plutôt que blanc.
+
+### Le curseur réticule était le troisième interrupteur décoratif
+
+La ligne existait, l'interrupteur basculait, la préférence se persistait — et la souris restait
+la flèche du système. Après les notifications et le son, c'était le troisième réglage sans
+effet. Un réglage qui ne fait rien est un mensonge d'interface.
+
+`components/shell/reticle-cursor.tsx` le rend réel : un noyau de 6 px qui colle à la souris, un
+anneau de 26 px qui la rattrape par interpolation — c'est ce décalage qui donne la sensation
+d'instrument. L'anneau s'ouvre à 34 px au-dessus d'un élément cliquable, se resserre à 20 px au
+clic pendant que le noyau enfle à 10, et le noyau devient une barre de 2 × 18 px au-dessus d'un
+champ de texte.
+
+**Aucun `setState` sur `mousemove`**, et c'est la contrainte qui gouverne tout le fichier. Une
+souris émet jusqu'à mille événements par seconde ; un rendu React par événement traverserait la
+coque entière à chaque pixel. La position vit dans des `ref`, et une boucle
+`requestAnimationFrame` écrit directement dans `el.style.transform`. Un test le vérifie de
+l'extérieur : quarante déplacements de souris ne produisent **aucune** mutation du DOM hors du
+réticule.
+
+La pulsation est calculée **dans la boucle** plutôt que par une image-clé CSS, et pour une
+raison technique : la boucle écrit `transform` à chaque image, donc une image-clé animant
+`scale` sur le même élément serait écrasée soixante fois par seconde. C'est d'ailleurs pourquoi
+le `curPulse` du prototype n'anime que l'opacité. La calculer permet de composer translation et
+échelle en une seule écriture.
+
+Les quatre garde-fous sont tenus et testés : sous `prefers-reduced-motion` l'anneau colle et ne
+pulse pas ; sur pointeur grossier **rien n'est monté et la ligne de réglage est absente** — pas
+grisée, absente, car un réglage qui n'a aucun sens sur l'appareil n'a rien à expliquer ; le
+réglage coupé rend la souris immédiatement, l'attribut étant retiré dans le *nettoyage* de
+l'effet, donc quoi qu'il arrive ; et l'impression rend la main au système.
+
+Ce dernier point est celui qui comptait le plus : il ne doit exister **aucun** état où
+`cursor: none` survit sans réticule dessiné. L'utilisateur perdrait sa souris, et devrait
+deviner où cliquer pour couper le réglage.
+
+### Ce que la recette a coûté, et appris
+
+`tsconfig.json` fixe `"jsx": "preserve"` — le réglage que Next attend — et vitest ne peut alors
+transformer aucun `.tsx` ; aucun test du dépôt n'en importait, le problème n'était jamais
+apparu. Les calculs purs des deux corrections vivent donc dans deux fichiers `.ts` voisins,
+`select-calculs.ts` et `reticule-calculs.ts`, couverts par 19 tests unitaires. Le reste — ARIA,
+clavier, portail, thèmes, états du curseur — est en e2e, dans un vrai navigateur : c'est le seul
+endroit où le défaut d'origine était observable.
+
+`selectOption()` et `toHaveValue()` n'existent que sur un `<select>` natif : trois contrôles
+existants ont été réécrits en conséquence — `vue-reglages.spec.ts`, `editeur.spec.ts` (qui
+comptait des `<option>` dans un menu fermé) et `a11y-approfondie.spec.ts`, dont l'assertion
+« l'interrupteur est décoché » devient « la ligne est absente » sur pointeur grossier. Chaque
+option porte désormais un `data-value` : viser une option par son libellé traduit produirait un
+test qui casse à la première reformulation.
+
+### Un rouge qui n'est PAS de ce lot : `axe — thème clinical`
+
+Il échoue, et il échouait déjà. Mesuré six fois sur chaque arbre, au même instant : **4 échecs
+sur 6 sans ce lot, 5 sur 6 avec** — statistiquement le même test instable. Le mécanisme est
+identifié et vaut d'être écrit, parce qu'il se reproduira : le test pose `data-theme` par
+`page.evaluate` puis lance axe immédiatement, alors que les boutons `Segmented` portent
+`transition: color .2s ease`. axe échantillonne pendant la transition et lit l'ENCRE de l'ancien
+thème sur le FOND du nouveau — leur fond quasi transparent, lui, ne transitionne pas
+visiblement. D'où « texte clair sur fond clair », un contraste de 1,03 qui n'existe à aucun
+moment pour un œil humain.
+
+Ce n'est donc pas un défaut de contraste mais une course, et sa correction — attendre la fin de
+la transition avant de mesurer — sort du périmètre de ce lot. Elle est signalée, pas faite.
+
 ## 2026-08-27 (nuit) — la coque prend enfin le système visuel du prototype
 
 ### Ce qui n'allait pas, et qui ne se voyait dans aucun contrôle

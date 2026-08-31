@@ -128,13 +128,23 @@ test.describe('profile', () => {
 
     await page.getByLabel('Nom', { exact: true }).fill('Amina Sarr');
     await page.getByLabel('Identifiant').fill('amina');
-    await page.getByLabel('Fonction').selectOption({ label: 'Chercheuse' });
+    /* « Fonction » n'est plus un `<select>` natif — son panneau était dessiné
+       par le système et restait blanc quel que soit le thème. C'est désormais
+       un combobox à nous, d'où le clic sur l'option plutôt que
+       `selectOption()`, qui n'existe que sur l'élément natif. */
+    await page.getByRole('combobox', { name: 'Fonction' }).click();
+    await page.getByRole('option', { name: 'Chercheuse' }).click();
+    /* La tranche écrit en base AVANT de mettre le store à jour : le libellé
+       affiché est donc la preuve que l'enregistrement a abouti. Recharger sans
+       l'attendre, c'est courir contre l'écriture — même raison qu'au début de
+       semaine, plus haut. */
+    await expect(page.getByRole('combobox', { name: 'Fonction' })).toContainText('Chercheuse');
 
     await page.reload();
     await attendreHydratation(page);
     await expect(page.getByLabel('Nom', { exact: true })).toHaveValue('Amina Sarr');
     await expect(page.getByLabel('Identifiant')).toHaveValue('amina');
-    await expect(page.getByLabel('Fonction')).toHaveValue('2');
+    await expect(page.getByRole('combobox', { name: 'Fonction' })).toContainText('Chercheuse');
   });
 
   test('le dernier profil ne se supprime pas', async ({ page }) => {

@@ -386,6 +386,7 @@
     "avatar": "Avatar",
     "created": "Profile created",
     "cursor": "Reticle cursor",
+    "cursorHint": "Replaces the system arrow with a reticle that follows the mouse. No effect on touch screens.",
     "data": "Progress",
     "del": "Delete",
     "deleted": "Profile deleted",

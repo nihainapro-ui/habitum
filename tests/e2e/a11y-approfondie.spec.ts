@@ -273,9 +273,19 @@ test('les changements passent par une région live polie', async ({ page }) => {
       mouvement réduit. Le prototype le posait d'office.
    -------------------------------------------------------------------------- */
 
-test('le curseur réticule est désactivé par défaut', async ({ page }) => {
+test('le curseur réticule est désactivé par défaut', async ({ page, isMobile }) => {
   await ouvrirVierge(page, '/app/profile');
 
   const interrupteur = page.getByRole('switch', { name: /curseur/i });
+
+  /* Sur pointeur grossier, la ligne n'est plus seulement décochée : elle est
+     ABSENTE. Un téléphone n'a pas de curseur à remplacer, et `cursor: none`
+     n'y veut rien dire — un réglage qui n'a aucun sens sur l'appareil n'a rien
+     à y expliquer. Le réticule n'y est pas monté non plus. */
+  if (isMobile) {
+    await expect(interrupteur).toHaveCount(0);
+    return;
+  }
+
   await expect(interrupteur).toHaveAttribute('aria-checked', 'false');
 });

@@ -4,6 +4,10 @@ import type { ReactNode } from 'react';
 import { useTranslations } from 'next-intl';
 import { Plus, X } from 'lucide-react';
 import { champStyle, Field } from '@/components/ui';
+/* Importé directement plutôt que par le tonneau `@/components/ui` : le
+   périmètre de cette correction n'autorise pas `components/ui/index.ts`. À
+   rebasculer sur le tonneau à la première occasion. */
+import { Select as SelectUI } from '@/components/ui/select';
 
 /* `?: T | undefined` plutôt que `?: T` — `exactOptionalPropertyTypes` (D23).
  *
@@ -104,19 +108,7 @@ export function Select<T extends string>({
   return (
     <Field label={label} error={error}>
       {(props) => (
-        <select
-          {...props}
-          value={value}
-          onChange={(e) => onChange(e.target.value as T)}
-          className={ENTREE}
-          style={champStyle}
-        >
-          {options.map((o) => (
-            <option key={o.value} value={o.value}>
-              {o.label}
-            </option>
-          ))}
-        </select>
+        <SelectUI {...props} value={value} options={options} onChange={onChange} label={label} />
       )}
     </Field>
   );
