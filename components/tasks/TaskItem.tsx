@@ -32,9 +32,13 @@ export function TaskItem({ task }: { task: Task }) {
   const sous = subTaskCount(task);
   const avancement = sous ? `${sous.done}/${sous.total}` : '';
   const priorite = [t('low'), t('mid'), t('high')][task.priority - 1] ?? t('mid');
-  const meta = [tc(task.category), task.time ? `⏰ ${task.time}` : '', task.date]
-    .filter(Boolean)
-    .join('  ·  ');
+  /* Segments SÉPARÉS, et non une chaîne jointe. Jointe, elle se repliait
+     n'importe où sur un écran étroit — la capture du 31/08 montre « 2026-08- »
+     puis « 31 » à la ligne suivante. Chaque segment porte maintenant
+     `whitespace-nowrap` : le retour ne peut tomber qu'ENTRE deux segments. */
+  const meta = [tc(task.category), task.time ? `⏰ ${task.time}` : '', task.date].filter(
+    Boolean,
+  ) as string[];
 
   return (
     <li
@@ -63,8 +67,19 @@ export function TaskItem({ task }: { task: Task }) {
               {priorite}
             </span>
           </div>
-          <span className="font-mono text-[10.5px]" style={{ color: 'var(--mut)' }}>
-            {meta}
+          <span
+            className="flex flex-wrap items-center gap-x-2 font-mono text-[10.5px]"
+            style={{ color: 'var(--mut)' }}
+          >
+            {meta.map((segment, i) => (
+              <span key={segment} className="whitespace-nowrap">
+                {segment}
+                {/* Séparateur EN FIN de segment : placé en tête, il ouvrait la
+                    ligne suivante par un point isolé quand le retour tombait
+                    là. */}
+                {i < meta.length - 1 ? <span aria-hidden="true">&nbsp;·</span> : null}
+              </span>
+            ))}
           </span>
         </div>
 

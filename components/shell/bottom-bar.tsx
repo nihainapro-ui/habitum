@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { Icon } from '@/components/ui/Icon';
-import { BOTTOM_ITEMS } from './nav-items';
+import { BOTTOM_ITEMS, estActif } from './nav-items';
 
 /* Barre basse, sous 768 px seulement — portée de `lay.bottom` et `navBot()`
    (`Habitum.dc.html`, lignes 2716 et 2539).
@@ -17,7 +17,12 @@ import { BOTTOM_ITEMS } from './nav-items';
      tactile est 44 px, les deux le passent ; on ne descend pas une cible déjà
      validée en recette pour gagner 4 px.
    - `env(safe-area-inset-bottom)` s'ajoute au bas : sans lui, la barre passe
-     sous la poignée d'accueil des téléphones sans bord. */
+     sous la poignée d'accueil des téléphones sans bord.
+
+   LE LIBELLÉ NE SE TRONQUE PLUS. `truncate` rendait « Tableau de b… » sur un
+   écran de 360 px — un mot coupé au milieu ne nomme plus rien. Il passe
+   maintenant sur deux lignes au plus, serrées ; la cible reste à 52 px, où
+   deux lignes de 10,5 px tiennent (17 px d'icône + 4 de gouttière + 26). */
 
 export function BottomBar({ zen }: { zen: boolean }) {
   const t = useTranslations('app');
@@ -39,13 +44,16 @@ export function BottomBar({ zen }: { zen: boolean }) {
       }}
     >
       {BOTTOM_ITEMS.map((item) => {
-        const actif = pathname === item.href;
+        /* Comparaison NORMALISÉE : l'export statique ajoute une barre finale
+           au chemin (`nav-items.ts` § normaliserChemin), et aucune entrée ne se
+           marquait courante dans l'APK. */
+        const actif = estActif(pathname, item.href);
         return (
           <Link
             key={item.href}
             href={item.href}
             aria-current={actif ? 'page' : undefined}
-            className="flex min-h-[52px] min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-[12px] px-1 text-[11px]"
+            className="flex min-h-[52px] min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-[12px] px-0.5 text-center text-[10.5px] leading-[1.15]"
             style={{
               border: `1px solid ${actif ? 'color-mix(in srgb,var(--acc2) 34%,transparent)' : 'transparent'}`,
               background: actif ? 'rgba(var(--glow),.18)' : 'transparent',
@@ -63,7 +71,7 @@ export function BottomBar({ zen }: { zen: boolean }) {
             <span style={{ color: actif ? 'var(--acc2)' : 'inherit', display: 'flex' }}>
               <Icon name={item.icon} size={17} />
             </span>
-            <span className="max-w-full truncate">{t(item.key)}</span>
+            <span className="line-clamp-2 max-w-full">{t(item.key)}</span>
           </Link>
         );
       })}

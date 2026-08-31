@@ -1,5 +1,92 @@
 # Journal des modifications
 
+## 2026-08-31 (suite 2) — Le rail existe aussi sur téléphone
+
+### Sept vues sur onze n'avaient aucun chemin d'accès au doigt
+
+Sous 768 px, le rail n'est pas rendu et la barre basse porte **quatre** entrées : tableau
+de bord, aujourd'hui, habitudes, tâches. Le commentaire de `nav-items.ts` réglait le reste
+d'une phrase — « le reste passe par la palette ⌘K ».
+
+Cette phrase suppose un clavier. L'APK Android n'en a pas. Et une recherche à taper n'est
+pas une navigation : il faut connaître le nom de ce qu'on cherche avant de pouvoir y aller.
+Calendrier, objectifs, statistiques, profil, minuteur, notes et réglages étaient donc
+**inatteignables** sur téléphone — thème et langue avec eux, puisqu'ils vivent au pied du
+rail et dans les réglages.
+
+`components/shell/nav-drawer.tsx` est ce chemin. Il rend **exactement** le contenu du rail,
+déplié : marque, carte d'expérience, les trois groupes avec leurs titres, les onze entrées
+avec leurs libellés, le pied thème/langue. Ce n'est pas une seconde liste — `rail.tsx` a été
+scindé, et `rail-contenu.tsx` sert les deux. Deux listes divergent toujours ; c'est déjà la
+raison d'être de `nav-items.ts`.
+
+Il s'ouvre par un bouton posé dans l'en-tête, sous 768 px seulement. Modale au sens strict :
+`role="dialog"`, `aria-modal`, piège de focus en capture sur le document, `Escape` qui rend
+le focus au déclencheur — le modèle de la palette, pour les mêmes raisons. Une navigation le
+referme : sans cela la vue changeait derrière un panneau resté ouvert.
+
+### Le défaut qui rendait l'APK muet : une barre oblique
+
+`next.config.mjs` pose `trailingSlash: true` sur l'export statique. `usePathname()` rend
+donc `/app/tasks/` dans l'APK, et la comparaison était une égalité de chaînes. Trois choses
+se sont tues d'un coup, sur les onze routes à la fois :
+
+- l'en-tête affichait « Habitum » au lieu du titre de la vue, sans sur-titre ;
+- aucune entrée du rail ne se marquait courante ;
+- aucune entrée de la barre basse non plus.
+
+`normaliserChemin()` et `estActif()` (`nav-items.ts`) tranchent, et `tests/unit/nav-items.test.ts`
+les tient — le défaut est invisible en développement, où la barre finale n'est pas ajoutée,
+donc il lui fallait son propre test.
+
+### L'en-tête ne se replie plus sur deux rangées
+
+`flex-wrap` faisait tomber la recherche et « Nouveau » sur une seconde ligne : un sixième de
+la hauteur utile d'un écran de 360 px, pour deux boutons. Tout tient maintenant sur une
+ligne. Sous 768 px la recherche se réduit à une cible carrée de 34 px ; sous 640 px la
+pilule de profil et le mode zen s'effacent — le profil est dans le tiroir, et le zen masque
+la barre basse, c'est une commande de bureau dont le raccourci `⌘\` reste intact. Le titre
+y gagne plus de 200 px au lieu des ~130 qu'il aurait eus en gardant tout.
+
+### Quatre corrections de rendu, plus petites
+
+- **Les dates ne se coupent plus en deux.** `TaskItem` joignait ses métadonnées en une
+  chaîne, qui se repliait n'importe où : la capture du 31/08 montre « 2026-08- » puis « 31 »
+  à la ligne suivante. Chaque segment porte maintenant `whitespace-nowrap`, et le séparateur
+  est en fin de segment — une ligne repliée ne s'ouvre pas par un point isolé.
+- **Les libellés de la barre basse ne se tronquent plus.** « Tableau de b… » ne nomme plus
+  rien. Deux lignes serrées au plus, dans la même cible de 52 px.
+- **Vingt pixels rendus au contenu.** La garniture haute du `<main>` passe de 32 à 20 px sous
+  768 px. Rien ne change au-dessus, où la référence visuelle est validée.
+- **Les zones sûres existent enfin.** Sans `viewport-fit=cover`, `env(safe-area-inset-*)`
+  vaut **zéro**, y compris sur les téléphones qui ont une encoche : la barre basse s'en
+  écartait déjà en théorie, jamais en pratique. L'en-tête et le tiroir s'en écartent aussi.
+- **Le bandeau de mise à jour ne passe plus devant les modales.** À égalité de `z-index`
+  avec elles, il gagnait par l'ordre du document et couvrait une entrée du tiroir comme un
+  pan de la palette. Il descend à `z-45` : au-dessus de la barre basse et des toasts, sous
+  les dialogues.
+
+### Un test d'accessibilité qui mesurait une image intermédiaire
+
+`axe — thème clinical` échouait en exécution parallèle, jamais seul : sept `color-contrast`
+sur les boutons segmentés des réglages, à 1,03:1 — l'encre du thème sortant sur le fond du
+thème entrant. Le test bascule `data-theme` puis mesure ; les couleurs, elles, portent une
+`transition`, et sur une machine chargée axe passe avant la fin de la fondue. Aucun de ces
+sept boutons n'a jamais eu ce contraste à l'écran.
+
+`page.emulateMedia({ reducedMotion: 'reduce' })` ramène les transitions à 1 ms via le bloc
+déjà présent dans `globals.css` : la mesure porte sur l'état de repos. Le contrôle n'est pas
+affaibli — il cesse de mesurer ce que personne ne voit. Défaut antérieur à cette
+intervention, corrigé ici parce qu'il tenait la recette en rouge.
+
+### Vérification
+
+`npm run verify` vert. `npm run test:e2e` vert sur les deux projets, dont
+`tests/e2e/tiroir-mobile.spec.ts` — huit contrôles neufs : onze entrées dans le tiroir,
+libellés visibles, navigation qui referme, thème et langue présents, cibles à 44 px, `Escape`
+qui rend le focus, absence du bouton au-dessus de 768 px, en-tête sur une ligne, vue courante
+marquée dans la barre basse.
+
 ## 2026-08-31 (suite) — Habitum s'installe : APK Android autonome, gratuit
 
 ### Ce qui existait déjà, et que personne ne disait

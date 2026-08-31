@@ -82,6 +82,21 @@
   }
 }
 
+/* .22s — tiroir de navigation mobile (`nav-drawer.tsx`). Il entre par la
+   GAUCHE, là où `slidein` entre par la droite : un panneau ancré au bord
+   gauche qui glisserait depuis la droite traverserait l'écran pour revenir se
+   coller à son bord. */
+@keyframes drawerin {
+  from {
+    opacity: 0;
+    transform: translateX(-100%);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
 /* .3s — navigation de mois, dans le sens du geste (`calDir`).
    Deux noms par sens, alternés : rejouer une animation exige de CHANGER son
    nom, sinon le navigateur considère qu'elle tourne déjà et ne la relance

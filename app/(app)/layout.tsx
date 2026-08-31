@@ -16,6 +16,12 @@ export const viewport: Viewport = {
   themeColor: '#04060d',
   width: 'device-width',
   initialScale: 1,
+  /* Sans `viewport-fit=cover`, `env(safe-area-inset-*)` vaut ZÉRO — y compris
+     sur les téléphones qui en ont un. L'en-tête, la barre basse et le tiroir
+     s'écartent tous des encoches et de la poignée d'accueil par ces variables ;
+     elles ne valaient rien tant que cette ligne manquait. Aucun effet là où il
+     n'y a pas d'encoche : les insets y restent nuls. */
+  viewportFit: 'cover',
 };
 
 /* Le serveur rend TOUJOURS la langue par défaut : c'est ce qui garde les douze

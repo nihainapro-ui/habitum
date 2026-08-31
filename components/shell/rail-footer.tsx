@@ -14,9 +14,15 @@ import { useLocaleSwitcher } from './locale-provider';
 
    Replié (< 1060 px), le pied passe en COLONNE et le nom du thème disparaît :
    il ne reste que la pastille et le code de langue. C'est ce que montre
-   `tests/visual/reference/01-dash.png`, en bas du rail. */
+   `tests/visual/reference/01-dash.png`, en bas du rail.
 
-export function RailFooter() {
+   `deplie` force l'état large indépendamment de la fenêtre : c'est ce que le
+   tiroir mobile (`nav-drawer.tsx`) demande. Sans lui, thème et langue étaient
+   INJOIGNABLES au doigt — le pied du rail n'est pas rendu sous 768 px, et les
+   Réglages qui les portent aussi n'étaient eux-mêmes accessibles que par la
+   palette ⌘K. */
+
+export function RailFooter({ deplie = false }: { deplie?: boolean }) {
   const t = useTranslations('app');
   const { locale, setLocale } = useLocaleSwitcher();
   const setSetting = useStore((s) => s.setSetting);
@@ -38,7 +44,11 @@ export function RailFooter() {
 
   return (
     <div
-      className="flex flex-col items-center gap-2 border-t px-[10px] py-[14px] min-[1060px]:flex-row min-[1060px]:px-4"
+      className={
+        deplie
+          ? 'flex flex-row items-center gap-2 border-t px-4 py-[14px]'
+          : 'flex flex-col items-center gap-2 border-t px-[10px] py-[14px] min-[1060px]:flex-row min-[1060px]:px-4'
+      }
       style={{ borderColor: 'var(--line)' }}
     >
       <button
@@ -46,7 +56,11 @@ export function RailFooter() {
         onClick={suivant}
         aria-label={t('switchTheme')}
         title={t('switchTheme')}
-        className="flex flex-1 cursor-pointer items-center gap-2 rounded-[10px] border px-[10px] py-2"
+        className={
+          deplie
+            ? 'flex min-h-[44px] flex-1 cursor-pointer items-center gap-2 rounded-[10px] border px-[10px] py-2'
+            : 'flex flex-1 cursor-pointer items-center gap-2 rounded-[10px] border px-[10px] py-2'
+        }
         style={{
           borderColor: 'var(--line)',
           background: 'transparent',
@@ -70,7 +84,7 @@ export function RailFooter() {
           }}
         />
         <span
-          className="hidden min-[1060px]:inline"
+          className={deplie ? 'inline' : 'hidden min-[1060px]:inline'}
           style={{
             fontFamily: 'var(--font-mono)',
             letterSpacing: '.1em',
@@ -86,7 +100,11 @@ export function RailFooter() {
         onClick={() => setLocale(locale === 'fr' ? 'en' : 'fr')}
         aria-label={t('switchLang')}
         title={t('switchLang')}
-        className="cursor-pointer rounded-[10px] border px-[11px] py-2"
+        className={
+          deplie
+            ? 'min-h-[44px] cursor-pointer rounded-[10px] border px-[11px] py-2'
+            : 'cursor-pointer rounded-[10px] border px-[11px] py-2'
+        }
         style={{
           borderColor: 'var(--line)',
           background: 'transparent',

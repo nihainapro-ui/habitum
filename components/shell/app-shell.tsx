@@ -13,6 +13,7 @@ import { EditorSheet } from '@/components/editor/EditorSheet';
 import { BottomBar } from './bottom-bar';
 import { Header } from './header';
 import { LiveRegion } from './live-region';
+import { NavDrawer } from './nav-drawer';
 import { Rail } from './rail';
 import { ReticleCursor } from './reticle-cursor';
 import { ID_CONTENU, SkipLink } from './skip-link';
@@ -75,6 +76,10 @@ export function AppShell({ children }: { children: ReactNode }) {
            à son déclencheur : ici on ne s'occupe que du reste. */
         echapper: () => {
           if (s.ui.commandOpen) return;
+          /* Le tiroir gère lui-même sa fermeture, pour rendre le focus à son
+             déclencheur — même raison que la palette. On s'abstient donc tant
+             qu'il est ouvert, au lieu de fermer l'éditeur derrière lui. */
+          if (s.ui.menuOpen) return;
           if (s.ui.editor) s.closeEditor();
           else if (s.ui.toast) s.dismissToast();
         },
@@ -115,13 +120,20 @@ export function AppShell({ children }: { children: ReactNode }) {
         <main
           id={ID_CONTENU}
           tabIndex={-1}
-          className="min-w-0 flex-1 px-4 py-8 pb-24 outline-none md:px-10 md:pb-8"
+          /* Sur téléphone la garniture haute tombe de 32 à 20 px : l'en-tête
+             porte déjà titre et sur-titre, et 32 px de vide entre lui et la
+             première carte se paient en défilement. Rien ne change au-dessus
+             de 768 px, où la référence visuelle est validée. */
+          className="min-w-0 flex-1 px-4 py-5 pb-24 outline-none md:px-10 md:py-8 md:pb-8"
         >
           {children}
         </main>
       </div>
 
       <BottomBar zen={zen} />
+      {/* Le tiroir n'est monté que sous 768 px (`md:hidden` sur sa racine) :
+          au-dessus, le rail est là et deux navigations se marcheraient dessus. */}
+      <NavDrawer />
       <LiveRegion />
       <ToastHost />
       <EditorSheet />

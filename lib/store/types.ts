@@ -52,6 +52,10 @@ export interface UiState {
   editor: EditorState | null;
   toast: ToastState | null;
   commandOpen: boolean;
+  /** Tiroir de navigation MOBILE. Sous 768 px le rail n'est pas rendu : sans ce
+   *  tiroir, sept des onze vues n'ont aucun chemin d'accès au doigt — la
+   *  palette ⌘K suppose un clavier, que l'APK n'a pas. */
+  menuOpen: boolean;
   loading: boolean;
   error: string | null;
 }
@@ -166,6 +170,7 @@ export interface UiActions {
   openEditor(editor: EditorState): void;
   closeEditor(): void;
   setCommandOpen(open: boolean): void;
+  setMenuOpen(open: boolean): void;
   showToast(toast: ToastState): void;
   dismissToast(): void;
 }

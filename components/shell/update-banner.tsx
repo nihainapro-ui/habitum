@@ -76,7 +76,12 @@ export function UpdateBanner() {
     <div
       role="status"
       data-testid="update-banner"
-      className="rounded-panel fixed right-4 bottom-24 left-4 z-50 mx-auto flex max-w-[420px] flex-wrap items-center gap-3 border p-3.5 md:bottom-4"
+      /* z-45 : AU-DESSUS de la barre basse et des toasts (z-40), en DESSOUS
+          des modales (z-50). À égalité avec elles, le bandeau gagnait par
+          l'ordre du document — il est monté en dernier dans la coque — et
+          couvrait une entrée du tiroir de navigation comme un pan de la
+          palette ⌘K. Un avis passif ne passe pas devant un dialogue. */
+      className="rounded-panel fixed right-4 bottom-24 left-4 z-[45] mx-auto flex max-w-[420px] flex-wrap items-center gap-3 border p-3.5 md:bottom-4"
       style={{ borderColor: 'var(--line2)', background: 'var(--bg2)' }}
     >
       <span className="min-w-0 flex-1 text-[12.5px]">{ts('updT')}</span>

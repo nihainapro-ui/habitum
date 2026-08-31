@@ -80,6 +80,22 @@ for (const route of ROUTES_VITRINE) {
    laisserait deux tiers du produit sans vérification. */
 for (const theme of ['plasma', 'clinical'] as const) {
   test(`axe — thème ${theme}`, async ({ page }) => {
+    /* MOUVEMENT RÉDUIT, ET CE N'EST PAS UN CONFORT DE TEST.
+
+       Changer `data-theme` ne repeint pas d'un coup : les couleurs des
+       commandes portent une `transition`, et axe échantillonne les styles
+       CALCULÉS à l'instant où il passe. Pris pendant la fondue, les sept
+       boutons segmentés des réglages rendent l'encre du thème SORTANT sur le
+       fond du thème ENTRANT — mesuré `#eaf2ff` sur `#f1f6fd`, soit 1,03:1. Un
+       défaut qui n'existe à l'écran pour personne, et qui ne se déclarait qu'en
+       exécution parallèle, quand la machine chargée allonge la fondue.
+
+       `reducedMotion: 'reduce'` déclenche le bloc de `globals.css` qui ramène
+       toutes les transitions à 1 ms : la mesure porte alors sur l'état de
+       repos, celui que l'utilisateur voit. Le contrôle n'est pas affaibli — il
+       cesse de mesurer une image intermédiaire. */
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+
     await page.goto('/app/settings');
     await expect(page.locator('[data-hydrated="true"]')).toBeAttached();
 

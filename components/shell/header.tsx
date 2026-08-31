@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { Maximize2, Plus, Search } from 'lucide-react';
+import { Maximize2, Menu, Plus, Search } from 'lucide-react';
 import { useProgression, useStore } from '@/lib/store';
 import { ENCRE_SUR_TEINTE } from '@/components/ui/encre';
 import { itemActif } from './nav-items';
@@ -23,7 +23,24 @@ import { itemActif } from './nav-items';
  * élément à largeur fixe dans l'en-tête vole la place du titre et du
  * sous-titre, y compris au-dessus de 1060 px ». Tout ce qui est ajouté à droite
  * porte donc `flex-none` et se réduit à sa marque sous 1200 px ; le bloc de
- * titre, lui, est le seul à porter `flex:1 1 120px` et `min-width:0`. */
+ * titre, lui, est le seul à porter `flex:1 1 120px` et `min-width:0`.
+ *
+ * SUR TÉLÉPHONE, L'EN-TÊTE NE SE REPLIE PLUS. `flex-wrap` faisait tomber la
+ * recherche et « Nouveau » sur une seconde rangée : deux boutons qui coûtaient
+ * un sixième de la hauteur utile d'un écran de 360 px. Tout tient maintenant
+ * sur une ligne, et pour que ce soit tenable trois choses changent sous
+ * 640/768 px :
+ *
+ * - le bouton MENU apparaît (< 768 px) — seul chemin au doigt vers les sept
+ *   vues que la barre basse ne porte pas. Il reste visible en mode zen, sans
+ *   quoi le zen mobile masquerait la dernière navigation atteignable ;
+ * - la recherche se réduit à une cible carrée de 34 px (< 768 px) ;
+ * - la pilule de profil et le mode zen disparaissent (< 640 px). Le profil est
+ *   dans le tiroir ; le zen, lui, masque la barre basse — c'est une commande de
+ *   bureau, et son raccourci ⌘\ reste intact pour qui a un clavier.
+ *
+ * Ce qui reste vaut ~137 px de commandes : le titre garde plus de 200 px sur un
+ * écran de 360, au lieu des ~130 qu'il aurait eus en gardant tout. */
 
 export function Header() {
   const t = useTranslations();
@@ -33,6 +50,8 @@ export function Header() {
   const setCommandOpen = useStore((s) => s.setCommandOpen);
   const toggleZen = useStore((s) => s.toggleZen);
   const openEditor = useStore((s) => s.openEditor);
+  const menuOpen = useStore((s) => s.ui.menuOpen);
+  const setMenuOpen = useStore((s) => s.setMenuOpen);
 
   const item = itemActif(pathname);
 
@@ -40,7 +59,12 @@ export function Header() {
 
   return (
     <header
-      className="sticky top-0 z-[18] flex flex-wrap items-center gap-3 border-b px-[13px] py-[11px] md:flex-nowrap md:gap-4 md:px-[26px] md:py-[14px]"
+      /* `pt-[calc(...)]` et non un `paddingTop` en ligne : le style en ligne
+         aurait aussi écrasé `md:py-[14px]`, et l'en-tête de bureau aurait
+         maigri de 3 px. Encoche : l'en-tête est collé en haut, c'est donc lui
+         qui doit s'en écarter ; l'inset vaut 0 partout où il n'y en a pas —
+         bureau compris, ce qui laisse les captures de référence inchangées. */
+      className="sticky top-0 z-[18] flex flex-nowrap items-center gap-2 border-b px-[13px] py-[11px] pt-[calc(11px+env(safe-area-inset-top))] md:gap-4 md:px-[26px] md:py-[14px] md:pt-[calc(14px+env(safe-area-inset-top))]"
       style={{
         borderColor: 'var(--line)',
         /* Dégradé et flou : le contenu qui passe dessous se devine sans jamais
@@ -51,6 +75,20 @@ export function Header() {
         WebkitBackdropFilter: 'blur(18px)',
       }}
     >
+      {/* Bouton du tiroir — mobile seulement. Au-dessus de 768 px le rail est
+          rendu et un second accès aux mêmes onze vues n'apporterait rien. */}
+      <button
+        type="button"
+        onClick={() => setMenuOpen(true)}
+        aria-expanded={menuOpen}
+        aria-label={t('app.menuOpen')}
+        title={t('app.menuOpen')}
+        className="grid h-[34px] w-[34px] flex-none cursor-pointer place-items-center rounded-[10px] border md:hidden"
+        style={{ borderColor: 'var(--line)', background: 'var(--panel2)', color: 'var(--txt2)' }}
+      >
+        <Menu size={16} strokeWidth={1.9} aria-hidden="true" />
+      </button>
+
       <div className="flex min-w-0 flex-[1_1_120px] flex-col gap-[3px] overflow-hidden">
         <div className="flex min-w-0 items-center gap-[9px]">
           <span
@@ -111,7 +149,7 @@ export function Header() {
       <Link
         href="/app/profile"
         aria-label={t('app.navProfile')}
-        className="flex max-w-[190px] flex-none items-center gap-[9px] rounded-full border py-[5px] pr-[13px] pl-[5px] text-[11.5px]"
+        className="hidden max-w-[190px] flex-none items-center gap-[9px] rounded-full border py-[5px] pr-[13px] pl-[5px] text-[11.5px] sm:flex"
         style={{ borderColor: 'var(--line)', background: 'var(--panel2)', color: 'var(--txt2)' }}
       >
         <ProfilePastille level={prog.level} />
@@ -124,7 +162,7 @@ export function Header() {
         aria-pressed={zen}
         aria-label={zen ? t('app.zenOff') : t('app.zenOn')}
         title={zen ? t('app.zenOff') : t('app.zenOn')}
-        className="grid h-[34px] w-[34px] flex-none cursor-pointer place-items-center rounded-[10px] border"
+        className="hidden h-[34px] w-[34px] flex-none cursor-pointer place-items-center rounded-[10px] border sm:grid"
         style={{
           borderColor: zen ? 'var(--acc2)' : 'var(--line)',
           background: zen ? 'rgba(var(--glow),.2)' : 'var(--panel2)',
@@ -171,7 +209,7 @@ export function Header() {
         type="button"
         onClick={() => setCommandOpen(true)}
         aria-label={t('app.search')}
-        className="flex min-w-0 flex-[0_1_190px] cursor-pointer items-center gap-[10px] overflow-hidden rounded-[11px] border px-[13px] py-[9px] text-xs"
+        className="grid h-[34px] w-[34px] flex-none cursor-pointer place-items-center rounded-[11px] border text-xs md:flex md:h-auto md:w-auto md:min-w-0 md:flex-[0_1_190px] md:items-center md:gap-[10px] md:overflow-hidden md:px-[13px] md:py-[9px]"
         style={{ borderColor: 'var(--line)', background: 'var(--panel2)', color: 'var(--mut)' }}
       >
         <Search size={13} strokeWidth={1.9} aria-hidden="true" style={{ flex: 'none' }} />
