@@ -22,7 +22,19 @@ import { BOTTOM_ITEMS, estActif } from './nav-items';
    LE LIBELLÉ NE SE TRONQUE PLUS. `truncate` rendait « Tableau de b… » sur un
    écran de 360 px — un mot coupé au milieu ne nomme plus rien. Il passe
    maintenant sur deux lignes au plus, serrées ; la cible reste à 52 px, où
-   deux lignes de 10,5 px tiennent (17 px d'icône + 4 de gouttière + 26). */
+   deux lignes de 10,5 px tiennent (17 px d'icône + 4 de gouttière + 26).
+
+   LE VOILE. La barre est opaque à 88 % et porte un filet net : le contenu qui
+   passe dessous n'était pas estompé, il était GUILLOTINÉ — une barre de
+   progression tranchée en deux au pixel près. Le voile est la rampe d'accès :
+   48 px au-dessus de la barre, où le fond remonte de rien à tout.
+
+   Il n'est pas décoratif, il DIT quelque chose : « ça continue en dessous ».
+   Un dégradé linéaire aurait donné une bande visible — l'œil lit la rupture de
+   pente. Les quatre arrêts approchent une courbe : opaque vite, transparent
+   lentement. Et il est ANCRÉ à la barre (`bottom:100%` sur un enfant absolu),
+   jamais à une hauteur recopiée : la barre grandit avec la zone sûre, le voile
+   la suit sans qu'un nombre soit à tenir à jour à deux endroits. */
 
 export function BottomBar({ zen }: { zen: boolean }) {
   const t = useTranslations('app');
@@ -43,6 +55,31 @@ export function BottomBar({ zen }: { zen: boolean }) {
         WebkitBackdropFilter: 'blur(20px)',
       }}
     >
+      {/* Le voile, hors du flux et hors du pointeur. Il se colle au bord haut de
+          la barre quelle que soit la hauteur de celle-ci — la zone sûre grandit,
+          il suit, sans nombre à tenir à jour à deux endroits.
+
+          LE « + 1px » N'EST PAS UN AJUSTEMENT AU JUGÉ. La boîte de
+          positionnement d'un enfant absolu est la boîte de REMPLISSAGE, qui
+          commence sous la bordure ; `bottom:100%` posait donc le voile 1 px
+          trop bas, et son extrémité opaque — un enfant peint par-dessus la
+          bordure du parent — EFFAÇAIT le filet du haut. La barre perdait son
+          arête et flottait sur un fond qui venait justement de s'estomper. Le
+          voile s'arrête maintenant au ras du filet : le contenu se dissout, la
+          bordure tranche. */}
+      <span
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-x-0 bottom-[calc(100%+1px)] h-12"
+        style={{
+          background:
+            'linear-gradient(to top,' +
+            'var(--bg) 0%,' +
+            'color-mix(in srgb,var(--bg) 72%,transparent) 34%,' +
+            'color-mix(in srgb,var(--bg) 30%,transparent) 64%,' +
+            'transparent 100%)',
+        }}
+      />
+
       {BOTTOM_ITEMS.map((item) => {
         /* Comparaison NORMALISÉE : l'export statique ajoute une barre finale
            au chemin (`nav-items.ts` § normaliserChemin), et aucune entrée ne se

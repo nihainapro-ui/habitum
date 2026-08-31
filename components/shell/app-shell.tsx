@@ -123,8 +123,13 @@ export function AppShell({ children }: { children: ReactNode }) {
           /* Sur téléphone la garniture haute tombe de 32 à 20 px : l'en-tête
              porte déjà titre et sur-titre, et 32 px de vide entre lui et la
              première carte se paient en défilement. Rien ne change au-dessus
-             de 768 px, où la référence visuelle est validée. */
-          className="min-w-0 flex-1 px-4 py-5 pb-24 outline-none md:px-10 md:py-8 md:pb-8"
+             de 768 px, où la référence visuelle est validée.
+
+             LA GARNITURE BASSE EST CALCULÉE, plus un `pb-24` de convenance :
+             barre (8 + 52 + 8) + voile (48) + zone sûre. Les 96 px précédents
+             laissaient la dernière carte finir SOUS le voile — on la voyait
+             s'éteindre au lieu de se terminer. */
+          className="min-w-0 flex-1 px-4 py-5 pb-[calc(124px+env(safe-area-inset-bottom))] outline-none md:px-10 md:py-8 md:pb-8"
         >
           {children}
         </main>

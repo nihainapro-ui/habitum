@@ -1,5 +1,56 @@
 # Journal des modifications
 
+## 2026-08-31 (suite 3) — Le bas de page ne guillotine plus
+
+### Ce que montrait la capture
+
+Le contenu qui défile passait sous la barre basse et s'y arrêtait NET : une barre de
+progression tranchée en deux au pixel près, un titre de carte coupé au milieu. La barre est
+opaque à 88 % et porte un filet : ce qui passe dessous n'était pas estompé, il était
+sectionné.
+
+### Un voile, et ce qu'il dit
+
+48 px au-dessus de la barre, le fond remonte de rien à tout. Ce n'est pas un ornement : il
+énonce « ça continue en dessous », là où l'arrêt net disait « c'est fini » — un mensonge,
+puisque la page continuait.
+
+Trois décisions, dont deux ne se voient pas :
+
+- **Quatre arrêts, pas deux.** Un dégradé linéaire donne une bande visible : l'œil lit la
+  rupture de pente. Les arrêts approchent une courbe — opaque vite, transparent lentement.
+- **Ancré à la barre, pas à un nombre.** `bottom` sur un enfant absolu, jamais une hauteur
+  recopiée. La barre grandit avec la zone sûre ; le voile la suit sans qu'une constante soit
+  à tenir à jour à deux endroits.
+- **`calc(100% + 1px)`, et ce n'est pas un ajustement au jugé.** La boîte de positionnement
+  d'un enfant absolu est la boîte de REMPLISSAGE, qui commence sous la bordure. À
+  `bottom:100%` le voile tombait 1 px trop bas, et son extrémité opaque — un enfant peint
+  par-dessus la bordure de son parent — EFFAÇAIT le filet du haut : la barre perdait son
+  arête et flottait sur un fond qui venait justement de s'estomper. Le voile s'arrête
+  maintenant au ras du filet. Le contenu se dissout, la bordure tranche.
+
+### La garniture basse est calculée, plus arrondie
+
+`pb-24` valait 96 px de convenance. Il en faut 124 plus la zone sûre : barre (8 + 52 + 8) +
+voile (48). Avec 96, la dernière carte finissait SOUS le voile — on la voyait s'éteindre au
+lieu de se terminer, ce qui est le même défaut déplacé de trois centimètres.
+
+### Ce qui n'a pas été touché, et pourquoi
+
+Le haut n'a pas reçu de voile. L'en-tête porte déjà un dégradé et un flou, et son filet est
+une arête STRUCTURELLE — « l'en-tête finit ici » —, pas une coupure. Du contenu qui glisse
+sous une barre titrée est un motif que tout le monde lit. Le bas était différent en nature :
+88 % d'opacité laissaient un fantôme sectionné, et aucune rampe.
+
+Rien ne change au-dessus de 768 px : la référence visuelle y est validée
+(`04-DESIGN-TOKENS.md` § Palier téléphone).
+
+### Vérification
+
+Deux contrôles neufs dans `tests/e2e/tiroir-mobile.spec.ts` : au bout du document la
+dernière carte dégage la barre ET les 48 px de voile ; et le voile touche le bord haut de la
+barre à moins d'un pixel — c'est ce second contrôle qui a levé le défaut du `+ 1px`.
+
 ## 2026-08-31 (suite 2) — Le rail existe aussi sur téléphone
 
 ### Sept vues sur onze n'avaient aucun chemin d'accès au doigt
