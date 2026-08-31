@@ -57,7 +57,12 @@ const config: CapacitorConfig = {
        dont le dernier segment n'a pas d'extension — viser `app/` reviendrait
        donc à redemander cette page d'entrée, indéfiniment. C'est exactement ce
        qui a produit un écran noir à la première installation. */
-    appStartPath: 'app/index.html',
+    /* LA BARRE OBLIQUE INITIALE EST OBLIGATOIRE. `Bridge.java` concatène
+       BRUTALEMENT — `appUrl += appUrlPath` — et n'ajoute « / » que pour les
+       schémas autres que `http`/`https`. Sans elle, l'URL de départ devenait
+       `https://localhostapp/index.html` : un nom d'hôte inexistant, et un
+       `ERR_NAME_NOT_RESOLVED` à l'ouverture. */
+    appStartPath: '/app/index.html',
   },
 };
 

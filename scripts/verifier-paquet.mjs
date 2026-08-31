@@ -21,15 +21,70 @@
 
 import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { extname, join } from 'node:path';
 import { chromium, devices } from '@playwright/test';
 
 const RACINE = join('packaging', 'www');
 const PORT = 4599;
 
-/** Chemin de démarrage réel de l'application, celui de `capacitor.config.ts`. */
-const DEMARRAGE = '/app/index.html';
+/** Configuration RÉELLEMENT embarquée, écrite par `cap sync`. */
+const CONFIG = join(
+  'packaging',
+  'android',
+  'app',
+  'src',
+  'main',
+  'assets',
+  'capacitor.config.json',
+);
+
+/** Compose l'URL de départ EXACTEMENT comme `Bridge.java` le fait.
+ *
+ *  POURQUOI CE CONTRÔLE EXISTE. La première correction de l'écran noir a posé
+ *  `appStartPath: 'app/index.html'` — sans barre oblique initiale. Or le pont
+ *  concatène brutalement, `appUrl += appUrlPath`, et n'ajoute « / » que pour
+ *  les schémas AUTRES que `http`/`https`. L'application s'ouvrait donc sur
+ *  `https://localhostapp/index.html` : un nom d'hôte qui n'existe pas, et un
+ *  `ERR_NAME_NOT_RESOLVED` en plein écran.
+ *
+ *  Le contrôle précédent ne pouvait pas le voir : il servait le paquet
+ *  correctement, mais ne vérifiait pas l'adresse par laquelle l'application y
+ *  entre. Deux choses différentes, et c'est la seconde qui était fausse. */
+function urlDeDepart() {
+  if (!existsSync(CONFIG)) {
+    console.error(`verifier-paquet : « ${CONFIG} » est absent. Lancer « npm run paquet:sync ».`);
+    process.exit(1);
+  }
+  const cfg = JSON.parse(readFileSync(CONFIG, 'utf8'));
+  const schema = cfg.server?.androidScheme ?? 'https';
+  const depart = cfg.server?.appStartPath ?? '';
+
+  let url = `${schema}://localhost`;
+  /* La règle du pont, recopiée : pas de « / » ajouté pour http et https. */
+  if (schema !== 'http' && schema !== 'https') url += '/';
+  url += depart;
+  return url;
+}
+
+const URL_DEPART = urlDeDepart();
+let hote;
+try {
+  hote = new URL(URL_DEPART).host;
+} catch {
+  hote = null;
+}
+if (hote !== 'localhost') {
+  console.error(
+    `verifier-paquet : l’URL de départ est « ${URL_DEPART} », dont l’hôte vaut ` +
+      `« ${hote ?? 'illisible'} » au lieu de « localhost ».\n` +
+      '  `server.appStartPath` doit commencer par une barre oblique.',
+  );
+  process.exit(1);
+}
+
+/** Chemin de démarrage, tel que le WebView le demandera. */
+const DEMARRAGE = new URL(URL_DEPART).pathname;
 
 const TYPES = {
   '.html': 'text/html; charset=utf-8',
@@ -104,6 +159,7 @@ async function controler(nom, chemin) {
 }
 
 console.log('verifier-paquet : contenu du paquet Android, servi comme Capacitor le sert.');
+console.log(`  URL de départ : ${URL_DEPART}`);
 await controler('démarrage', DEMARRAGE);
 await controler('chemin sans extension', '/app/today/');
 await controler('racine', '/');
