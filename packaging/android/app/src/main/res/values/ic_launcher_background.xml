@@ -1,10 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Fond de l'icône adaptative (Android 8+).
 
-     `#04060d` est `--bg` du thème `neural`, celui par défaut, et la même
-     valeur que `background_color` du manifeste web. Capacitor y laisse du
+     `#04060d` est le jeton de fond du thème `neural`, celui par défaut, et la
+     même valeur que `background_color` du manifeste web. Capacitor y laisse du
      BLANC : sur un lanceur sombre, l'icône d'une application dont toute
      l'identité est sombre apparaîtrait alors comme une pastille blanche.
+
+     Le nom du jeton n'est pas cité ici : un XML interdit la double tiret dans
+     un commentaire, et c'est exactement ce qui a fait échouer la première
+     construction Gradle.
 
      Généré une fois, à la main — les PNG, eux, viennent de
      `scripts/icones-android.mjs`. -->
