@@ -8,6 +8,8 @@ import {
   metaRepo,
   profilesRepo,
   sessionsRepo,
+  projectsRepo,
+  projectTasksRepo,
   shoppingRepo,
   tasksRepo,
 } from './repositories';
@@ -369,6 +371,31 @@ export async function seedDemo(): Promise<void> {
     await shoppingRepo.create(article);
   }
 
+  /* Un projet de démonstration, sinon Work s'ouvre vide et personne ne voit à
+     quoi la vue sert. Les cinq étapes couvrent les TROIS statuts et les deux
+     cas d'échéance — présente et absente —, plus une en retard : c'est ce qui
+     rend le rouge visible sans qu'aucun chiffre soit fabriqué. */
+  const projet = await projectsRepo.create({
+    name: 'Refonte du site',
+    note: 'Vitrine et pages de contenu',
+  });
+  for (const etape of [
+    { name: 'Cadrer le besoin', assignee: 'Alex', off: -6, status: 'done' },
+    { name: 'Maquettes des trois pages', assignee: 'Sam', off: -2, status: 'done' },
+    { name: 'Intégration', assignee: 'Alex', off: -1, status: 'doing' },
+    { name: 'Relire les textes', assignee: '', off: 4, status: 'todo' },
+    { name: 'Mise en ligne', assignee: 'Sam', off: null, status: 'todo' },
+  ] as const) {
+    await projectTasksRepo.create({
+      projectId: projet.id,
+      name: etape.name,
+      assignee: etape.assignee,
+      deadline: etape.off === null ? '' : dateKey(addDays(maintenant, etape.off)),
+      status: etape.status,
+      note: '',
+    });
+  }
+
   /* Les QUATRE entrées du jour de `demoData()` — le seul journal du jeu de
      démonstration. Aucune date antérieure n'est écrite : un historique de
      démonstration ne se distingue pas d'un vrai à l'œil nu. */
@@ -409,6 +436,8 @@ export async function resetAll(): Promise<void> {
       db.sessions,
       db.profiles,
       db.shopping,
+      db.projects,
+      db.projectTasks,
       db.meta,
     ],
     async () => {
@@ -421,6 +450,11 @@ export async function resetAll(): Promise<void> {
         db.sessions.clear(),
         db.profiles.clear(),
         db.shopping.clear(),
+        /* Work. OUBLIER CES DEUX LIGNES aurait laissé projets et tâches
+           survivre à une « réinitialisation complète » — un compte annoncé
+           vierge qui ne l'est pas. */
+        db.projects.clear(),
+        db.projectTasks.clear(),
         db.meta.clear(),
       ]);
     },

@@ -185,6 +185,12 @@ test.describe('menu déroulant', () => {
   });
 
   test('ouvert, il reste accessible', async ({ page }) => {
+    /* Mouvement réduit, pour la même raison que `a11y.spec.ts` : le panneau
+       entre avec une transition de couleur, et axe lit les styles CALCULÉS à
+       l'instant où il passe. Pris pendant la fondue, il mesure l'encre d'un
+       état sur le fond de l'autre — 176 faux contrastes, et seulement quand la
+       machine est chargée. La mesure doit porter sur l'état de REPOS. */
+    await page.emulateMedia({ reducedMotion: 'reduce' });
     await ouvrirVierge(page, ROUTE);
     await declencheur(page).click();
     await expect(panneau(page)).toBeVisible();

@@ -57,7 +57,7 @@ describe('estActif', () => {
 });
 
 describe('itemActif', () => {
-  it('retrouve chacune des onze vues, sous ses trois formes de chemin', () => {
+  it('retrouve chacune des douze vues, sous ses trois formes de chemin', () => {
     for (const item of NAV_ITEMS) {
       expect(itemActif(item.href)?.href, item.href).toBe(item.href);
       expect(itemActif(`${item.href}/`)?.href, `${item.href}/`).toBe(item.href);
@@ -78,11 +78,17 @@ describe('table de navigation', () => {
     for (const item of BOTTOM_ITEMS) expect(routes.has(item.href), item.href).toBe(true);
   });
 
-  it('les sept vues absentes de la barre basse existent bien', () => {
-    /* C'est la raison d'être du tiroir mobile : sous 768 px, ces sept-là
-       n'avaient aucun chemin d'accès au doigt. Si ce compte change, le tiroir
-       change de justification — et ce test le dit. */
+  it('les huit vues absentes de la barre basse existent bien', () => {
+    /* C'est la raison d'être du tiroir mobile : sous 768 px, celles-là n'ont
+       aucun chemin d'accès au doigt sans lui. Sept à l'origine, HUIT depuis
+       Work. Si ce compte change encore, le tiroir change de justification — et
+       ce test le dit, plutôt que la documentation qui répète le nombre. */
     const bas = new Set(BOTTOM_ITEMS.map((i) => i.href));
-    expect(NAV_ITEMS.filter((i) => !bas.has(i.href))).toHaveLength(7);
+    expect(NAV_ITEMS.filter((i) => !bas.has(i.href))).toHaveLength(8);
+  });
+
+  it('les douze vues sont déclarées', () => {
+    expect(NAV_ITEMS).toHaveLength(12);
+    expect(NAV_ITEMS.map((i) => i.href)).toContain('/app/work');
   });
 });

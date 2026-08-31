@@ -9,6 +9,8 @@ import type {
   Session,
   ShoppingItem,
   Task,
+  Project,
+  ProjectTask,
 } from '@/lib/domain';
 
 /** Ligne de la table clé/valeur : version de schéma, drapeaux, cache dérivé. */
@@ -30,6 +32,8 @@ export class HabitumDB extends Dexie {
   sessions!: EntityTable<Session, 'id'>;
   profiles!: EntityTable<Profile, 'id'>;
   shopping!: EntityTable<ShoppingItem, 'id'>;
+  projects!: EntityTable<Project, 'id'>;
+  projectTasks!: EntityTable<ProjectTask, 'id'>;
   meta!: EntityTable<MetaRow, 'key'>;
 
   constructor() {
@@ -51,6 +55,20 @@ export class HabitumDB extends Dexie {
       profiles: 'id, updatedAt, deletedAt',
       shopping: 'id, done, updatedAt, deletedAt',
       meta: 'key, updatedAt',
+    });
+
+    /* Version 2 — Work (spec du 2026-08-31).
+
+       PUREMENT ADDITIVE : Dexie conserve les neuf tables de la version 1 telles
+       quelles et crée les deux nouvelles. Aucune donnée existante n'est
+       touchée, aucune fonction de migration n'est nécessaire.
+
+       `projectTasks` indexe `projectId` — c'est la seule requête chaude de la
+       vue : « les tâches de CE projet ». `status` et `deadline` servent au
+       groupement et au retard. */
+    this.version(2).stores({
+      projects: 'id, updatedAt, deletedAt',
+      projectTasks: 'id, projectId, status, deadline, updatedAt, deletedAt',
     });
   }
 }

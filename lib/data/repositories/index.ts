@@ -7,4 +7,5 @@ export { notesRepo } from './notes';
 export { sessionsRepo } from './sessions';
 export { profilesRepo } from './profiles';
 export { shoppingRepo } from './shopping';
+export { projectsRepo, projectTasksRepo } from './projects';
 export { metaRepo } from './meta';

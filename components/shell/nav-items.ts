@@ -1,4 +1,4 @@
-/* Les onze vues, dans les trois groupes du rail du prototype.
+/* Les DOUZE vues, dans les trois groupes du rail du prototype.
    Déclarées UNE SEULE FOIS : le rail, la barre basse et la région annoncée
    lisent la même liste. Deux listes divergent toujours. */
 
@@ -42,6 +42,9 @@ export const NAV_GROUPS: NavGroup[] = [
       { href: '/app/tasks', key: 'navTasks', icon: 'tasks', subKey: 'tasksSub' },
       { href: '/app/goals', key: 'navGoals', icon: 'goals', subKey: 'goalsSub' },
       { href: '/app/stats', key: 'navStats', icon: 'stats', subKey: 'statsSub' },
+      /* Work — douzième vue (spec du 2026-08-31). Dans « Suivi » et non dans
+         « Espace » : on y suit un travail, on n'y organise pas sa journée. */
+      { href: '/app/work', key: 'navWork', icon: 'work', subKey: 'workSub' },
     ],
   },
   {

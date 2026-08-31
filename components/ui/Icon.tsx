@@ -3,6 +3,7 @@ import {
   CalendarDays,
   CheckSquare,
   ClipboardList,
+  FolderKanban,
   LayoutDashboard,
   ListTodo,
   NotebookPen,
@@ -38,6 +39,8 @@ const ICONES = {
   profile: User,
   settings: Settings,
   list: ClipboardList,
+  /* Work : un contenant d'étapes, pas une liste de plus. */
+  work: FolderKanban,
 } satisfies Record<string, LucideIcon>;
 
 export type IconName = keyof typeof ICONES;

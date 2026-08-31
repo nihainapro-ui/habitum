@@ -9,12 +9,24 @@ import {
   legacyGoal,
   legacyHabit,
   legacySession,
+  legacyProject,
+  legacyProjectTask,
   legacyShoppingItem,
   legacyTask,
   type Bilingue,
 } from './import.schema';
 import { addDays, dateKey, today } from '@/lib/domain';
-import type { Goal, Habit, LogEntry, Note, Session, ShoppingItem, Task } from '@/lib/domain';
+import type {
+  Goal,
+  Habit,
+  LogEntry,
+  Note,
+  Session,
+  ShoppingItem,
+  Task,
+  Project,
+  ProjectTask,
+} from '@/lib/domain';
 
 /* ============================================================================
    Importeur du format d'export du prototype.
@@ -33,7 +45,16 @@ import type { Goal, Habit, LogEntry, Note, Session, ShoppingItem, Task } from '@
    ========================================================================= */
 
 export type ImportEntity =
-  'habits' | 'tasks' | 'goals' | 'logs' | 'notes' | 'sessions' | 'shopping' | 'occurrences';
+  | 'habits'
+  | 'tasks'
+  | 'goals'
+  | 'logs'
+  | 'notes'
+  | 'sessions'
+  | 'shopping'
+  | 'occurrences'
+  | 'projects'
+  | 'projectTasks';
 
 export interface ImportReport {
   read: number;
@@ -76,6 +97,8 @@ export const emptyReport = (): ImportReport => ({
     notes: { read: 0, kept: 0 },
     sessions: { read: 0, kept: 0 },
     shopping: { read: 0, kept: 0 },
+    projects: { read: 0, kept: 0 },
+    projectTasks: { read: 0, kept: 0 },
     occurrences: { read: 0, kept: 0 },
   },
 });
@@ -254,6 +277,41 @@ export async function importFromJson(input: unknown): Promise<ImportReport> {
   }));
   rapport.byEntity.shopping = { read: src.shop.length, kept: shopping.length };
 
+  /* ---- Work : projets, puis leurs tâches ---- */
+  const projBruts = parseAll(legacyProject, src.proj, 'proj', rapport.dropped);
+  const projects: Project[] = projBruts.map((p) => ({
+    id: p.id ?? newId(),
+    name: p.name,
+    note: p.note,
+    createdAt: at,
+    updatedAt: at,
+  }));
+  rapport.byEntity.projects = { read: src.proj.length, kept: projects.length };
+
+  /* UNE TÂCHE SANS PROJET EST ÉCARTÉE, comme le journal écarte une entrée dont
+     l'habitude n'existe pas : elle ne serait atteignable par aucune vue. Le
+     rapport le dit, il ne l'avale pas. */
+  const connus = new Set(projects.map((p) => p.id));
+  const ptaskBruts = parseAll(legacyProjectTask, src.ptask, 'ptask', rapport.dropped);
+  const projectTasks: ProjectTask[] = ptaskBruts
+    .filter((t) => {
+      if (connus.has(t.projectId)) return true;
+      rapport.dropped.push(`ptask : projet « ${t.projectId} » inconnu`);
+      return false;
+    })
+    .map((t) => ({
+      id: t.id ?? newId(),
+      projectId: t.projectId,
+      name: t.name,
+      assignee: t.assignee,
+      deadline: t.deadline,
+      status: t.status,
+      note: t.note,
+      createdAt: at,
+      updatedAt: at,
+    }));
+  rapport.byEntity.projectTasks = { read: src.ptask.length, kept: projectTasks.length };
+
   /* ---- journal ---- */
   const journal = src.log ?? src.ov ?? {};
   const logs: LogEntry[] = [];
@@ -308,13 +366,26 @@ export async function importFromJson(input: unknown): Promise<ImportReport> {
      moitié peuplée. */
   await db.transaction(
     'rw',
-    [db.habits, db.tasks, db.goals, db.sessions, db.shopping, db.logs, db.notes, db.meta],
+    [
+      db.habits,
+      db.tasks,
+      db.goals,
+      db.sessions,
+      db.shopping,
+      db.logs,
+      db.notes,
+      db.projects,
+      db.projectTasks,
+      db.meta,
+    ],
     async () => {
       await db.habits.bulkPut(habits);
       await db.tasks.bulkPut(tasks);
       await db.goals.bulkPut(goals);
       await db.sessions.bulkPut(sessions);
       await db.shopping.bulkPut(shopping);
+      await db.projects.bulkPut(projects);
+      await db.projectTasks.bulkPut(projectTasks);
       /* Le journal passe PAR LOTS, et c'est mesuré, pas supposé : à la charge
          documentée du plan — 200 habitudes × 3 ans, 219 000 entrées — un
          `bulkPut` unique demande 90 s, les mêmes lignes par lots de 10 000 en

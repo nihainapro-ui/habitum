@@ -23,6 +23,9 @@ const VUES = [
   { route: '/app/notes', titre: { fr: 'Notes', en: 'Notes' } },
   { route: '/app/profile', titre: { fr: 'Profil', en: 'Profile' } },
   { route: '/app/settings', titre: { fr: 'Paramètres', en: 'Settings' } },
+  /* Douzième vue (Work). Le titre est le MÊME dans les deux langues : c'est
+     un nom, pas un mot à traduire. */
+  { route: '/app/work', titre: { fr: 'Work', en: 'Work' } },
 ] as const;
 
 const THEMES = ['neural', 'plasma', 'clinical'] as const;

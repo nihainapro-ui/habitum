@@ -1,7 +1,13 @@
 # Rapport d'accessibilité — Habitum
 
 **Établi le 17 août 2026**, phase 7 tâche 8.3 (plan 8, référence T7.4).
-Périmètre : les onze vues applicatives, les trois thèmes, les deux gabarits.
+Périmètre : les vues applicatives, les trois thèmes, les deux gabarits.
+
+> **Depuis le 31 août 2026, il y a DOUZE vues** : Work (`/app/work`) a été ajoutée. Elle
+> entre dans les mêmes balayages — axe compte peuplé et compte vierge, `target-size`,
+> paliers responsive — et y passe au vert. Les chiffres datés ci-dessous restent ceux du
+> 17 août, date de la recette : ils décrivent ce qui a été mesuré ce jour-là, et ne sont
+> pas réécrits après coup.
 
 Ce document sépare volontairement **ce qu'une machine a vérifié** de **ce qui demande une
 oreille humaine**. Confondre les deux est la façon la plus courante de déclarer une

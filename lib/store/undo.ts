@@ -58,6 +58,11 @@ export function capturer(s: AppState): Snapshot {
     sessions: [...s.sessions],
     shopping: [...s.shopping],
     profiles: [...s.profiles],
+    /* Work. Sans ces deux lignes, annuler la suppression d'un projet aurait
+       ramené le toast et pas les données : `Snapshot` vaut `DataState`, et
+       c'est le typage qui a levé l'oubli plutôt que l'utilisateur. */
+    projects: [...s.projects],
+    projectTasks: [...s.projectTasks],
     logIndex: new Map(s.logIndex),
     occurrences: new Set(s.occurrences),
     logIndexComplete: s.logIndexComplete,

@@ -20,6 +20,7 @@ const VUES_VIDES = [
   '/app/stats',
   '/app/timer',
   '/app/notes',
+  '/app/work',
 ];
 
 test('une erreur de vue affiche un écran de reprise, pas un écran blanc', async ({ page }) => {

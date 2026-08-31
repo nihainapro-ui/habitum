@@ -29,6 +29,7 @@ const ROUTES = [
   '/app/stats',
   '/app/timer',
   '/app/notes',
+  '/app/work',
   '/app/profile',
   '/app/settings',
 ];

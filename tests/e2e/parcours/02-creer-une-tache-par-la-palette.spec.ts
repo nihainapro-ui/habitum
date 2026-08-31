@@ -74,16 +74,16 @@ test('la tâche créée par la palette survit au rechargement', async ({ page })
   await expect(page.locator('[data-task]').filter({ hasText: INTITULE })).toHaveCount(1);
 });
 
-test('la palette mène aux onze vues, au clavier seul', async ({ page }) => {
+test('la palette mène aux douze vues, au clavier seul', async ({ page }) => {
   await ouvrirVierge(page, '/app');
 
   await page.keyboard.press('Meta+k');
-  /* Requête VIDE : la palette propose les onze vues. Dès qu'on saisit quelque
+  /* Requête VIDE : la palette propose les douze vues. Dès qu'on saisit quelque
      chose, elle cherche dans les entités — habitudes, tâches, objectifs,
      courses — et non plus dans la navigation. La distinction compte : taper
      « objectifs » sur un compte vierge ne propose PAS la vue du même nom, mais
      la création d'une tâche ainsi intitulée. */
-  await expect(page.getByRole('option')).toHaveCount(11);
+  await expect(page.getByRole('option')).toHaveCount(12);
 
   /* De bout en bout sans souris : c'est ce que la palette promet à qui n'en
      utilise pas. Deux flèches depuis le premier élément — l'ordre est celui de

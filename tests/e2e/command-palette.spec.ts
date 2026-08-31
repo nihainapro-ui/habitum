@@ -57,10 +57,13 @@ test('une recherche infructueuse reste une action possible', async ({ page }) =>
   await expect(page.getByRole('listbox')).toContainText(/arroser les plantes/i);
 });
 
-test('vide, la palette propose les onze vues', async ({ page }) => {
+test('vide, la palette propose les douze vues', async ({ page }) => {
   await ouvrir(page, '/app');
   await page.keyboard.press('Meta+k');
-  await expect(page.getByRole('option')).toHaveCount(11);
+  /* DOUZE depuis Work. Ce nombre est en dur À DESSEIN : la palette est le
+     seul chemin clavier vers toutes les vues, et une entrée qui cesserait d'y
+     apparaître ne se verrait nulle part ailleurs. */
+  await expect(page.getByRole('option')).toHaveCount(12);
 });
 
 /* ---------------------------------------------------------------------------

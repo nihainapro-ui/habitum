@@ -11,6 +11,7 @@ import { createNotesSlice } from './slices/notes';
 import { createSessionsSlice } from './slices/sessions';
 import { createSettingsSlice } from './slices/settings';
 import { createShoppingSlice } from './slices/shopping';
+import { createProjectsSlice } from './slices/projects';
 import { createTasksSlice } from './slices/tasks';
 import { createTimerSlice } from './slices/timer';
 import { createUiSlice, uiInitial } from './slices/ui';
@@ -25,6 +26,8 @@ const donneesInitiales: DataState = {
   notes: [],
   sessions: [],
   shopping: [],
+  projects: [],
+  projectTasks: [],
   logIndex: new Map(),
   occurrences: new Set(),
   logIndexComplete: false,
@@ -51,6 +54,7 @@ export const useStore = create<AppState>()((...a) => ({
   ...createNotesSlice(...a),
   ...createSessionsSlice(...a),
   ...createShoppingSlice(...a),
+  ...createProjectsSlice(...a),
   ...createSettingsSlice(...a),
   ...createTimerSlice(...a),
   ...createAccountSlice(...a),

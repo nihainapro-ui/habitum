@@ -26,6 +26,7 @@ const VUES = [
   ['09-notes', '/app/notes'],
   ['10-profile', '/app/profile'],
   ['11-settings', '/app/settings'],
+  ['12-work', '/app/work'],
 ] as const;
 
 test.skip(({ browserName }) => browserName !== 'chromium', 'captures de recette');

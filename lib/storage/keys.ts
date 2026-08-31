@@ -12,4 +12,5 @@ export const LEGACY_SCHEMA_VERSION = 5;
 
 /** Base Dexie cible (phase 1). */
 export const DB_NAME = 'habitum';
-export const DB_VERSION = 1;
+/** 2 depuis Work : deux tables ajoutées, aucune touchée (`lib/data/db.ts`). */
+export const DB_VERSION = 2;

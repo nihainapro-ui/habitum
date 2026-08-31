@@ -118,6 +118,54 @@ export interface Task {
   deletedAt?: string;
 }
 
+/* ---------------------------------------------------------------------------
+   Work — projets et tâches de projet.
+
+   ENTITÉ SÉPARÉE DE `Task`, décision du commanditaire (spec du 2026-08-31).
+   Ce que cela coûte est écrit dans la spec : une tâche de projet ne remonte pas
+   dans Aujourd'hui ni dans le calendrier. Ce que cela achète : les champs de
+   Work — responsable, trois états — ne contaminent pas `Task`, dont dépendent
+   huit vues et les 62 valeurs de référence.
+   ------------------------------------------------------------------------- */
+
+/** Les trois états, déclarés UNE SEULE FOIS.
+ *
+ *  C'est le piège n°1 du CLAUDE.md, et il a déjà coûté cher : une liste de
+ *  types recopiée ailleurs finit par en oublier un, et les entités de ce
+ *  type-là DISPARAISSENT sans que rien ne le signale. Toute vue, tout
+ *  validateur, tout importateur lit cette constante. */
+export const PROJECT_STATUSES = ['todo', 'doing', 'done'] as const;
+export type ProjectStatus = (typeof PROJECT_STATUSES)[number];
+
+export const isProjectStatus = (v: unknown): v is ProjectStatus =>
+  typeof v === 'string' && (PROJECT_STATUSES as readonly string[]).includes(v);
+
+export interface Project {
+  id: string;
+  name: string;
+  note: string;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt?: string;
+}
+
+export interface ProjectTask {
+  id: string;
+  projectId: string;
+  name: string;
+  /** Texte libre, `''` si personne. Habitum est local-first et sans compte :
+   *  un responsable ne peut être qu'un nom écrit à la main, pour déléguer à
+   *  quelqu'un hors de l'application. */
+  assignee: string;
+  /** `''` si pas d'échéance. */
+  deadline: DateKey | '';
+  status: ProjectStatus;
+  note: string;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt?: string;
+}
+
 export interface Goal {
   id: string;
   name: string;

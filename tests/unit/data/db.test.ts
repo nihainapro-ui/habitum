@@ -8,7 +8,12 @@ beforeEach(async () => {
 });
 
 describe('schéma Dexie', () => {
-  it('déclare les neuf tables attendues', () => {
+  it('déclare les onze tables attendues', () => {
+    /* Neuf à l'origine, ONZE depuis Work (version 2 du schéma). Ce test vaut
+       plus que son comptage : il échoue aussi bien quand une table est AJOUTÉE
+       sans être déclarée nulle part que quand une table existante DISPARAÎT
+       d'un `stores()` mal recopié — auquel cas Dexie la supprime, avec son
+       contenu, sans un mot. */
     const noms = db.tables.map((t) => t.name).sort();
     expect(noms).toEqual([
       'goals',
@@ -17,10 +22,33 @@ describe('schéma Dexie', () => {
       'meta',
       'notes',
       'profiles',
+      'projectTasks',
+      'projects',
       'sessions',
       'shopping',
       'tasks',
     ]);
+  });
+
+  it('la version 2 conserve les tables de la version 1', () => {
+    /* La migration de Work est PUREMENT ADDITIVE. Si un jour elle cesse de
+       l'être, c'est ici que ça se verra — avant que la base de quelqu'un ne
+       soit vidée. */
+    const noms = new Set(db.tables.map((t) => t.name));
+    for (const table of [
+      'habits',
+      'logs',
+      'tasks',
+      'goals',
+      'notes',
+      'sessions',
+      'profiles',
+      'shopping',
+      'meta',
+    ]) {
+      expect(noms.has(table), table).toBe(true);
+    }
+    expect(db.verno).toBe(2);
   });
 
   it('indexe le journal par [habitId+date] — une fenêtre sans balayage complet', async () => {

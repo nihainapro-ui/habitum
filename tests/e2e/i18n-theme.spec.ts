@@ -55,6 +55,7 @@ test('aucune clé de traduction brute n’est affichée', async ({ page }) => {
     '/app/stats',
     '/app/timer',
     '/app/notes',
+    '/app/work',
     '/app/profile',
     '/app/settings',
   ];

@@ -5,6 +5,8 @@ import { Sheet } from '@/components/ui';
 import { useStore } from '@/lib/store';
 import { GoalEditor } from './GoalEditor';
 import { HabitEditor } from './HabitEditor';
+import { ProjectEditor } from './ProjectEditor';
+import { ProjectTaskEditor } from './ProjectTaskEditor';
 import { TaskEditor } from './TaskEditor';
 
 /* Hôte des éditeurs, monté dans la coque.
@@ -26,6 +28,8 @@ export function EditorSheet() {
     habit: editor.id ? t('editH') : t('newH'),
     task: editor.id ? t('editT') : t('newT'),
     goal: editor.id ? t('editG') : t('newG'),
+    project: editor.id ? t('editP') : t('newP'),
+    projectTask: editor.id ? t('editPT') : t('newPT'),
   } as const;
 
   return (
@@ -42,6 +46,14 @@ export function EditorSheet() {
           <HabitEditor id={editor.id} onClose={closeEditor} />
         ) : editor.kind === 'task' ? (
           <TaskEditor id={editor.id} onClose={closeEditor} />
+        ) : editor.kind === 'project' ? (
+          <ProjectEditor id={editor.id} onClose={closeEditor} />
+        ) : editor.kind === 'projectTask' ? (
+          <ProjectTaskEditor
+            id={editor.id}
+            projectId={editor.parentId ?? null}
+            onClose={closeEditor}
+          />
         ) : (
           <GoalEditor id={editor.id} onClose={closeEditor} />
         )}

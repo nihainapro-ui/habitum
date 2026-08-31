@@ -292,3 +292,87 @@ export const demoShopping = (): ShoppingItem[] =>
     { label: 'Pâtes', done: false },
     { label: 'Shampooing', done: false },
   ].map((a, i) => ({ id: `sh${i + 1}`, ...a, createdAt: ISO, updatedAt: ISO }));
+
+/* --------------------------------------------------------------------------
+   Work — le projet de démonstration, calqué sur `seedDemo()`.
+
+   DATES ABSOLUES et non relatives à `Date.now()` : l'horloge des tests est
+   figée au 5 août 2026 (`DEMO_NOW`), et une fixture qui se déplacerait avec la
+   machine ferait passer ou échouer le contrôle « en retard » selon le jour où
+   on la lance.
+
+   La composition n'est pas décorative — elle couvre ce que la vue doit savoir
+   montrer : les trois statuts, une échéance absente, et surtout UNE SEULE
+   étape en retard parmi trois échues, les deux autres étant terminées. C'est
+   ce qui distingue `isOverdue` d'une simple comparaison de dates.
+   ------------------------------------------------------------------------- */
+
+export const DEMO_PROJECT_ID = 'proj-demo';
+
+export const demoProjects = () => [
+  {
+    id: DEMO_PROJECT_ID,
+    name: 'Refonte du site',
+    note: 'Vitrine et pages de contenu',
+    createdAt: ISO,
+    updatedAt: ISO,
+  },
+];
+
+export const demoProjectTasks = () => [
+  {
+    id: 'pt1',
+    projectId: DEMO_PROJECT_ID,
+    name: 'Cadrer le besoin',
+    assignee: 'Alex',
+    deadline: '2026-07-30',
+    status: 'done',
+    note: '',
+    createdAt: ISO,
+    updatedAt: ISO,
+  },
+  {
+    id: 'pt2',
+    projectId: DEMO_PROJECT_ID,
+    name: 'Maquettes des trois pages',
+    assignee: 'Sam',
+    deadline: '2026-08-03',
+    status: 'done',
+    note: '',
+    createdAt: ISO,
+    updatedAt: ISO,
+  },
+  {
+    id: 'pt3',
+    projectId: DEMO_PROJECT_ID,
+    name: 'Intégration',
+    assignee: 'Alex',
+    deadline: '2026-08-04',
+    status: 'doing',
+    note: '',
+    createdAt: ISO,
+    updatedAt: ISO,
+  },
+  {
+    id: 'pt4',
+    projectId: DEMO_PROJECT_ID,
+    name: 'Relire les textes',
+    assignee: '',
+    deadline: '2026-08-09',
+    status: 'todo',
+    note: '',
+    createdAt: ISO,
+    updatedAt: ISO,
+  },
+  {
+    id: 'pt5',
+    projectId: DEMO_PROJECT_ID,
+    name: 'Mise en ligne',
+    assignee: 'Sam',
+    deadline: '',
+    status: 'todo',
+    note: '',
+    createdAt: ISO,
+    updatedAt: ISO,
+  },
+];

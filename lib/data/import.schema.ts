@@ -119,6 +119,27 @@ export const legacyShoppingItem = z.object({
   done: z.boolean().default(false),
 });
 
+/* Work. Les deux schémas tolèrent TOUT ce qui manque : une sauvegarde produite
+   avant Work n'a ni `proj` ni `ptask`, et doit s'importer sans une erreur.
+   `status` retombe sur `todo` plutôt que d'écarter la ligne — perdre une tâche
+   parce que son statut est inconnu serait exactement la disparition
+   silencieuse que le CLAUDE.md proscrit. */
+export const legacyProject = z.object({
+  id: z.string().optional(),
+  name: z.string().default(''),
+  note: z.string().default(''),
+});
+
+export const legacyProjectTask = z.object({
+  id: z.string().optional(),
+  projectId: z.string(),
+  name: z.string().default(''),
+  assignee: z.string().default(''),
+  deadline: z.string().default(''),
+  status: z.enum(['todo', 'doing', 'done']).catch('todo'),
+  note: z.string().default(''),
+});
+
 export const habitumExport = z.object({
   app: z.literal('Habitum'),
   exported: z.string().optional(),
@@ -132,6 +153,8 @@ export const habitumExport = z.object({
   obj: z.array(z.unknown()).default([]),
   sessions: z.array(z.unknown()).default([]),
   shop: z.array(z.unknown()).default([]),
+  proj: z.array(z.unknown()).default([]),
+  ptask: z.array(z.unknown()).default([]),
   /* Occurrences accomplies des tâches récurrentes. Nom FIGÉ (G1) : c'est celui
      du prototype, et des sauvegardes réelles le portent. */
   occ: z.record(z.string(), z.number()).optional(),

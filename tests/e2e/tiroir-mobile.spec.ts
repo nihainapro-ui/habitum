@@ -5,8 +5,8 @@ import { installer, ouvrirAvecDemo } from './helpers/app';
    Tiroir de navigation mobile.
 
    CE QUE CES TESTS PROTÈGENT. Sous 768 px, le rail n'est pas rendu et la barre
-   basse ne porte que quatre entrées. Les sept autres vues — calendrier,
-   objectifs, statistiques, profil, minuteur, notes, réglages — n'avaient aucun
+   basse ne porte que quatre entrées. Les HUIT autres vues — calendrier,
+   objectifs, statistiques, Work, profil, minuteur, notes, réglages — n'avaient aucun
    chemin d'accès au doigt : la consigne « le reste passe par la palette ⌘K »
    suppose un clavier, que l'APK n'a pas. Le tiroir est ce chemin, et il doit
    montrer le rail EN ENTIER, libellés compris.
@@ -18,7 +18,7 @@ test.beforeEach(async ({ page }) => {
   await installer(page);
 });
 
-test('sur téléphone, le tiroir donne accès aux onze vues', async ({ page }) => {
+test('sur téléphone, le tiroir donne accès aux douze vues', async ({ page }) => {
   await page.setViewportSize(TELEPHONE);
   await page.goto('/app');
 
@@ -27,7 +27,7 @@ test('sur téléphone, le tiroir donne accès aux onze vues', async ({ page }) =
 
   const tiroir = page.getByTestId('nav-drawer');
   await expect(tiroir).toBeVisible();
-  await expect(tiroir.getByRole('link')).toHaveCount(11);
+  await expect(tiroir.getByRole('link')).toHaveCount(12);
 
   /* Les libellés sont LÀ, et pas seulement dans le nom accessible : c'est
      précisément ce que le rail replié ne montre pas. */

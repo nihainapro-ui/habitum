@@ -61,6 +61,7 @@ describe('sortie de build', () => {
       '/app/stats',
       '/app/timer',
       '/app/notes',
+      '/app/work',
       '/app/profile',
       '/app/settings',
     ]) {

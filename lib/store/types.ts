@@ -12,6 +12,9 @@ import type {
   TimerMode,
   TimerState,
   TimerTarget,
+  Project,
+  ProjectStatus,
+  ProjectTask,
 } from '@/lib/domain';
 import type { CreateInput, ImportReport, UpdatePatch } from '@/lib/data';
 
@@ -37,9 +40,13 @@ export interface ToastState {
 }
 
 export interface EditorState {
-  kind: 'habit' | 'task' | 'goal';
+  kind: 'habit' | 'task' | 'goal' | 'project' | 'projectTask';
   /** `null` = création. */
   id: string | null;
+  /** Projet d'accueil, pour `projectTask` en création UNIQUEMENT. `id: null`
+   *  dit « nouvelle tâche » mais pas « dans quel projet » : sans ce champ, la
+   *  création écrirait une tâche orpheline. */
+  parentId?: string;
 }
 
 export interface UiState {
@@ -67,6 +74,11 @@ export interface DataState {
   notes: Note[];
   sessions: Session[];
   shopping: ShoppingItem[];
+  /* Work. Les tâches de projet sont une entité SÉPARÉE de `tasks` — décision de
+     la spec du 2026-08-31 : ce qui vit dans Work ne remonte ni dans Aujourd'hui,
+     ni dans le calendrier, ni dans les statistiques. */
+  projects: Project[];
+  projectTasks: ProjectTask[];
   logIndex: LogIndex;
   /** Occurrences de tâches récurrentes accomplies — clés `taskId|date` (G1). */
   occurrences: ReadonlySet<string>;
@@ -156,6 +168,18 @@ export interface ShoppingActions {
   deleteShoppingItem(id: string): Promise<void>;
 }
 
+export interface ProjectsActions {
+  createProject(input: CreateInput<Project>): Promise<void>;
+  updateProject(id: string, patch: UpdatePatch<Project>): Promise<void>;
+  /** Supprime le projet ET ses tâches : une tâche orpheline n'est atteignable
+   *  par aucune vue, elle ne ferait qu'occuper la base en silence. */
+  deleteProject(id: string): Promise<void>;
+  createProjectTask(input: CreateInput<ProjectTask>): Promise<void>;
+  updateProjectTask(id: string, patch: UpdatePatch<ProjectTask>): Promise<void>;
+  setProjectTaskStatus(id: string, status: ProjectStatus): Promise<void>;
+  deleteProjectTask(id: string): Promise<void>;
+}
+
 export interface SettingsActions {
   setSetting<K extends keyof Settings>(key: K, value: Settings[K]): Promise<void>;
   setActiveProfile(id: string): Promise<void>;
@@ -226,6 +250,7 @@ export type AppState = DataState & { ui: UiState; timer: TimerState } & HabitsAc
   NotesActions &
   SessionsActions &
   ShoppingActions &
+  ProjectsActions &
   SettingsActions &
   TimerActions &
   AccountActions &

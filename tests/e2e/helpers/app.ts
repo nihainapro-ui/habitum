@@ -8,6 +8,8 @@ import {
   demoHabits,
   demoLogIndex,
   demoSessions,
+  demoProjects,
+  demoProjectTasks,
   demoShopping,
   demoTasks,
 } from '@/tests/fixtures/demo-seed';
@@ -203,6 +205,8 @@ export async function ouvrirAvecDemo(
     goals: demoGoals(),
     sessions: demoSessions(),
     shopping: demoShopping(),
+    projects: demoProjects(),
+    projectTasks: demoProjectTasks(),
     meta: metaInstalle(true),
     logs: lignesJournal(options.historique === true),
   });

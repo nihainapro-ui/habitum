@@ -9,6 +9,8 @@ import {
   metaRepo,
   notesRepo,
   sessionsRepo,
+  projectsRepo,
+  projectTasksRepo,
   shoppingRepo,
   tasksRepo,
 } from './repositories';
@@ -40,6 +42,28 @@ export interface HabitumExport {
    *  Sans elles, une sauvegarde restituerait des séries mais perdrait ce qui a
    *  été fait : la tâche reviendrait, l'historique non. */
   occ: Record<string, number>;
+  /** Work — CLÉS NEUVES (spec du 2026-08-31). Elles s'ajoutent, elles ne
+   *  renomment rien : la règle 1 du CLAUDE.md ne concerne que les noms
+   *  existants. Optionnelles à la RELECTURE seulement (`import.ts`) : toute
+   *  sauvegarde produite avant Work doit s'importer sans erreur. */
+  proj: ExportedProject[];
+  ptask: ExportedProjectTask[];
+}
+
+export interface ExportedProject {
+  id: string;
+  name: string;
+  note: string;
+}
+
+export interface ExportedProjectTask {
+  id: string;
+  projectId: string;
+  name: string;
+  assignee: string;
+  deadline: string;
+  status: string;
+  note: string;
 }
 
 export interface ExportedHabit {
@@ -115,16 +139,19 @@ export interface ExportedShoppingItem {
 }
 
 export async function exportToJson(): Promise<HabitumExport> {
-  const [habits, tasks, goals, sessions, shopping, notes, logs, occ] = await Promise.all([
-    habitsRepo.list(),
-    tasksRepo.list(),
-    goalsRepo.list(),
-    sessionsRepo.list(),
-    shoppingRepo.list(),
-    notesRepo.list(),
-    logsRepo.all(),
-    metaRepo.get<Record<string, number>>(META_KEYS.occ),
-  ]);
+  const [habits, tasks, goals, sessions, shopping, notes, logs, occ, projects, projectTasks] =
+    await Promise.all([
+      habitsRepo.list(),
+      tasksRepo.list(),
+      goalsRepo.list(),
+      sessionsRepo.list(),
+      shoppingRepo.list(),
+      notesRepo.list(),
+      logsRepo.all(),
+      metaRepo.get<Record<string, number>>(META_KEYS.occ),
+      projectsRepo.list(),
+      projectTasksRepo.list(),
+    ]);
 
   /* Les occurrences d'une tâche disparue ne sortent pas : elles ne se
      rattacheraient à rien à la relecture, et l'import les écarterait une à une
@@ -229,5 +256,15 @@ export async function exportToJson(): Promise<HabitumExport> {
     })),
     shop: shopping.map((s) => ({ id: s.id, fr: s.label, en: s.label, done: s.done })),
     occ: occurrences,
+    proj: projects.map((p) => ({ id: p.id, name: p.name, note: p.note })),
+    ptask: projectTasks.map((t) => ({
+      id: t.id,
+      projectId: t.projectId,
+      name: t.name,
+      assignee: t.assignee,
+      deadline: t.deadline,
+      status: t.status,
+      note: t.note,
+    })),
   };
 }
