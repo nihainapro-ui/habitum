@@ -24,10 +24,21 @@ describe('normaliserChemin', () => {
     expect(normaliserChemin('/app/tasks')).toBe('/app/tasks');
   });
 
-  it('ne réduit pas la racine à la chaîne vide', () => {
+  it('retire le `/index.html` par lequel la WebView entre', () => {
+    /* `appStartPath` vaut `/app/index.html` (`capacitor.config.ts`). Traiter la
+       seule barre finale était PIRE que ne rien faire : le serveur prérend
+       `/app/` — donc « Tableau de bord » — pendant que le navigateur lit
+       `/app/index.html` — donc « Habitum ». React abandonne l'hydratation sur
+       ce désaccord de texte (#418) et `verifier-paquet` refuse le paquet. */
+    expect(normaliserChemin('/app/index.html')).toBe('/app');
+    expect(normaliserChemin('/app/tasks/index.html')).toBe('/app/tasks');
+  });
+
+  it('ne réduit aucune forme de la racine à la chaîne vide', () => {
     /* `''` correspondrait à un `href` vide, donc à n'importe quelle entrée mal
        déclarée. La racine reste `/`, qui n'est aucune des onze routes. */
     expect(normaliserChemin('/')).toBe('/');
+    expect(normaliserChemin('/index.html')).toBe('/');
   });
 });
 
@@ -46,10 +57,12 @@ describe('estActif', () => {
 });
 
 describe('itemActif', () => {
-  it('retrouve chacune des onze vues, sous ses deux formes de chemin', () => {
+  it('retrouve chacune des onze vues, sous ses trois formes de chemin', () => {
     for (const item of NAV_ITEMS) {
       expect(itemActif(item.href)?.href, item.href).toBe(item.href);
       expect(itemActif(`${item.href}/`)?.href, `${item.href}/`).toBe(item.href);
+      /* La forme que sert la WebView de l'APK. */
+      expect(itemActif(`${item.href}/index.html`)?.href, `${item.href}/index.html`).toBe(item.href);
     }
   });
 

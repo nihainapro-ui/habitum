@@ -79,17 +79,30 @@ export const BOTTOM_ITEMS: NavItem[] = [
 
 /** Chemin rendu COMPARABLE aux `href` de la table ci-dessus.
  *
- *  L'export statique pose `trailingSlash: true` (`next.config.mjs`) : dans
- *  l'APK et sur toute sortie exportée, `usePathname()` rend `/app/tasks/`, avec
- *  la barre finale. La comparaison brute échouait alors sur les onze routes à
- *  la fois — l'en-tête affichait « Habitum » au lieu du titre de la vue, sans
- *  sur-titre, et AUCUNE entrée du rail ni de la barre basse ne se marquait
- *  courante. Défaut invisible en développement, où la barre n'est pas posée.
+ *  DEUX FORMES À RÉDUIRE, et il a fallu les deux.
  *
- *  `/` est laissé tel quel : ce n'est pas une route de l'application, mais le
- *  réduire à la chaîne vide ferait correspondre n'importe quel `href` vide. */
-export const normaliserChemin = (chemin: string): string =>
-  chemin.length > 1 && chemin.endsWith('/') ? chemin.slice(0, -1) : chemin;
+ *  1. **La barre finale.** L'export statique pose `trailingSlash: true`
+ *     (`next.config.mjs`) : `usePathname()` rend `/app/tasks/`. La comparaison
+ *     brute échouait sur les onze routes à la fois — l'en-tête affichait
+ *     « Habitum » au lieu du titre de la vue, sans sur-titre, et aucune entrée
+ *     du rail ni de la barre basse ne se marquait courante.
+ *
+ *  2. **`/index.html`.** C'est par là que la WebView ENTRE : `appStartPath`
+ *     vaut `/app/index.html` (`capacitor.config.ts`). Traiter le seul cas 1
+ *     était pire que ne rien faire — le serveur prérend le chemin `/app/`, donc
+ *     « Tableau de bord », pendant que le navigateur lit `/app/index.html`,
+ *     donc « Habitum ». Deux textes différents pour le même nœud : React
+ *     abandonne l'hydratation (#418), et `scripts/verifier-paquet.mjs` refuse
+ *     le paquet. Sans normalisation du tout, les deux côtés se trompaient
+ *     PAREIL et s'accordaient par accident ; c'est ce qui rendait le défaut
+ *     initial silencieux.
+ *
+ *  `/` reste `/` : ce n'est aucune des onze routes, mais la chaîne vide
+ *  correspondrait à n'importe quel `href` vide. */
+export const normaliserChemin = (chemin: string): string => {
+  const nu = chemin.replace(/\/index\.html$/, '').replace(/\/+$/, '');
+  return nu === '' ? '/' : nu;
+};
 
 /** Le chemin courant désigne-t-il CETTE entrée ? `/app` ne doit pas s'activer
  *  sur `/app/today` : la comparaison est exacte, jamais par préfixe. */

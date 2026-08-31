@@ -39,6 +39,14 @@ se sont tues d'un coup, sur les onze routes à la fois :
 les tient — le défaut est invisible en développement, où la barre finale n'est pas ajoutée,
 donc il lui fallait son propre test.
 
+**Il faut réduire DEUX formes, pas une.** La WebView entre par `/app/index.html`
+(`appStartPath`). Ne traiter que la barre finale était pire que ne rien faire : le serveur
+prérend `/app/`, donc « Tableau de bord », pendant que le navigateur lit `/app/index.html`,
+donc « Habitum ». Deux textes pour le même nœud, React abandonne l'hydratation (#418), et
+`scripts/verifier-paquet.mjs` refuse le paquet — il l'a fait, au premier passage en CI.
+Sans normalisation du tout, les deux côtés se trompaient **pareil** et s'accordaient par
+accident : c'est précisément ce qui rendait le défaut d'origine silencieux.
+
 ### L'en-tête ne se replie plus sur deux rangées
 
 `flex-wrap` faisait tomber la recherche et « Nouveau » sur une seconde ligne : un sixième de
