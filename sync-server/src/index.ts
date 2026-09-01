@@ -152,7 +152,9 @@ export default {
         /* Aucune ligne acceptée : rendre le maximum courant SANS rien
            écrire. `depuis` reste la référence du client tant qu'il n'y a
            rien de neuf pour son espace. */
-        const actuel = await env.DB.prepare('SELECT COALESCE(MAX(seq), 0) AS seq FROM lignes WHERE espace = ?')
+        const actuel = await env.DB.prepare(
+          'SELECT COALESCE(MAX(seq), 0) AS seq FROM lignes WHERE espace = ?',
+        )
           .bind(espace)
           .first<{ seq: number }>();
         return json({ seq: actuel?.seq ?? 0 });

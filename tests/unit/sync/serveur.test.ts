@@ -39,11 +39,15 @@ describe('validation des lignes entrantes', () => {
      le commentaire de `ligneValide` dans sync-server/src/logique.ts. */
 
   it('rejette une ligne sans kind', () => {
-    expect(ligneValide({ id: 'x', updatedAt: '2026-01-01T00:00:00.000Z', blob: 'AAA' })).toBe(false);
+    expect(ligneValide({ id: 'x', updatedAt: '2026-01-01T00:00:00.000Z', blob: 'AAA' })).toBe(
+      false,
+    );
   });
 
   it('rejette une ligne sans id', () => {
-    expect(ligneValide({ kind: 'x', updatedAt: '2026-01-01T00:00:00.000Z', blob: 'AAA' })).toBe(false);
+    expect(ligneValide({ kind: 'x', updatedAt: '2026-01-01T00:00:00.000Z', blob: 'AAA' })).toBe(
+      false,
+    );
   });
 
   it('rejette une ligne null', () => {

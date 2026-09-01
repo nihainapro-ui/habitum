@@ -48,11 +48,7 @@ export async function lireDepuis(filigrane: string): Promise<LigneLocale[]> {
      écrite dans la même milliseconde que le filigrane doit être relue plutôt
      que ratée — la réappliquer est sans effet, la rater est une perte. */
   for (const kind of TABLES) {
-    const rows = await db
-      .table(kind)
-      .where('updatedAt')
-      .aboveOrEqual(filigrane)
-      .toArray();
+    const rows = await db.table(kind).where('updatedAt').aboveOrEqual(filigrane).toArray();
     for (const r of rows) {
       /* Les entités supprimées logiquement (`deletedAt`) NE SONT PAS filtrées
          ici : c'est ainsi que l'autre appareil apprend l'effacement. Ne pas

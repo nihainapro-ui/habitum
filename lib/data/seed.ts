@@ -59,6 +59,17 @@ export const META_KEYS = {
   /** Onboarding franchi. Tant qu'elle est absente, la première ouverture mène
    *  au parcours d'accueil et non au tableau de bord. */
   onboarded: 'onboarded',
+  /** Code d'appairage. Il vit là où vivent les données qu'il protège : sur
+   *  l'appareil, et nulle part ailleurs. Absent = synchronisation inactive,
+   *  et alors AUCUNE requête ne sort. */
+  syncCode: 'syncCode',
+  /** Dernier `seq` reçu du serveur. Un NOMBRE, pas une date : les horloges
+   *  de deux appareils ne sont pas comparables. */
+  syncCursor: 'syncCursor',
+  /** Horodatage de la dernière poussée réussie — filigrane de lecture locale. */
+  syncWatermark: 'syncWatermark',
+  /** Dernière synchronisation réussie, pour l'affichage. */
+  syncLastAt: 'syncLastAt',
 } as const;
 
 /** Réglages d'un compte neuf. `notifications`, `sound` et `vibrate` sont à

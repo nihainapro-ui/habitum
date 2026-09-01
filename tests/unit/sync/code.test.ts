@@ -8,8 +8,8 @@ import {
   normaliserCode,
 } from '@/lib/sync/code';
 
-describe('code d\'appairage', () => {
-  it('rend 20 caractères de l\'alphabet, sans tiret', () => {
+describe("code d'appairage", () => {
+  it("rend 20 caractères de l'alphabet, sans tiret", () => {
     const c = genererCode();
     expect(c).toHaveLength(LONGUEUR_CODE);
     for (const ch of c) expect(ALPHABET).toContain(ch);
@@ -26,7 +26,7 @@ describe('code d\'appairage', () => {
     for (const ch of ['I', 'L', 'O', 'U']) expect(ALPHABET).not.toContain(ch);
   });
 
-  it('normalise ce qu\'un humain tape', () => {
+  it("normalise ce qu'un humain tape", () => {
     /* Minuscules, tirets, espaces, et les quatre confusions classiques :
        l\'utilisateur lit « O » là où le code porte un zéro. */
     expect(normaliserCode(' k7m2-9qpx 3rtz-8hnv-4wbd ')).toBe('K7M29QPX3RTZ8HNV4WBD');
