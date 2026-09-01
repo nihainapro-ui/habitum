@@ -1,0 +1,13 @@
+# sync-server/wrangler.toml
+name = "habitum-sync"
+main = "src/index.ts"
+compatibility_date = "2026-01-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "habitum-sync"
+# `wrangler d1 create habitum-sync` rend cet identifiant — le coller ici.
+database_id = ""
+
+# Le palier gratuit suffit très largement : 100 000 requêtes par jour, quand un
+# appareil en fait quelques dizaines.

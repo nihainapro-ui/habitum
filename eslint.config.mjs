@@ -38,6 +38,12 @@ const config = [
       'out/**',
       'packaging/www/**',
       'packaging/android/**',
+      /* `sync-server/` est un Worker Cloudflare, déployé séparément et exclu
+         de `tsconfig.json` (tâche 6) : il ne fait partie d'aucun projet
+         TypeScript du dépôt. Sans cette exclusion, les règles ESLint typées
+         (qui s'appuient sur `tsconfig.json` pour résoudre les types) échouent
+         sur un fichier qu'elles ne peuvent pas rattacher à un programme. */
+      'sync-server/**',
     ],
   },
   ...compat.extends('next/core-web-vitals', 'next/typescript'),

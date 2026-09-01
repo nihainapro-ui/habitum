@@ -88,3 +88,10 @@ tests/e2e/visual/socle/*-darwin.png
 # quiconque l'obtient peut signer une contrefaçon qu'Android acceptera.
 *.keystore
 *.jks
+
+# --- Serveur de synchronisation (tâche 6) ----------------------------------
+# `wrangler dev` écrit ici l'état local de D1 (une base SQLite) et des
+# journaux d'exécution : rien de tout cela ne se partage entre postes, et rien
+# ne se déploie — seuls `src/`, `schema.sql` et `wrangler.toml` le sont.
+/sync-server/.wrangler/
+/sync-server/node_modules/
