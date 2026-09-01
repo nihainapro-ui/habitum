@@ -311,17 +311,35 @@ describe('putRaw — écriture d’une ligne reçue', () => {
     expect(relu?.updatedAt).toBe(ancien);
   });
 
-  it('écrase une ligne existante sans la fusionner', async () => {
+  it('écrase la ligne entière : un champ absent de la ligne reçue disparaît', async () => {
+    /* Scénario concret : une habitude supprimée localement (`deletedAt` posé)
+       est restaurée sur un AUTRE appareil. La ligne reçue de cet appareil
+       n'a plus la clé `deletedAt` du tout (pas « à undefined » : ABSENTE,
+       comme le rend `habitsRepo.create`). Une FUSION (`table.update(id,
+       patch)`) ne touche que les clés présentes dans le correctif : le
+       `deletedAt` local survivrait, et l'habitude resterait supprimée ici
+       pour toujours — la restauration ne se propagerait jamais. Un
+       ÉCRASEMENT (`table.put(row)`) remplace le document entier : la clé
+       absente de la ligne reçue disparaît. C'est la différence que ce test
+       observe — pas un champ modifié, un champ ABSENT qui doit survivre ou
+       non. */
     const cree = await habitsRepo.create({ name: 'Avant', type: 'check' } as never);
+    await habitsRepo.softDelete(cree.id);
+
+    /* `cree` n'a jamais eu `deletedAt` (il vient d'un `create`) : cette ligne
+       ne le porte donc pas non plus, à la différence de la ligne stockée. */
     await habitsRepo.putRaw({
       ...cree,
-      name: 'Après',
       updatedAt: '2030-01-01T00:00:00.000Z',
     } as never);
 
-    const relu = await habitsRepo.get(cree.id);
-    expect(relu?.name).toBe('Après');
-    expect(relu?.updatedAt).toBe('2030-01-01T00:00:00.000Z');
+    /* `habitsRepo.get` masque toute ligne dont `deletedAt` est renseigné : il
+       rendrait `undefined` aussi bien pour une fusion (deletedAt survivant)
+       que pour un écrasement (deletedAt disparu), et le test ne prouverait
+       plus rien. On relit donc la table brute, comme le fait déjà le test
+       « supprime logiquement » plus haut dans ce fichier. */
+    const relu = await db.habits.get(cree.id);
+    expect(relu?.deletedAt).toBeUndefined();
   });
 });
 
