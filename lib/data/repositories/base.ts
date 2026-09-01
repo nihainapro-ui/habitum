@@ -106,6 +106,19 @@ export function makeRepo<T extends Versioned>(entityTable: EntityTable<T, 'id'>)
       await table.update(id, { deletedAt: undefined, updatedAt: at } as never);
     },
 
+    /** Écrit une ligne REÇUE D'UN AUTRE APPAREIL, telle quelle.
+     *
+     *  `create` et `update` posent `updatedAt` à maintenant — c'est juste pour
+     *  une saisie humaine, et faux ici : une ligne réhorodatée à l'arrivée
+     *  gagnerait tous les arbitrages suivants, y compris contre des
+     *  modifications réellement plus récentes faites ailleurs. La ligne entre
+     *  donc intacte, horodatage d'origine compris.
+     *
+     *  N'est appelée que par `lib/sync/entites.ts`. */
+    async putRaw(row: T): Promise<void> {
+      await table.put(row);
+    },
+
     async count(): Promise<number> {
       return (await this.list()).length;
     },

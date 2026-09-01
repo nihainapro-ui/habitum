@@ -284,3 +284,55 @@ describe('dépôts spécialisés — les requêtes métier filtrent les suppress
     expect(renomme?.sourceHabitId).toBe('lecture');
   });
 });
+
+/* ---------------------------------------------------------------------------
+   Tâche 4 du plan de synchronisation multi-appareils : une ligne REÇUE d'un
+   autre appareil s'écrit telle quelle (`putRaw`), et l'effacement d'une
+   entrée journalière laisse une trace (`tombstone`) plutôt que de disparaître
+   sans laisser de trace (`clear`).
+   --------------------------------------------------------------------------- */
+
+describe('putRaw — écriture d’une ligne reçue', () => {
+  it('préserve updatedAt au lieu de le poser à maintenant', async () => {
+    /* C'est TOUT l'enjeu de la synchronisation : `update()` horodate à
+       maintenant, ce qui est juste pour une saisie humaine et faux pour une
+       ligne qui arrive d'un autre appareil — elle gagnerait chaque arbitrage
+       suivant, y compris contre des modifications plus récentes. */
+    const ancien = '2020-01-01T00:00:00.000Z';
+    await habitsRepo.putRaw({
+      id: 'venue-d-ailleurs',
+      name: 'Courir',
+      type: 'check',
+      createdAt: ancien,
+      updatedAt: ancien,
+    } as never);
+
+    const relu = await habitsRepo.get('venue-d-ailleurs');
+    expect(relu?.updatedAt).toBe(ancien);
+  });
+
+  it('écrase une ligne existante sans la fusionner', async () => {
+    const cree = await habitsRepo.create({ name: 'Avant', type: 'check' } as never);
+    await habitsRepo.putRaw({
+      ...cree,
+      name: 'Après',
+      updatedAt: '2030-01-01T00:00:00.000Z',
+    } as never);
+
+    const relu = await habitsRepo.get(cree.id);
+    expect(relu?.name).toBe('Après');
+    expect(relu?.updatedAt).toBe('2030-01-01T00:00:00.000Z');
+  });
+});
+
+describe('journal — l’effacement laisse une trace', () => {
+  it('tombstone garde la ligne avec deletedAt', async () => {
+    await logsRepo.setValue('h1', '2026-09-01' as never, 3);
+    await logsRepo.tombstone('h1', '2026-09-01' as never);
+
+    const toutes = await logsRepo.all();
+    const ligne = toutes.find((l) => l.habitId === 'h1');
+    expect(ligne).toBeDefined();
+    expect(ligne?.deletedAt).toBeTruthy();
+  });
+});

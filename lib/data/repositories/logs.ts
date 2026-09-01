@@ -44,9 +44,19 @@ export const logsRepo = {
     await db.logs.put({ habitId, date, value, updatedAt: nowIso() });
   },
 
+  /** Même rôle que `makeRepo().putRaw` — le journal n'y passe pas, sa clé est
+   *  le couple [habitId+date]. */
+  async putRaw(entry: LogEntry): Promise<void> {
+    await db.logs.put(entry);
+  },
+
   /* Effacement DUR : la ligne disparaît sans laisser de trace dans `updatedAt`.
      L'instantané d'ouverture ne peut donc pas le voir par son delta — il est
-     oublié, et sera reconstruit (tâche 5.10). */
+     oublié, et sera reconstruit (tâche 5.10).
+
+     NE PAS UTILISER SUR UN CHEMIN SYNCHRONISÉ. L'effacement dur ne laisse
+     aucune trace : l'appareil distant renverrait la valeur au tour suivant, et
+     elle réapparaîtrait. Pour effacer une saisie, c'est `tombstone()`. */
   async clear(habitId: string, date: DateKey): Promise<void> {
     await db.logs.delete([habitId, date]);
     await db.meta.delete('logSnapshot');
