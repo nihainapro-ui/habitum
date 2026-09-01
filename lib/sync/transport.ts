@@ -29,7 +29,15 @@ async function appeler<T>(url: string, init?: RequestInit): Promise<T> {
   if (reponse.status === 429) throw new SyncErreur('limite', 'trop de requêtes');
   if (!reponse.ok) throw new SyncErreur('serveur', `HTTP ${reponse.status}`);
 
-  return (await reponse.json()) as T;
+  try {
+    return (await reponse.json()) as T;
+  } catch (cause) {
+    /* Un corps illisible sur une réponse par ailleurs valide : coupure en plein
+       transfert, réponse tronquée par un intermédiaire. Ce n'est pas une panne du
+       serveur mais bien un incident de transport — le genre `reseau` le range du
+       côté des choses qui se réessaient toutes seules. */
+    throw new SyncErreur('reseau', `corps illisible : ${String(cause)}`);
+  }
 }
 
 export function transportHttp(base: string): Transport {

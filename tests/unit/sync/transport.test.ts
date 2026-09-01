@@ -1,5 +1,4 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { SyncErreur } from '@/lib/sync/types';
 import { transportHttp } from '@/lib/sync/transport';
 
 const ESPACE = 'K7M29QPX3RTZ8HNV4WBDK7M29QPX3RTZ';
@@ -40,9 +39,9 @@ describe('transport HTTP', () => {
 
   it('transforme un 429 en SyncErreur « limite »', async () => {
     vi.stubGlobal('fetch', async () => new Response('', { status: 429 }));
-    await expect(transportHttp('https://s.example').tirer(ESPACE, 0)).rejects.toBeInstanceOf(
-      SyncErreur,
-    );
+    await expect(transportHttp('https://s.example').tirer(ESPACE, 0)).rejects.toMatchObject({
+      genre: 'limite',
+    });
   });
 
   it('envoie les lignes en POST', async () => {
@@ -57,5 +56,17 @@ describe('transport HTTP', () => {
     expect(init.method).toBe('POST');
     expect(JSON.parse(String(init.body))).toEqual({ lignes: [ligne] });
     expect(r.seq).toBe(9);
+  });
+
+  it('transforme un corps illisible en SyncErreur « reseau »', async () => {
+    /* Une réponse HTTP 200 au corps vide ou tronqué — coupure réseau en plein
+       transfert, réponse d'un intermédiaire, serveur qui ferme la connexion —
+       lève un SyntaxError. Ce n'est pas une panne du serveur mais bien un
+       incident de transport : la connexion a lâché en plein envoi. */
+    vi.stubGlobal('fetch', async () => new Response('pas du json', { status: 200 }));
+
+    await expect(transportHttp('https://s.example').tirer(ESPACE, 0)).rejects.toMatchObject({
+      genre: 'reseau',
+    });
   });
 });
