@@ -18,3 +18,35 @@ export function accepterLigne(stockee: Arbitrable | undefined, entrante: Arbitra
   if (entrante.updatedAt !== stockee.updatedAt) return entrante.updatedAt > stockee.updatedAt;
   return entrante.blob > stockee.blob;
 }
+
+/** Une ligne, une fois validée : les quatre champs que le serveur manipule,
+ *  garantis présents et non vides. */
+export interface LigneValidee {
+  kind: string;
+  id: string;
+  updatedAt: string;
+  blob: string;
+}
+
+/** Vrai si `brute` a la forme d'une ligne exploitable.
+ *
+ *  `brute` vient du corps JSON d'une requête : sa forme réelle est
+ *  arbitraire — `null`, un nombre, un objet sans `kind`... Sans ce filtre,
+ *  une ligne malformée lève au premier accès à `.kind` ou `.id` et fait
+ *  sortir l'exception de `fetch`, ce qui perd les en-têtes CORS de la
+ *  réponse. Elle doit être ignorée (`continue`), pas plantée dessus — comme
+ *  n'importe quelle autre ligne invalide. */
+export function ligneValide(brute: unknown): brute is LigneValidee {
+  if (typeof brute !== 'object' || brute === null) return false;
+  const b = brute as Record<string, unknown>;
+  return (
+    typeof b.kind === 'string' &&
+    b.kind !== '' &&
+    typeof b.id === 'string' &&
+    b.id !== '' &&
+    typeof b.updatedAt === 'string' &&
+    b.updatedAt !== '' &&
+    typeof b.blob === 'string' &&
+    b.blob !== ''
+  );
+}

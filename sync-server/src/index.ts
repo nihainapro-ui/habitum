@@ -1,4 +1,4 @@
-import { accepterLigne } from './logique';
+import { accepterLigne, ligneValide } from './logique';
 
 /* Interfaces D1 minimales, déclarées ici plutôt que fournies par
  * `@cloudflare/workers-types` : ce paquet n'est PAS ajouté au dépôt — aucune
@@ -81,46 +81,85 @@ export default {
     }
 
     if (req.method === 'POST') {
-      const corps = (await req.json()) as { lignes?: unknown };
+      /* Un corps non-JSON lève au `.json()`. Sans ce filet, l'exception sort
+         de `fetch` et la réponse d'erreur du runtime n'a pas les en-têtes
+         CORS posés par `json()` — le navigateur ne voit alors qu'une erreur
+         opaque, jamais un 400 lisible. */
+      let corps: { lignes?: unknown };
+      try {
+        corps = (await req.json()) as { lignes?: unknown };
+      } catch {
+        return json({ erreur: 'corps' }, 400);
+      }
+
       const lignes = Array.isArray(corps.lignes) ? corps.lignes : [];
       if (lignes.length > MAX_LIGNES) return json({ erreur: 'trop de lignes' }, 413);
 
-      let seq =
-        (
-          await env.DB.prepare('SELECT seq FROM compteurs WHERE espace = ?')
+      try {
+        /* `seq` attribué à la DERNIÈRE ligne acceptée pendant cette requête —
+           c'est ce que la réponse rend. Reste `undefined` si aucune ligne
+           n'a été acceptée : dans ce cas on ne touche pas au compteur, on se
+           contente de le lire plus bas. */
+        let dernierSeq: number | undefined;
+
+        for (const brute of lignes) {
+          if (!ligneValide(brute)) continue;
+
+          const stockee = await env.DB.prepare(
+            'SELECT updated_at AS updatedAt, blob FROM lignes WHERE espace = ? AND kind = ? AND id = ?',
+          )
+            .bind(espace, brute.kind, brute.id)
+            .first<{ updatedAt: string; blob: string }>();
+
+          if (!accepterLigne(stockee ?? undefined, brute)) continue;
+
+          /* Incrément ATOMIQUE, en SQL, PAR LIGNE ACCEPTÉE — jamais une
+             lecture du compteur suivie d'une écriture séparée. Avec une
+             lecture puis une écriture, deux poussées simultanées sur le même
+             espace liraient le MÊME compteur de départ, et la seconde à
+             écrire écraserait le travail de la première : le compteur
+             régresserait, et pire, deux lignes DIFFÉRENTES pourraient
+             recevoir le MÊME `seq`. Comme la lecture (`GET`) trie sur `seq`
+             sans départage et que le curseur rendu est le `seq` de la
+             dernière ligne servie, une page dont la frontière tombe entre
+             deux lignes de même `seq` en perdrait une DÉFINITIVEMENT —
+             exactement ce que l'index de `schema.sql` est censé empêcher.
+             `INSERT ... ON CONFLICT DO UPDATE SET seq = seq + 1 RETURNING
+             seq` est une seule opération pour SQLite : aucune requête
+             concurrente ne peut lire une valeur intermédiaire, le compteur
+             ne peut ni régresser ni être partagé par deux lignes. */
+          const compteur = await env.DB.prepare(
+            `INSERT INTO compteurs (espace, seq) VALUES (?, 1)
+             ON CONFLICT (espace) DO UPDATE SET seq = seq + 1
+             RETURNING seq`,
+          )
             .bind(espace)
-            .first<{ seq: number }>()
-        )?.seq ?? 0;
+            .first<{ seq: number }>();
+          const seq = compteur!.seq;
+          dernierSeq = seq;
 
-      for (const brute of lignes as { kind: string; id: string; updatedAt: string; blob: string }[]) {
-        if (typeof brute?.blob !== 'string' || typeof brute?.updatedAt !== 'string') continue;
+          await env.DB.prepare(
+            `INSERT INTO lignes (espace, kind, id, updated_at, seq, blob)
+             VALUES (?, ?, ?, ?, ?, ?)
+             ON CONFLICT (espace, kind, id)
+             DO UPDATE SET updated_at = excluded.updated_at, seq = excluded.seq, blob = excluded.blob`,
+          )
+            .bind(espace, brute.kind, brute.id, brute.updatedAt, seq, brute.blob)
+            .run();
+        }
 
-        const stockee = await env.DB.prepare(
-          'SELECT updated_at AS updatedAt, blob FROM lignes WHERE espace = ? AND kind = ? AND id = ?',
-        )
-          .bind(espace, brute.kind, brute.id)
-          .first<{ updatedAt: string; blob: string }>();
+        if (dernierSeq !== undefined) return json({ seq: dernierSeq });
 
-        if (!accepterLigne(stockee ?? undefined, brute)) continue;
-
-        seq += 1;
-        await env.DB.prepare(
-          `INSERT INTO lignes (espace, kind, id, updated_at, seq, blob)
-           VALUES (?, ?, ?, ?, ?, ?)
-           ON CONFLICT (espace, kind, id)
-           DO UPDATE SET updated_at = excluded.updated_at, seq = excluded.seq, blob = excluded.blob`,
-        )
-          .bind(espace, brute.kind, brute.id, brute.updatedAt, seq, brute.blob)
-          .run();
+        const actuel = await env.DB.prepare('SELECT seq FROM compteurs WHERE espace = ?')
+          .bind(espace)
+          .first<{ seq: number }>();
+        return json({ seq: actuel?.seq ?? 0 });
+      } catch {
+        /* Une erreur D1 inattendue ne doit pas sortir de `fetch` non plus,
+           pour la même raison que le `.json()` ci-dessus : sans ce filet, la
+           réponse d'erreur du runtime n'aurait pas les en-têtes CORS. */
+        return json({ erreur: 'serveur' }, 500);
       }
-
-      await env.DB.prepare(
-        'INSERT INTO compteurs (espace, seq) VALUES (?, ?) ON CONFLICT (espace) DO UPDATE SET seq = excluded.seq',
-      )
-        .bind(espace, seq)
-        .run();
-
-      return json({ seq });
     }
 
     return json({ erreur: 'méthode' }, 405);
