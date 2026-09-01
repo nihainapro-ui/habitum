@@ -66,8 +66,8 @@ export default {
         .all<{ kind: string; id: string; updated_at: string; seq: number; blob: string }>();
 
       /* Le curseur rendu est le `seq` de la DERNIÈRE ligne servie, pas le
-         compteur de l'espace : avec la limite, il reste peut-être des lignes,
-         et le client doit revenir les chercher. */
+         plus grand `seq` de l'espace : avec la limite, il reste peut-être
+         des lignes, et le client doit revenir les chercher. */
       const seq = results.length ? results[results.length - 1]!.seq : depuis;
       return json({
         seq,
@@ -98,8 +98,8 @@ export default {
       try {
         /* `seq` attribué à la DERNIÈRE ligne acceptée pendant cette requête —
            c'est ce que la réponse rend. Reste `undefined` si aucune ligne
-           n'a été acceptée : dans ce cas on ne touche pas au compteur, on se
-           contente de le lire plus bas. */
+           n'a été acceptée : dans ce cas la requête ne modifie rien, elle se
+           contente de lire le maximum courant plus bas. */
         let dernierSeq: number | undefined;
 
         for (const brute of lignes) {
@@ -113,44 +113,46 @@ export default {
 
           if (!accepterLigne(stockee ?? undefined, brute)) continue;
 
-          /* Incrément ATOMIQUE, en SQL, PAR LIGNE ACCEPTÉE — jamais une
-             lecture du compteur suivie d'une écriture séparée. Avec une
-             lecture puis une écriture, deux poussées simultanées sur le même
-             espace liraient le MÊME compteur de départ, et la seconde à
-             écrire écraserait le travail de la première : le compteur
-             régresserait, et pire, deux lignes DIFFÉRENTES pourraient
-             recevoir le MÊME `seq`. Comme la lecture (`GET`) trie sur `seq`
-             sans départage et que le curseur rendu est le `seq` de la
-             dernière ligne servie, une page dont la frontière tombe entre
-             deux lignes de même `seq` en perdrait une DÉFINITIVEMENT —
-             exactement ce que l'index de `schema.sql` est censé empêcher.
-             `INSERT ... ON CONFLICT DO UPDATE SET seq = seq + 1 RETURNING
-             seq` est une seule opération pour SQLite : aucune requête
-             concurrente ne peut lire une valeur intermédiaire, le compteur
-             ne peut ni régresser ni être partagé par deux lignes. */
-          const compteur = await env.DB.prepare(
-            `INSERT INTO compteurs (espace, seq) VALUES (?, 1)
-             ON CONFLICT (espace) DO UPDATE SET seq = seq + 1
+          /* Le `seq` naît DANS la même instruction que l'écriture de la
+             ligne — jamais réservé à part.
+             Un numéro réservé puis écrit ouvre une fenêtre entre les deux
+             allers-retours D1 : une requête A réserve 5 puis est préemptée
+             avant d'écrire ; une requête B réserve 6 et écrit aussitôt ; un
+             GET arrivant dans cet intervalle ne voit que la ligne 6 et avance
+             le curseur du client à 6 ; quand la ligne de A s'écrit enfin avec
+             `seq = 5`, plus aucun client ne redemandera jamais `seq > 5`.
+             Elle est perdue, DÉFINITIVEMENT et SILENCIEUSEMENT — le même
+             symptôme que la collision de numéro déjà corrigée, atteint cette
+             fois par un décalage d'ORDRE DE VALIDATION plutôt que par une
+             course sur la valeur. Aucune réservation préalable ne s'en sort,
+             même par blocs : la fenêtre entre réserver et écrire existe dès
+             qu'il y a deux allers-retours.
+             En calculant `MAX(seq) + 1` à l'intérieur même de l'INSERT,
+             SQLite exécute la lecture du maximum et l'écriture comme une
+             seule opération sérialisée : impossible qu'un `seq` devienne
+             visible avant que la ligne qui le porte le soit — l'ordre des
+             `seq` EST l'ordre de validation, sans exception.
+             Aucune table de compteur séparée n'existe plus dans le schéma :
+             un numéro qui existerait sans ligne pour le porter serait
+             justement ce point de rupture. */
+          const ecrite = await env.DB.prepare(
+            `INSERT INTO lignes (espace, kind, id, updated_at, seq, blob)
+             VALUES (?, ?, ?, ?, (SELECT COALESCE(MAX(seq), 0) + 1 FROM lignes WHERE espace = ?), ?)
+             ON CONFLICT (espace, kind, id)
+             DO UPDATE SET updated_at = excluded.updated_at, seq = excluded.seq, blob = excluded.blob
              RETURNING seq`,
           )
-            .bind(espace)
+            .bind(espace, brute.kind, brute.id, brute.updatedAt, espace, brute.blob)
             .first<{ seq: number }>();
-          const seq = compteur!.seq;
-          dernierSeq = seq;
-
-          await env.DB.prepare(
-            `INSERT INTO lignes (espace, kind, id, updated_at, seq, blob)
-             VALUES (?, ?, ?, ?, ?, ?)
-             ON CONFLICT (espace, kind, id)
-             DO UPDATE SET updated_at = excluded.updated_at, seq = excluded.seq, blob = excluded.blob`,
-          )
-            .bind(espace, brute.kind, brute.id, brute.updatedAt, seq, brute.blob)
-            .run();
+          dernierSeq = ecrite!.seq;
         }
 
         if (dernierSeq !== undefined) return json({ seq: dernierSeq });
 
-        const actuel = await env.DB.prepare('SELECT seq FROM compteurs WHERE espace = ?')
+        /* Aucune ligne acceptée : rendre le maximum courant SANS rien
+           écrire. `depuis` reste la référence du client tant qu'il n'y a
+           rien de neuf pour son espace. */
+        const actuel = await env.DB.prepare('SELECT COALESCE(MAX(seq), 0) AS seq FROM lignes WHERE espace = ?')
           .bind(espace)
           .first<{ seq: number }>();
         return json({ seq: actuel?.seq ?? 0 });
