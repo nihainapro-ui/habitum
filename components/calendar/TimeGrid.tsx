@@ -149,7 +149,7 @@ export function TimeGrid({ offset, jours }: { offset: number; jours: 1 | 7 }) {
         </div>
       ) : null}
 
-      <div className="flex overflow-x-auto">
+      <div className="flex overflow-x-auto overscroll-x-contain">
         <div className="w-[52px] flex-none">
           {heures.map((h) => (
             <div

@@ -1,5 +1,58 @@
 # Journal des modifications
 
+## 2026-08-31 (suite 6) — Le défilement ne fuit plus, et ce que la mesure a dit
+
+### D'abord, ce qui n'était PAS le problème
+
+La demande visait « le défilement et les listes ». Le suspect était nommé d'avance :
+`backdrop-filter: blur()` pleine largeur sur l'en-tête collant ET sur la barre basse fixe,
+recalculé à chaque image — la cause classique de saccade dans une WebView Android.
+
+**La mesure l'a écarté.** Défilement profilé sur téléphone émulé, processeur bridé 4×, sur
+les deux vues les plus chargées, quatre variantes comparées sur la même page :
+
+| Variante | Images longues | p50 | p95 |
+| --- | --- | --- | --- |
+| témoin | 39–42 / 66–71 | 17 ms | 26 ms |
+| sans `backdrop-filter` | 37–38 | 17 ms | 26 ms |
+| avec `content-visibility` | 39–42 | 17 ms | 27 ms |
+| en-tête non collant | 33–35 | 17 ms | 23 ms |
+
+p50 à 17 ms partout : c'est le plancher du bridage, pas un défaut du produit. Aucune piste
+ne gagne quoi que ce soit de significatif. **L'application ne fait pas de travail lourd par
+image de défilement**, et les écouteurs le confirment — aucun ne déclenche de rendu React.
+
+Optimiser un suspect sans preuve aurait ajouté de la complexité pour rien. C'est écrit ici
+pour que la question ne soit pas rouverte à l'aveugle.
+
+### Ce qui accrochait vraiment : le chaînage
+
+Ce n'est pas une affaire d'images par seconde. **Sept conteneurs défilaient à l'intérieur de
+la page sans retenir leur geste** : le bandeau des jours, la grille horaire du calendrier,
+le tableau des statistiques, la liste de la palette, le corps de l'éditeur, le rail, le menu
+déroulant.
+
+On fait glisser le bandeau des jours, on arrive au bout, et le geste **continue dans la
+page**. On défile l'éditeur ouvert, et c'est la page derrière qui bouge. C'est exactement ce
+qu'on décrit par « ça accroche » — et `overscroll-behavior: contain` le coupe.
+
+### Un ancrage n'atterrit plus sous l'en-tête
+
+`scroll-padding-top` réserve la hauteur de l'en-tête collant. Sans lui, le lien d'évitement
+et tout retour au focus amenaient leur cible DERRIÈRE la barre : on voyait du vide au-dessus
+de ce qu'on cherchait.
+
+### Vérification
+
+`tests/e2e/defilement.spec.ts` — quatorze contrôles. Le premier balaie CINQ vues et
+échouera sur tout conteneur ajouté demain sans sa retenue : la règle se garde toute seule.
+
+### Ce qui reste ouvert
+
+La mesure n'a rien trouvé sur un téléphone ÉMULÉ. Si la saccade persiste sur l'appareil
+réel, elle vient de la WebView elle-même et se profile en branchant le téléphone en USB —
+`chrome://inspect`. C'est la seule façon d'obtenir une trace qui vaille.
+
 ## 2026-08-31 (suite 4) — Corriger depuis Aujourd'hui, et rendre la largeur au contenu
 
 ### La seule vue où l'on ne pouvait rien corriger

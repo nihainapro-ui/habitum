@@ -78,6 +78,17 @@ a:hover {
   display: none;
 }
 
+/* Un ancrage ne doit pas atterrir SOUS l'en-tête collant.
+
+   Le lien d'évitement, un retour au focus, un `scrollIntoView` : tous amènent
+   leur cible en haut de la fenêtre, c'est-à-dire derrière un en-tête qui y est
+   collé. On voit alors le vide au-dessus du contenu qu'on cherchait. La marge
+   de défilement le compense — 5 rem couvre l'en-tête dans les deux gabarits,
+   téléphone (≈ 56 px) comme bureau (≈ 64 px). */
+html {
+  scroll-padding-top: 5rem;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

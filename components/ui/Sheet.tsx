@@ -48,7 +48,7 @@ export function Sheet({
           <RadixDialog.Description className="m-0 mb-4 text-[12px]" style={{ color: 'var(--mut)' }}>
             {description ?? ''}
           </RadixDialog.Description>
-          <div className="min-h-0 flex-1 overflow-y-auto">{children}</div>
+          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">{children}</div>
         </RadixDialog.Content>
       </RadixDialog.Portal>
     </RadixDialog.Root>

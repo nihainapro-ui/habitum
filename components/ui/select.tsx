@@ -322,7 +322,7 @@ export function Select<T extends string>({
               role="listbox"
               aria-label={label}
               data-select-panel
-              className="rounded-field overflow-y-auto border p-[5px] transition-[opacity,transform] duration-150 ease-out motion-reduce:transition-none"
+              className="rounded-field overflow-y-auto overscroll-contain border p-[5px] transition-[opacity,transform] duration-150 ease-out motion-reduce:transition-none"
               style={{
                 position: 'fixed',
                 zIndex: 60,

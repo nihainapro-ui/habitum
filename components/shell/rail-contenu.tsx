@@ -124,8 +124,8 @@ export function RailContenu({ deplie }: { deplie: boolean }) {
       <div
         className={
           deplie
-            ? 'flex flex-1 flex-col gap-[3px] overflow-x-hidden overflow-y-auto px-3 pb-[18px]'
-            : 'flex flex-1 flex-col gap-[3px] overflow-x-hidden overflow-y-auto px-[10px] pb-[18px] min-[1060px]:px-3'
+            ? 'flex flex-1 flex-col gap-[3px] overflow-x-hidden overflow-y-auto overscroll-contain px-3 pb-[18px]'
+            : 'flex flex-1 flex-col gap-[3px] overflow-x-hidden overflow-y-auto overscroll-contain px-[10px] pb-[18px] min-[1060px]:px-3'
         }
       >
         {NAV_GROUPS.map((groupe) => (

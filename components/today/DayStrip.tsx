@@ -48,7 +48,10 @@ export function DayStrip() {
 
   if (!monte) {
     return (
-      <div className="flex gap-2 overflow-x-auto pt-1 pb-1.5" aria-hidden="true">
+      <div
+        className="flex gap-2 overflow-x-auto overscroll-x-contain pt-1 pb-1.5"
+        aria-hidden="true"
+      >
         {Array.from({ length: LARGEUR }, (_, i) => (
           <span
             key={i}
@@ -61,7 +64,11 @@ export function DayStrip() {
   }
 
   return (
-    <div className="flex gap-2 overflow-x-auto pt-1 pb-1.5" role="group" aria-label={t('quickNav')}>
+    <div
+      className="flex gap-2 overflow-x-auto overscroll-x-contain pt-1 pb-1.5"
+      role="group"
+      aria-label={t('quickNav')}
+    >
       {dates.map((d, i) => {
         const offset = decalages[i] ?? 0;
         const actif = offset === day;

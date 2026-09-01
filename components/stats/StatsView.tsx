@@ -188,7 +188,7 @@ export function StatsView() {
 
       <div className="grid grid-cols-1 items-start gap-4 min-[1060px]:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
         <Panel title={t('perHabit')} padding={0}>
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto overscroll-x-contain">
             <table className="w-full border-collapse text-[12px]">
               <thead>
                 <tr style={{ color: 'var(--txt2)' }}>

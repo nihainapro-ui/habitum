@@ -223,7 +223,11 @@ export function CommandPalette() {
           style={{ borderColor: 'var(--line)', color: 'var(--txt)' }}
         />
 
-        <ul id="palette-resultats" role="listbox" className="max-h-[46vh] overflow-y-auto">
+        <ul
+          id="palette-resultats"
+          role="listbox"
+          className="max-h-[46vh] overflow-y-auto overscroll-contain"
+        >
           {resultats.length === 0 ? (
             <li className="px-4 py-6 text-sm" style={{ color: 'var(--mut)' }}>
               {t('cmdEmpty')}
