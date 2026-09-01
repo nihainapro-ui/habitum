@@ -147,6 +147,9 @@ describe('deux appareils', () => {
         pousse = entrantes;
         return { seq: 1 };
       },
+      async effacer() {
+        /* Jamais appelé ici : ce test n'éprouve que la réception. */
+      },
     };
 
     const r = await synchroniser({ transport: laxiste, cles });
@@ -166,7 +169,6 @@ describe('deux appareils', () => {
       'deletedAt',
     );
   });
-
 }, 30_000);
 
 describe('inactif', () => {
@@ -182,6 +184,10 @@ describe('inactif', () => {
       pousser: (...a) => {
         appels += 1;
         return t.pousser(...a);
+      },
+      effacer: (...a) => {
+        appels += 1;
+        return t.effacer(...a);
       },
     };
 

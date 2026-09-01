@@ -66,3 +66,97 @@ describe('validation des lignes entrantes', () => {
     ).toBe(true);
   });
 });
+
+/* --- La route d'effacement -------------------------------------------------
+
+   Le Worker est ici exercé pour de vrai, avec une D1 en toc. C'est le seul
+   test du dépôt qui traverse `index.ts` : `logique.ts` couvre l'arbitrage,
+   mais le ROUTAGE — quelle méthode fait quoi, quel espace est refusé — n'était
+   couvert par rien. Or l'effacement est la seule opération irréversible du
+   serveur, et la seule dont une erreur d'aiguillage détruirait des données.
+
+   La doublure ne simule pas SQLite : elle retient les requêtes reçues et leurs
+   paramètres. C'est exactement ce qu'on veut vérifier — que `DELETE` porte sur
+   l'espace demandé, et sur lui seul. */
+
+interface RequeteVue {
+  sql: string;
+  params: unknown[];
+}
+
+function d1Factice(reponse: unknown = { seq: 0 }) {
+  const vues: RequeteVue[] = [];
+  const db = {
+    prepare(sql: string) {
+      const vue: RequeteVue = { sql, params: [] };
+      vues.push(vue);
+      const st = {
+        bind(...p: unknown[]) {
+          vue.params = p;
+          return st;
+        },
+        first: async () => reponse,
+        all: async () => ({ results: [] }),
+        run: async () => ({}),
+      };
+      return st;
+    },
+  };
+  return { db, vues };
+}
+
+const ESPACE_VALIDE = 'K7M29QPX3RTZ8HNV4WBDK7M29QPX3RTZ';
+
+describe('effacement d’un espace', () => {
+  it('efface les lignes de CET espace, et rend un espace neuf', async () => {
+    const { default: worker } = await import('../../../sync-server/src/index');
+    const { db, vues } = d1Factice();
+
+    const r = await worker.fetch(
+      new Request(`https://x/v1/${ESPACE_VALIDE}`, { method: 'DELETE' }),
+      { DB: db } as never,
+    );
+
+    expect(r.status).toBe(200);
+    /* `seq: 0` remet le client à l'état d'un espace vierge : sans cela, il
+       garderait un curseur pointant des lignes qui n'existent plus et ne
+       redemanderait jamais celles qui viendront après. */
+    expect(await r.json()).toEqual({ seq: 0 });
+
+    const suppression = vues.find((v) => v.sql.startsWith('DELETE'));
+    expect(suppression).toBeDefined();
+    /* LA CLAUSE QUI COMPTE : sans `WHERE espace = ?`, un désappairage viderait
+       la table de TOUS les utilisateurs. */
+    expect(suppression!.sql).toContain('WHERE espace = ?');
+    expect(suppression!.params).toEqual([ESPACE_VALIDE]);
+  });
+
+  it('refuse un espace mal formé sans rien effacer', async () => {
+    const { default: worker } = await import('../../../sync-server/src/index');
+    const { db, vues } = d1Factice();
+
+    const r = await worker.fetch(new Request('https://x/v1/pas-un-espace', { method: 'DELETE' }), {
+      DB: db,
+    } as never);
+
+    expect(r.status).toBe(400);
+    /* Aucune requête ne doit avoir été préparée : le refus est prononcé AVANT
+       de toucher à la base. */
+    expect(vues).toEqual([]);
+  });
+
+  it('annonce l’effacement parmi les méthodes autorisées', async () => {
+    /* L'application est servie depuis une autre origine : si `DELETE` manque
+       de la liste CORS, le navigateur bloque la requête avant qu'elle parte,
+       et l'utilisateur voit une panne réseau au lieu d'un effacement. */
+    const { default: worker } = await import('../../../sync-server/src/index');
+    const { db } = d1Factice();
+
+    const r = await worker.fetch(
+      new Request(`https://x/v1/${ESPACE_VALIDE}`, { method: 'OPTIONS' }),
+      { DB: db } as never,
+    );
+
+    expect(r.headers.get('access-control-allow-methods')).toContain('DELETE');
+  });
+});

@@ -10,6 +10,7 @@ import { createHabitsSlice } from './slices/habits';
 import { createNotesSlice } from './slices/notes';
 import { createSessionsSlice } from './slices/sessions';
 import { createSettingsSlice } from './slices/settings';
+import { createSyncSlice, syncInitial } from './slices/sync';
 import { createShoppingSlice } from './slices/shopping';
 import { createProjectsSlice } from './slices/projects';
 import { createTasksSlice } from './slices/tasks';
@@ -47,6 +48,7 @@ export const useStore = create<AppState>()((...a) => ({
   ...donneesInitiales,
   ui: uiInitial,
   timer: timerInitial,
+  sync: syncInitial,
 
   ...createHabitsSlice(...a),
   ...createTasksSlice(...a),
@@ -59,9 +61,10 @@ export const useStore = create<AppState>()((...a) => ({
   ...createTimerSlice(...a),
   ...createAccountSlice(...a),
   ...createUiSlice(...a),
+  ...createSyncSlice(...a),
 
   async hydrate() {
-    const [set] = a;
+    const [set, get] = a;
     set((s) => ({ ui: { ...s.ui, loading: true, error: null } }));
     /* Relire la base, c'est repartir d'un état qu'on ne connaissait pas : rien
        de ce qui était mémorisé ne peut être présumé vrai (tâche 5.9). */
@@ -74,6 +77,12 @@ export const useStore = create<AppState>()((...a) => ({
          COMPLET dès le premier écran. */
       const { watermark, aJour, ...donnees } = await chargerTout();
       set((s) => ({ ...donnees, ui: { ...s.ui, loading: false } }));
+
+      /* L'état de synchronisation se lit ICI et pas dans la coque : un appareil
+         appairé doit se savoir appairé dès que la base a parlé, quelle que soit
+         la vue ouverte. Deux lectures de `meta`, aucune requête réseau — le
+         déclenchement, lui, est ailleurs (`lib/features/sync`). */
+      await get().chargerSync();
 
       /* Le travail de fond ne doit JAMAIS faire tomber l'application : il n'a
          aucune conséquence visible s'il échoue — l'index affiché est déjà bon,

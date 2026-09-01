@@ -16,6 +16,24 @@ test.describe('settings', () => {
     await expect(page.getByText('Sauvegarde locale sur cet appareil')).toBeVisible();
   });
 
+  /* La synchronisation est FACULTATIVE, et ce déploiement n'a pas de relais
+     (`NEXT_PUBLIC_SYNC_URL` absente en recette). La section entière — titre du
+     panneau compris — doit alors disparaître : proposer un appairage qui ne
+     peut aboutir serait le même mensonge d'interface que l'ancien réglage
+     `cloud` juste au-dessus.
+
+     Ce test vérifie la dégradation dans l'application RÉELLE, là où les tests
+     unitaires ne voient que l'état : c'est la construction Next qui fige la
+     variable, et une erreur d'inlining ne se verrait qu'ici. */
+  test('sans relais configuré, la synchronisation ne s’affiche pas du tout', async ({ page }) => {
+    await ouvrirVierge(page, ROUTE);
+    await attendreHydratation(page);
+
+    await expect(page.getByRole('heading', { name: 'Synchronisation' })).toHaveCount(0);
+    await expect(page.getByText('Créer un code')).toHaveCount(0);
+    await expect(page.getByTestId('sync-code')).toHaveCount(0);
+  });
+
   /* Tâche 5.4 — plus aucun interrupteur en attente d'une phase future : les
      trois canaux de rappel sont branchés (5.2, 5.3). Ce qui reste vérifié,
      c'est qu'ils AGISSENT, et le test générique de `interrupteurs.spec.ts`

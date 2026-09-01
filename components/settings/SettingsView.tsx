@@ -9,6 +9,7 @@ import { clearErrorLog, readErrorLog, type ErreurJournalisee } from '@/lib/logge
 import { FeedbackSettings } from './FeedbackSettings';
 import { NotificationSetting } from './NotificationSetting';
 import { DataSection } from './DataSection';
+import { SyncSection } from './SyncSection';
 import { LocaleSwitcher } from './LocaleSwitcher';
 import { ThemeSwitcher } from './ThemeSwitcher';
 import { AboutPanel } from './AboutPanel';
@@ -129,6 +130,13 @@ export function SettingsView() {
         </div>
       </Panel>
 
+      {/* Panneau distinct de « Données », et c'est délibéré : l'export protège
+          d'une perte d'appareil, la synchronisation n'en protège pas. Les
+          ranger ensemble laisserait croire qu'appairer dispense d'exporter.
+          `SyncSection` ne rend RIEN si le dépôt n'a pas de serveur configuré —
+          le panneau disparaît alors avec elle. */}
+      <SyncPanel />
+
       <Panel title={ts('errLogT')}>
         <div className="flex flex-col gap-3">
           <span className="text-[11.5px]" style={{ color: 'var(--mut)' }}>
@@ -179,5 +187,19 @@ export function SettingsView() {
           — il fait diagnostiquer la mauvaise version. */}
       <AboutPanel />
     </div>
+  );
+}
+
+/** Enveloppe le panneau pour que son TITRE disparaîsse avec son contenu. Un
+ *  `Panel` vide laisserait un cadre et un titre annonçant une fonctionnalité
+ *  absente — pire qu'aucun panneau. */
+function SyncPanel() {
+  const t = useTranslations('sync');
+  const disponible = useStore((s) => s.sync.disponible);
+  if (!disponible) return null;
+  return (
+    <Panel title={t('sec')}>
+      <SyncSection />
+    </Panel>
   );
 }

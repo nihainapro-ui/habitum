@@ -18,7 +18,7 @@ interface D1Database {
   prepare(query: string): D1PreparedStatement;
 }
 
-/* Le Worker. Deux routes, aucune notion de compte.
+/* Le Worker. Trois routes, aucune notion de compte.
  *
  * L'AUTHENTIFICATION EST LE PORTEUR DE L'ESPACE : 32 caractères dérivés d'un
  * code de 100 bits. Qui le connaît lit et écrit des octets chiffrés qu'il ne
@@ -45,7 +45,7 @@ const json = (corps: unknown, statut = 200): Response =>
          tout. `*` est acceptable ici — l'espace est le secret, pas l'origine. */
       'access-control-allow-origin': '*',
       'access-control-allow-headers': 'content-type',
-      'access-control-allow-methods': 'GET, POST, OPTIONS',
+      'access-control-allow-methods': 'GET, POST, DELETE, OPTIONS',
     },
   });
 
@@ -162,6 +162,28 @@ export default {
         /* Une erreur D1 inattendue ne doit pas sortir de `fetch` non plus,
            pour la même raison que le `.json()` ci-dessus : sans ce filet, la
            réponse d'erreur du runtime n'aurait pas les en-têtes CORS. */
+        return json({ erreur: 'serveur' }, 500);
+      }
+    }
+
+    if (req.method === 'DELETE') {
+      /* EFFACEMENT D'UN ESPACE. Sans cette route, rien de ce qui a été relayé
+         ne peut jamais disparaître : désappairer un appareil le rend muet mais
+         laisse les octets ici, indéfiniment. Pour un produit qui met la
+         confidentialité en avant, « vous ne pouvez pas reprendre ce qui est
+         parti » n'est pas une position tenable.
+
+         L'autorisation est la même que pour lire et écrire : connaître
+         l'espace. C'est cohérent — qui le connaît peut déjà tout écraser
+         ligne à ligne par des POST plus récents ; refuser l'effacement en
+         bloc ne protégerait personne, cela rendrait seulement la reprise
+         impossible à son légitime propriétaire. */
+      try {
+        await env.DB.prepare('DELETE FROM lignes WHERE espace = ?').bind(espace).run();
+        /* `seq: 0` remet le client à l'état d'un espace neuf : le prochain
+           appareil qui tire ne reçoit rien, sans cas particulier. */
+        return json({ seq: 0 });
+      } catch {
         return json({ erreur: 'serveur' }, 500);
       }
     }

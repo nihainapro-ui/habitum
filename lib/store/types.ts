@@ -240,11 +240,64 @@ export interface LifecycleActions {
   hydrate(): Promise<void>;
 }
 
+/* --- Synchronisation ------------------------------------------------------
+   L'ÉTAT NE PORTE PAS LES CLÉS. `deriverCles` rend un `CryptoKey` non
+   extractible ; le déposer dans le store en ferait un objet vivant au milieu
+   de données par ailleurs sérialisables, copié par chaque instantané
+   d'annulation. Les clés vivent donc dans un cache de module
+   (`slices/sync.ts`), et l'état ne retient que ce qui s'affiche. */
+
+/** Ce que l'interface a le droit de dire de la dernière tentative. Les genres
+ *  viennent de `SyncErreur` : « pas de réseau » et « mauvais code » n'appellent
+ *  pas le même geste, les confondre ferait retaper un code pendant une panne
+ *  Wi-Fi. */
+export type SyncEchec = 'reseau' | 'serveur' | 'limite' | 'cle';
+
+export interface SyncState {
+  /** Le dépôt a-t-il été configuré avec un serveur (`NEXT_PUBLIC_SYNC_URL`) ?
+   *  Faux : la section n'apparaît pas du tout. */
+  disponible: boolean;
+  /** Un code d'appairage est enregistré sur cet appareil. */
+  actif: boolean;
+  /** Le code lui-même, pour pouvoir le montrer à l'utilisateur qui appaire son
+   *  second appareil. `null` quand la synchronisation est inactive. */
+  code: string | null;
+  /** Un aller-retour est en cours. Empêche d'en lancer deux à la fois. */
+  enCours: boolean;
+  /** Dernière synchronisation RÉUSSIE, ISO. `null` s'il n'y en a jamais eu. */
+  lastAt: string | null;
+  /** Motif du dernier échec, effacé par le premier succès. */
+  echec: SyncEchec | null;
+}
+
+export interface SyncActions {
+  /** Lit `meta` au démarrage : y a-t-il déjà un code sur cet appareil ? */
+  chargerSync(): Promise<void>;
+  /** Enregistre un code (saisi ou engendré) et synchronise dans la foulée.
+   *  Rend `false` si le code est mal formé — l'appelant affiche alors le refus
+   *  sans qu'aucune requête ne soit partie. */
+  activerSync(code: string): Promise<boolean>;
+  /** Oublie le code et les curseurs. NE SUPPRIME AUCUNE DONNÉE LOCALE : les
+   *  entités déjà reçues restent, elles sont à l'utilisateur.
+   *
+   *  `effacerRelais` demande en plus l'effacement des octets déposés sur le
+   *  serveur. Rend `false` si CET effacement a échoué — et dans ce cas rien
+   *  n'est oublié localement non plus : jeter le code d'abord empêcherait
+   *  toute reprise, puisque c'est lui qui dérive l'espace à effacer. */
+  desactiverSync(effacerRelais?: boolean): Promise<boolean>;
+  /** Un aller-retour, à la demande ou au réveil de l'onglet. */
+  synchroniserMaintenant(): Promise<void>;
+}
+
 /* Le minuteur est HORS de `DataState`, à côté de `ui` : il ne fait partie ni
    des instantanés d'annulation — annuler une suppression ne doit pas remettre
    une session en marche — ni de l'hydratation générale, puisqu'il se restaure
    toujours en pause (B5).  */
-export type AppState = DataState & { ui: UiState; timer: TimerState } & HabitsActions &
+export type AppState = DataState & {
+  ui: UiState;
+  timer: TimerState;
+  sync: SyncState;
+} & HabitsActions &
   TasksActions &
   GoalsActions &
   NotesActions &
@@ -255,4 +308,5 @@ export type AppState = DataState & { ui: UiState; timer: TimerState } & HabitsAc
   TimerActions &
   AccountActions &
   UiActions &
+  SyncActions &
   LifecycleActions;

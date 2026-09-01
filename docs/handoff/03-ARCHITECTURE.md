@@ -261,6 +261,32 @@ autres sont propres à l'application portée et documentées ici plutôt que dev
 | `lastExport` / `nagDismissed` | date du dernier export et refus du rappel de sauvegarde (D8) | export / rappel |
 | `backup` | copie de secours `{at, payload}` prise avant import et avant réinitialisation (5.8) | `construireCopie()` |
 | `errors` | vingt dernières erreurs attrapées, **local uniquement**, lisibles dans les réglages (5.1) | `lib/logger.ts` |
+| `syncCode` | code d'appairage, 20 caractères. **Le seul secret** : il dérive l'espace ET la clé de chiffrement, et ne quitte jamais l'appareil. Absent = synchronisation inactive, et alors aucune requête ne sort | `activerSync()` |
+| `syncCursor` | dernier `seq` reçu du relais. Un **nombre**, pas une date : les horloges de deux appareils ne sont pas comparables | moteur de synchronisation |
+| `syncWatermark` | filigrane de lecture locale — borné à l'instant de fin de la passe, jamais au plus grand `updatedAt` envoyé (une écriture faite pendant l'aller-retour serait sinon sautée pour toujours) | moteur de synchronisation |
+| `syncLastAt` | dernière synchronisation réussie, pour l'affichage seul | moteur de synchronisation |
+
+Les quatre clés `sync*` sont effacées **ensemble** au désappairage. Garder le curseur d'un code
+oublié ferait manquer, au réappairage, tout ce qui a transité entre-temps : le relais ne
+renverrait que ce qui suit un numéro sans rapport.
+
+### Synchronisation — où vit quoi
+
+| Fichier | Rôle | Ne connaît pas |
+|---|---|---|
+| `lib/sync/code.ts` | engendrer, normaliser, valider le code (alphabet de Crockford) | tout le reste |
+| `lib/sync/crypto.ts` | dériver espace + clé (PBKDF2 600 k, HKDF), chiffrer/déchiffrer (AES-GCM) | le réseau, Dexie |
+| `lib/sync/merge.ts` | arbitrage pur — **miroir exact** de `sync-server/src/logique.ts` | tout le reste |
+| `lib/sync/entites.ts` | **la seule partie qui connaît Dexie** : table ↔ lignes synchronisables | le réseau, le chiffrement |
+| `lib/sync/transport.ts` | les **deux seuls appels réseau** de l'application, plus l'effacement | Dexie, le chiffrement |
+| `lib/sync/engine.ts` | l'enchaînement, et rien d'autre : tirer → arbitrer → écrire → pousser → mémoriser | — |
+| `lib/sync/config.ts` | `NEXT_PUBLIC_SYNC_URL` ; **vide = fonctionnalité absente de l'interface** | — |
+| `lib/store/slices/sync.ts` | branchement au produit : gardes, traduction des échecs, rechargement | l'arbitrage, le réseau |
+| `lib/features/sync/use-sync.ts` | **quand** on synchronise : montage, retour d'onglet, retour du réseau. Pas d'intervalle | le reste |
+
+**À horodatage égal, la distante gagne côté client** — délibéré. Le client ne peut pas départager
+par le chiffré : le vecteur d'initialisation est aléatoire, deux chiffrements de la même valeur ne
+se ressemblent pas. Le départage appartient au relais, seul à voir des chiffrés comparables.
 
 ## 5. Migration des données existantes
 

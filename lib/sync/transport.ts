@@ -14,6 +14,10 @@ export interface Reponse {
 export interface Transport {
   tirer(espace: string, depuis: number): Promise<Reponse>;
   pousser(espace: string, lignes: SyncRow[]): Promise<{ seq: number }>;
+  /** Efface TOUT l'espace sur le relais. Le seul geste par lequel ce qui est
+   *  parti peut revenir en arrière — sans lui, désappairer rend l'appareil
+   *  muet mais laisse les octets sur le relais indéfiniment. */
+  effacer(espace: string): Promise<void>;
 }
 
 async function appeler<T>(url: string, init?: RequestInit): Promise<T> {
@@ -51,5 +55,8 @@ export function transportHttp(base: string): Transport {
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ lignes }),
       }),
+    effacer: async (espace) => {
+      await appeler<{ seq: number }>(`${racine}/v1/${espace}`, { method: 'DELETE' });
+    },
   };
 }

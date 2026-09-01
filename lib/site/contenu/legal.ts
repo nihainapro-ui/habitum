@@ -1,3 +1,4 @@
+import { syncDisponible } from '@/lib/sync/config';
 import { CONTACT, DEPOT, HEBERGEUR, LANGUE_PAR_DEFAUT, type LangueSite } from '../routes';
 import type { Bloc, ParLangue } from './types';
 
@@ -14,6 +15,15 @@ import type { Bloc, ParLangue } from './types';
  *     n'existent pas ;
  *   — le stockage local est présenté avec sa contrepartie — vider son
  *     navigateur efface tout.
+ *
+ * LA SECTION « SYNCHRONISATION » EST CONDITIONNELLE, et c'est le même
+ * principe poussé d'un cran. Elle n'apparaît que si le déploiement a été
+ * configuré avec un relais (`NEXT_PUBLIC_SYNC_URL`). Décrire un relais qui
+ * n'existe pas sur cette installation serait exactement le genre
+ * d'approximation que cette page refuse — dans un sens comme dans l'autre :
+ * annoncer un envoi qui n'a pas lieu inquiète pour rien, taire un envoi qui a
+ * lieu est bien pire. La variable étant lue à la compilation, la page
+ * prérendue dit la vérité de SON déploiement.
  *
  * L'hébergeur et le contact viennent de `routes.ts`, pas d'une chaîne recopiée :
  * la décision C (tâche 7.9) peut encore changer l'hébergeur, et une page
@@ -64,6 +74,55 @@ export const dateLongue = (iso: string, langue: LangueSite): string => {
 
 export const MISE_A_JOUR = DATE_MAJ;
 
+/* Section « Synchronisation », rendue UNIQUEMENT si le déploiement a un relais.
+   Les deux langues sont construites par la même fonction : le test de
+   structure (`tests/unit/site-contenu.test.ts`) exige que FR et EN aient la
+   même forme, et deux tableaux écrits à la main auraient divergé au premier
+   ajout. */
+const SYNC_FR: readonly Bloc[] = [
+  { t: 'h2', x: 'Synchronisation entre appareils' },
+  {
+    t: 'p',
+    x: 'La synchronisation est facultative et désactivée par défaut. Tant que vous ne l’avez pas activée, aucune requête ne quitte votre appareil — c’est vérifiable dans l’onglet « Réseau » de votre navigateur. L’activer ne demande ni compte, ni adresse électronique, ni mot de passe : un code de vingt caractères, engendré sur votre appareil, suffit à appairer deux installations.',
+  },
+  {
+    t: 'p',
+    x: 'Ce code est la seule clé. Il ne quitte jamais vos appareils : il n’est ni transmis au relais, ni déposé sur le site, ni connu de l’éditeur. Vos données sont chiffrées avec lui sur votre appareil AVANT de partir, et déchiffrées seulement à l’arrivée sur l’autre appareil. Le relais reçoit des octets qu’il ne peut pas lire, et il n’existe aucun moyen de les lui faire lire — perdu, le code n’est récupérable par personne, l’éditeur compris.',
+  },
+  {
+    t: 'ul',
+    x: [
+      'Le relais ne voit ni vos habitudes, ni vos notes, ni vos horaires : il ne voit que du chiffré, un identifiant d’espace dérivé de votre code, et une date de modification.',
+      'Cet identifiant d’espace n’est rattaché à aucun compte ni à aucune identité. Il est dérivé du code par une fonction à sens unique : il ne permet pas de remonter au code, ni à vous.',
+      'Aucune adresse électronique, aucun nom, aucun profil n’est transmis, parce qu’il n’en existe aucun dans le produit.',
+      'Vous pouvez désappairer un appareil à tout moment depuis les réglages. Il cesse alors d’envoyer et de recevoir, et les données déjà présentes sur lui restent : désappairer n’efface rien.',
+      'Synchroniser n’est pas sauvegarder. Ce que vous supprimez sur un appareil est supprimé sur tous : l’export reste votre seule copie de secours.',
+    ],
+  },
+];
+
+const SYNC_EN: readonly Bloc[] = [
+  { t: 'h2', x: 'Sync between devices' },
+  {
+    t: 'p',
+    x: 'Sync is optional and off by default. Until you turn it on, no request leaves your device — you can confirm that in your browser’s Network tab. Turning it on requires no account, no email address and no password: a twenty-character code, generated on your device, is enough to pair two installations.',
+  },
+  {
+    t: 'p',
+    x: 'That code is the only key. It never leaves your devices: it is not sent to the relay, not stored on the site, and not known to the publisher. Your data is encrypted with it on your device BEFORE it leaves, and decrypted only once it reaches the other device. The relay receives bytes it cannot read, and there is no way to make it read them — lose the code and nobody can recover it, the publisher included.',
+  },
+  {
+    t: 'ul',
+    x: [
+      'The relay sees neither your habits, nor your notes, nor your schedule: it sees ciphertext, a space identifier derived from your code, and a modification date.',
+      'That space identifier is tied to no account and no identity. It is derived from the code by a one-way function: it leads back neither to the code nor to you.',
+      'No email address, no name and no profile is transmitted, because none exists in the product.',
+      'You can unpair a device at any time from the settings. It then stops sending and receiving, and the data already on it stays: unpairing erases nothing.',
+      'Sync is not backup. Whatever you delete on one device is deleted on all of them: export remains your only safety copy.',
+    ],
+  },
+];
+
 const confidentialiteFr: readonly Bloc[] = [
   {
     t: 'p',
@@ -72,7 +131,7 @@ const confidentialiteFr: readonly Bloc[] = [
   { t: 'h2', x: 'Ce qui est collecté' },
   {
     t: 'p',
-    x: 'Rien. Aucune inscription n’est demandée, aucune adresse électronique n’est saisie, aucun identifiant n’est attribué. L’application ne transmet vos données à aucun destinataire, pour la raison simple qu’elle ne dispose d’aucun serveur applicatif vers lequel les transmettre : les pages sont statiques et le traitement se fait entièrement dans votre navigateur.',
+    x: 'Rien. Aucune inscription n’est demandée, aucune adresse électronique n’est saisie, aucun identifiant n’est attribué. Tant que la synchronisation n’est pas activée, l’application ne transmet vos données à aucun destinataire : les pages sont statiques et le traitement se fait entièrement dans votre navigateur. Si vous appairez deux appareils, ce qui transite est chiffré sur l’appareil avant de partir — la section consacrée à la synchronisation le détaille.',
   },
   { t: 'h2', x: 'Où vivent vos données' },
   {
@@ -88,6 +147,7 @@ const confidentialiteFr: readonly Bloc[] = [
       'Une copie de secours est prise automatiquement avant chaque import et avant chaque réinitialisation. Elle reste elle aussi sur votre appareil.',
     ],
   },
+  ...(syncDisponible() ? SYNC_FR : []),
   { t: 'h2', x: 'Cookies et traceurs' },
   {
     t: 'p',
@@ -135,7 +195,7 @@ const confidentialiteEn: readonly Bloc[] = [
   { t: 'h2', x: 'What is collected' },
   {
     t: 'p',
-    x: 'Nothing. No sign-up is required, no email address is entered, no identifier is assigned. The app transmits your data to no recipient, for the simple reason that it has no application server to transmit it to: the pages are static and all processing happens inside your browser.',
+    x: 'Nothing. No sign-up is required, no email address is entered, no identifier is assigned. As long as sync is off, the app transmits your data to no recipient: the pages are static and all processing happens inside your browser. If you pair two devices, whatever travels is encrypted on the device before it leaves — the section on sync spells this out.',
   },
   { t: 'h2', x: 'Where your data lives' },
   {
@@ -151,6 +211,7 @@ const confidentialiteEn: readonly Bloc[] = [
       'A backup is taken automatically before every import and every reset. It too stays on your device.',
     ],
   },
+  ...(syncDisponible() ? SYNC_EN : []),
   { t: 'h2', x: 'Cookies and trackers' },
   {
     t: 'p',

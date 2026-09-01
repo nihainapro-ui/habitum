@@ -72,9 +72,7 @@ export async function synchroniser({ transport, cles }: Deps): Promise<Bilan> {
 
   /* 4. POUSSER ce qui a bougé localement depuis le filigrane. */
   const filigrane = (await metaRepo.get<string>(META_KEYS.syncWatermark)) ?? EPOQUE;
-  const locales = (await lireDepuis(filigrane)).filter(
-    (l) => !appliques.has(`${l.kind}|${l.id}`),
-  );
+  const locales = (await lireDepuis(filigrane)).filter((l) => !appliques.has(`${l.kind}|${l.id}`));
 
   const aEnvoyer: SyncRow[] = [];
   for (const l of locales) {
@@ -126,6 +124,13 @@ export function transportMemoire(): Transport {
         lignes.set(cle, { ...e, seq: compteur });
       }
       return { seq: compteur };
+    },
+    async effacer() {
+      /* Le compteur repart de zéro AVEC les lignes : c'est ce que fait le vrai
+         serveur, où `seq` est calculé par `MAX(seq) + 1` sur une table vidée.
+         Le laisser courir ici ferait diverger la doublure de l'original. */
+      lignes.clear();
+      compteur = 0;
     },
   };
 }

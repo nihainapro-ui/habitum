@@ -1,4 +1,5 @@
 export * from './code';
+export * from './config';
 export * from './crypto';
 export * from './engine';
 export * from './entites';

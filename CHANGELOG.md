@@ -1,5 +1,112 @@
 # Journal des modifications
 
+## 2026-09-01 — La synchronisation est branchée, et le site cesse de promettre l'inverse
+
+Le moteur existait depuis cinq livraisons ; il n'était relié à rien. Cette livraison lui
+donne un volant, une clé de contact — et corrige les huit endroits où le site affirmait
+qu'un tel moteur ne pouvait pas exister.
+
+### Ce qui marche maintenant
+
+Réglages → **Synchronisation**. Un bouton engendre un code de vingt caractères ; on le
+recopie sur le second appareil, et les deux se tiennent à jour. Pas de compte, pas
+d'adresse électronique, pas de mot de passe. Le code dérive à la fois l'identifiant
+d'espace et la clé de chiffrement : le relais ne reçoit que des octets qu'il ne peut pas
+lire.
+
+Le déclenchement se fait au montage, au retour de l'onglet et au retour du réseau —
+**pas d'intervalle**. Un `setInterval` ferait des requêtes pour un onglet que personne ne
+regarde, et le palier gratuit se paie en requêtes, pas en octets.
+
+### Trois refus qui se voient dans le code
+
+**Sans `NEXT_PUBLIC_SYNC_URL`, la section n'apparaît pas.** Ni panneau, ni titre, ni
+bouton grisé. Montrer un appairage qui ne peut aboutir serait le mensonge d'interface que
+le réglage `cloud` avait déjà valu au produit (T4.4).
+
+**Désappairer n'efface rien**, et c'est dit avant le geste. Les entités déjà reçues sont à
+l'utilisateur, pas à la synchronisation.
+
+**Appairer n'est pas sauvegarder**, et c'est dit avant l'appairage, pas après. C'est la
+confusion la plus probable et la plus coûteuse : croire ses données à l'abri parce
+qu'elles sont à deux endroits, puis effacer par mégarde. L'export reste la seule copie de
+secours, et le rappel qui le dit n'a pas bougé.
+
+### L'effacement du relais, qui manquait
+
+Le serveur n'avait aucun moyen d'oublier. Désappairer rendait l'appareil muet et laissait
+les octets en base indéfiniment — intenable pour un produit qui met la confidentialité en
+avant. `DELETE /v1/:espace` existe désormais, et la case « effacer aussi mes données sur
+le serveur » l'expose au désappairage, **décochée par défaut** : détruire et se
+déconnecter ne sont pas le même geste.
+
+Une règle non évidente le gouverne : **si l'effacement échoue, on ne désappaire pas**.
+Jeter le code d'abord laisserait l'utilisateur déconnecté ET définitivement incapable de
+reprendre ses octets — c'est le code qui dérive l'espace à effacer. Il a son test.
+
+### Ce que le site disait, et qui n'était plus vrai
+
+Huit affirmations sont devenues fausses le jour où la synchronisation est devenue
+possible. « Il n'y a pas de serveur du tout. » « Il n'existe aucun serveur qui les
+reçoive. » « Il n'y a pas de synchronisation automatique : elle demanderait un compte et
+un serveur, c'est-à-dire exactement ce que le produit refuse. »
+
+Toutes réécrites, dans les deux langues, pour être vraies **dans les deux cas** — relais
+configuré ou non, appairage activé ou non. La tournure qui y parvient est toujours la
+même : « tant que vous n'activez pas la synchronisation ». Elle reste exacte pour un
+déploiement sans relais, où l'utilisateur ne peut de toute façon rien activer.
+
+L'argument de vérifiabilité est conservé et étendu plutôt qu'abandonné : ouvrez l'onglet
+« Réseau », aucune requête ne part ; appairez, et vous en verrez exactement deux, dont le
+contenu est illisible.
+
+### La politique de confidentialité est conditionnelle
+
+Sa section « Synchronisation » n'apparaît que si le déploiement a un relais. Les deux
+mensonges possibles coûtent cher en sens inverse : annoncer un envoi qui n'a pas lieu
+inquiète pour rien, taire un envoi qui a lieu est bien pire. La variable étant lue à la
+compilation, la page prérendue dit la vérité de **son** déploiement. Trois tests le
+vérifient, dont un qui échoue si un remaniement futur laissait tomber l'un des trois faits
+qui engagent.
+
+### Trois tests qui ne prouvaient rien
+
+Écrits d'abord, verts d'emblée, et vides. Ils sont signalés ici parce que le piège se
+reproduira.
+
+1. **Non-résurrection d'une suppression.** Neutraliser le garde-fou du client OU celui du
+   serveur le laissait vert : il rejouait un scénario où l'appareil en retard tire la
+   pierre tombale avant d'avoir rien à opposer — c'est-à-dire le test voisin. Réécrit
+   contre la vraie course, via un transport mannequin : `transportMemoire` arbitre côté
+   serveur et n'émettrait jamais cette ligne, or c'est la défense du **client** qu'on
+   éprouve.
+2. **Garde de concurrence.** La première version comptait les appels concurrents et
+   passait au vert garde retirée : les passes ne se croisaient jamais vraiment. Réécrite
+   en bloquant explicitement la première dans `tirer`, l'invariant est devenu vérifiable
+   plutôt que probable.
+3. **Assertion insatisfiable.** `habitsRepo.get` masque les supprimées par construction :
+   `get(id)?.deletedAt` vaut `undefined` quoi que fasse le moteur. `listAll` et `get` sont
+   désormais assertées séparément — une suppression respectée et une ligne jamais arrivée
+   se ressemblent vues de `get` seule.
+
+La leçon tient en une ligne : **un test qu'on n'a pas vu échouer ne garde rien.** Chaque
+invariant de cette livraison a été éprouvé par mutation avant d'être considéré comme tenu.
+
+### Un piège d'horodatage, deux fois rencontré
+
+Création et suppression tombent dans la même milliseconde. Deux horodatages égaux, et à
+égalité la distante l'emporte délibérément — un test bâti dessus passe au vert sans rien
+éprouver. Les antidatages sont donc explicites, et commentés sur place.
+
+### Ce qui reste
+
+- **Le relais n'est pas déployé** : il demande un compte Cloudflare, `wrangler login` et
+  quatre commandes (`sync-server/README.md`). Tant que `NEXT_PUBLIC_SYNC_URL` est vide, le
+  produit se comporte exactement comme avant.
+- **Aucune purge des espaces abandonnés.** Un code perdu laisse ses octets en base pour
+  toujours. Ce n'est pas une fuite — ils sont illisibles et rattachés à personne — mais
+  c'est du stockage qui ne se libère jamais. Écrit dans le README plutôt que tu.
+
 ## 2026-08-31 (suite 6) — Le défilement ne fuit plus, et ce que la mesure a dit
 
 ### D'abord, ce qui n'était PAS le problème
