@@ -6,6 +6,7 @@ import { Check, Copy, Loader2, RefreshCw, Unlink } from 'lucide-react';
 import { Field, champStyle } from '@/components/ui';
 import { useStore } from '@/lib/store';
 import { formaterCode, genererCode, LONGUEUR_CODE } from '@/lib/sync';
+import type { Presence } from '@/lib/sync';
 import { useLocaleSwitcher } from '@/components/shell/locale-provider';
 
 /* Appairage de deux appareils — la seule interface de toute la synchronisation.
@@ -71,6 +72,13 @@ export function SyncSection() {
   /* Composés hors du JSX — `jsx-no-literals` y interdit jusqu'aux gabarits. */
   const codeAffiche = sync.code ? formaterCode(sync.code) : '';
   const codeMasque = '•'.repeat(LONGUEUR_CODE + 4);
+  /* Composé hors du JSX comme les autres : `jsx-no-literals` y interdit
+     jusqu'aux gabarits. */
+  const quand = (a: Presence) =>
+    new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeStyle: 'short' }).format(
+      new Date(a.at),
+    );
+
   const dateSync = sync.lastAt
     ? new Intl.DateTimeFormat(locale, { dateStyle: 'long', timeStyle: 'short' }).format(
         new Date(sync.lastAt),
@@ -204,6 +212,20 @@ export function SyncSection() {
           )}
         </p>
 
+        {/* CE QUI A RÉELLEMENT TRANSITÉ. Sans ce compte, l'heure seule
+            s'affiche à l'identique qu'un échange ait eu lieu ou non : celui
+            qui vient d'appairer son téléphone n'a aucun moyen de savoir si ça
+            a marché, sinon aller vérifier ses habitudes une par une.
+            « Rien à échanger » est dit en toutes lettres plutôt que par deux
+            zéros — un zéro se lit comme une panne. */}
+        {sync.bilan && !sync.enCours ? (
+          <p data-testid="sync-bilan" className="m-0 text-[11.5px]" style={{ color: 'var(--mut)' }}>
+            {sync.bilan.recus + sync.bilan.envoyes === 0
+              ? t('exchangeNone')
+              : t('exchange', { recus: sync.bilan.recus, envoyes: sync.bilan.envoyes })}
+          </p>
+        ) : null}
+
         {/* L'échec est traduit PAR GENRE. « Pas de réseau » et « mauvais code »
             n'appellent pas le même geste : le second seul demande d'agir. */}
         {sync.echec ? (
@@ -228,6 +250,38 @@ export function SyncSection() {
           <RefreshCw size={13} aria-hidden="true" />
           {t('now')}
         </button>
+      </div>
+
+      <div className="flex flex-col gap-2 border-t pt-4" style={{ borderColor: 'var(--line)' }}>
+        <span className="text-[13px]">{t('devices')}</span>
+        <span className="text-[11.5px]" style={{ color: 'var(--mut)' }}>
+          {t('devicesHint')}
+        </span>
+
+        {/* UN SEUL APPAREIL N'EST PAS UNE ERREUR, c'est l'état normal juste
+            après avoir créé un code. On le dit, plutôt que d'afficher une
+            liste d'un élément qui laisse croire à un appairage raté. */}
+        {sync.appareils.length <= 1 ? (
+          <span data-testid="sync-seul" className="text-[12px]" style={{ color: 'var(--mut)' }}>
+            {t('devAlone')}
+          </span>
+        ) : (
+          <ul data-testid="sync-appareils" className="m-0 flex list-none flex-col gap-2 p-0">
+            {sync.appareils.map((a) => (
+              <li key={a.id} className="flex flex-wrap items-baseline gap-2 text-[12.5px]">
+                <span>{a.famille === 'mobile' ? t('devMobile') : t('devBureau')}</span>
+                {a.id === sync.moi ? (
+                  <span className="text-[11px]" style={{ color: 'var(--acc2)' }}>
+                    {t('devMe')}
+                  </span>
+                ) : null}
+                <span className="text-[11px]" style={{ color: 'var(--mut)' }}>
+                  {t('devSeen', { date: quand(a) })}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
 
       <div className="flex flex-col gap-2 border-t pt-4" style={{ borderColor: 'var(--line)' }}>

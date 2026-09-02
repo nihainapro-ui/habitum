@@ -70,6 +70,9 @@ export const META_KEYS = {
   syncWatermark: 'syncWatermark',
   /** Dernière synchronisation réussie, pour l'affichage. */
   syncLastAt: 'syncLastAt',
+  /** Identifiant de CET appareil, tiré au sort. NE VOYAGE PAS : il sert à
+   *  reconnaître, parmi les présences reçues, laquelle est la nôtre. */
+  syncDeviceId: 'syncDeviceId',
 } as const;
 
 /** Réglages d'un compte neuf. `notifications`, `sound` et `vibrate` sont à

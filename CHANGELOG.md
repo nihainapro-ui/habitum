@@ -1,5 +1,59 @@
 # Journal des modifications
 
+## 2026-09-02 (suite) — « Comment savoir que ça a marché ? »
+
+La question est venue d'un usage réel, après un appairage réussi : l'écran affichait
+« Dernière synchronisation : 15 h 22 », et rien d'autre. Or cette ligne s'affiche
+**exactement pareil** qu'un aller-retour ait tout échangé ou n'ait rien trouvé. Celui qui
+vient d'appairer son téléphone n'avait aucun moyen de le vérifier, sinon parcourir ses
+habitudes une par une.
+
+Deux informations manquaient. Elles sont là.
+
+### Ce qui a transité
+
+« 3 reçus · 12 envoyés » sous la date. Le moteur calculait déjà ce bilan depuis la
+première livraison ; la tranche le jetait.
+
+« Rien à échanger — les deux appareils étaient déjà à jour » est écrit en toutes lettres
+plutôt qu'affiché par deux zéros : un zéro se lit comme une panne.
+
+### Avec qui
+
+Chaque appareil s'annonce dans l'espace partagé — une présence chiffrée comme le reste,
+que le relais ne peut pas lire. Les réglages listent désormais « Téléphone · vu à 15 h 22 »
+et « Ordinateur · cet appareil ».
+
+**Un seul appareil n'est pas une erreur** : c'est l'état normal juste après avoir créé un
+code. L'écran le dit, au lieu d'afficher une liste d'un élément qui laisse croire à un
+appairage raté.
+
+### Trois décisions qui se voient dans le code
+
+**Une clé `meta` par appareil**, balayée par préfixe. Chacun n'écrit jamais que la sienne :
+l'arbitrage devient sans objet, deux appareils ne se disputent jamais la même ligne. Aucune
+table Dexie ajoutée, donc aucune migration.
+
+**L'annonce passe AVANT l'aller-retour.** `lireDepuis` ramasse ce qui a bougé depuis le
+filigrane : une présence écrite après le départ attendrait le tour suivant pour partir, et
+le second appareil resterait invisible une synchronisation de plus. Inverser les deux lignes
+fait tomber le test — vérifié par mutation.
+
+**La famille d'appareil reste grossière** — « téléphone » ou « ordinateur ». « Chrome 151
+sur Windows 10 » serait un identifiant d'empreinte déguisé en confort, et se tromper n'a
+ici aucune conséquence.
+
+**Rafraîchie une fois par heure**, pas à chaque passage : une ligne poussée à chaque
+aller-retour, pour une information dont la précision utile est l'heure, c'est du palier
+gratuit dépensé pour rien.
+
+### Un défaut d'isolation dans mes propres tests
+
+Le serveur en mémoire est partagé par tout le fichier — c'est voulu, deux « appareils »
+doivent pouvoir se parler au sein d'un même test. Mais sans remise à zéro, les présences
+laissées par les tests précédents s'accumulaient : un test qui en attendait deux en
+trouvait cinq. Relais neuf à chaque test.
+
 ## 2026-09-02 — Un espace abandonné ne pèse plus éternellement
 
 La livraison de la veille laissait une réserve écrite noir sur blanc : rien n'effaçait
@@ -131,6 +185,17 @@ déploiement sans relais, où l'utilisateur ne peut de toute façon rien activer
 L'argument de vérifiabilité est conservé et étendu plutôt qu'abandonné : ouvrez l'onglet
 « Réseau », aucune requête ne part ; appairez, et vous en verrez exactement deux, dont le
 contenu est illisible.
+
+### Un test qui interdisait la fonctionnalité
+
+`interrupteurs.spec.ts` vérifiait qu'aucun réglage ne contient « cloud », « nuage » **ou
+« synchronis »**. Le motif datait de T4.4, où le réglage `cloud` promettait un nuage
+inexistant — il décrivait la persistance locale sous un nom de service distant.
+
+Ce défaut-là reste interdit. Mais bannir le mot lui-même faisait désormais échouer la
+recette sur une fonctionnalité qui, elle, tient sa promesse — et poussait à la cacher
+plutôt qu'à la nommer. Le motif est donc resserré à « cloud | nuage », et ce que la section
+affiche est vérifié ailleurs, y compris son absence totale sur un déploiement sans relais.
 
 ### Un test qui interdisait la fonctionnalité
 

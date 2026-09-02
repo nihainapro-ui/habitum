@@ -1,6 +1,7 @@
 import { db } from '@/lib/data/db';
 import { logsRepo } from '@/lib/data';
 import type { LogEntry } from '@/lib/domain';
+import { PREFIXE_APPAREIL, type Presence } from './appareils';
 import { SYNC_KINDS, type SyncKind } from './types';
 
 /* LA SEULE PARTIE DE `lib/sync/` QUI CONNAÎT DEXIE.
@@ -69,7 +70,37 @@ export async function lireDepuis(filigrane: string): Promise<LigneLocale[]> {
     }
   }
 
+  /* Les PRÉSENCES d'appareil, une clé par appareil. Un balayage de préfixe et
+     non une liste figée : leur nombre n'est pas connu d'avance, et il change
+     à chaque appairage. `where('key')` s'appuie sur l'index primaire de
+     `meta` (`lib/data/db.ts`) — pas de parcours complet de la table. */
+  const presences = await db.meta.where('key').startsWith(PREFIXE_APPAREIL).toArray();
+  for (const row of presences) {
+    if (row.updatedAt >= filigrane) {
+      lignes.push({ kind: 'meta', id: row.key, updatedAt: row.updatedAt, valeur: row.value });
+    }
+  }
+
   return lignes;
+}
+
+/** Toutes les présences connues, la nôtre comprise. */
+export async function lireAppareils(): Promise<Presence[]> {
+  const rows = await db.meta.where('key').startsWith(PREFIXE_APPAREIL).toArray();
+  return rows.map((r) => r.value as Presence).filter((p) => p && typeof p.id === 'string');
+}
+
+/** Écrit NOTRE présence, et rien d'autre.
+ *
+ *  Chaque appareil n'écrit jamais que sa propre clé : c'est ce qui rend
+ *  l'arbitrage sans objet ici. Deux appareils ne se disputent jamais la même
+ *  ligne, donc aucune présence n'en écrase une autre. */
+export async function ecrireAppareil(presence: Presence): Promise<void> {
+  await db.meta.put({
+    key: `${PREFIXE_APPAREIL}${presence.id}`,
+    value: presence,
+    updatedAt: presence.at,
+  });
 }
 
 export async function lireUne(kind: SyncKind, id: string): Promise<LigneLocale | undefined> {

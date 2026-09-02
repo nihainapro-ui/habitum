@@ -33,7 +33,16 @@
     "backupNote": "Pairing is not backup: whatever you delete on one device disappears on all of them. Export remains your only safety copy.",
     "wipe": "Also erase my data on the server",
     "wipeHint": "Erases the encrypted data left on the relay. Irreversible, and it applies to all your devices: any that have not yet received a change never will. Your local data is untouched.",
-    "offYesWipe": "Yes, unpair and erase"
+    "offYesWipe": "Yes, unpair and erase",
+    "devices": "Paired devices",
+    "devicesHint": "Every device announces itself when it syncs. A device missing from this list has never connected with this code.",
+    "devAlone": "Only this device has announced itself so far. Pair a second one and it will show up here.",
+    "devMe": "this device",
+    "devMobile": "Phone",
+    "devBureau": "Computer",
+    "devSeen": "seen {date}",
+    "exchange": "{recus} received · {envoyes} sent",
+    "exchangeNone": "nothing to exchange — both devices were already up to date"
   },
   "app": {
     "activity": "Activity",

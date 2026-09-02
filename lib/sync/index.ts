@@ -1,3 +1,4 @@
+export * from './appareils';
 export * from './code';
 export * from './config';
 export * from './crypto';

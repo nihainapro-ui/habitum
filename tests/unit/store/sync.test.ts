@@ -29,7 +29,7 @@ vi.mock('@/lib/sync', async (original) => {
 
 const { db } = await import('@/lib/data/db');
 const { META_KEYS, metaRepo, seedEmpty } = await import('@/lib/data');
-const { SyncErreur } = await import('@/lib/sync');
+const { SyncErreur, transportMemoire } = await import('@/lib/sync');
 const { useStore } = await import('@/lib/store');
 const { _viderCacheCles } = await import('@/lib/store/slices/sync');
 
@@ -41,6 +41,12 @@ beforeEach(async () => {
   await db.open();
   await seedEmpty();
   _viderCacheCles();
+  /* UN RELAIS NEUF PAR TEST. Il est partagé par tout le fichier — c'est
+     voulu, deux « appareils » doivent pouvoir se parler au sein d'un même
+     test. Mais sans remise à zéro, les présences d'appareil laissées par les
+     tests précédents s'accumulent dans le même espace, et un test qui en
+     attend deux en trouve cinq. */
+  transportPartage.courant = transportMemoire();
   await useStore.getState().hydrate();
 });
 
@@ -179,6 +185,77 @@ describe('effacement du relais', () => {
     };
     const { cles } = await import('./_cles-sync');
     expect((await t.tirer(await cles(CODE), 0)).lignes.length).toBeGreaterThan(0);
+  }, 30_000);
+});
+
+describe('appareils appairés', () => {
+  it('s’annonce lui-même dès la première synchronisation', async () => {
+    await useStore.getState().activerSync(CODE);
+
+    const { appareils, moi } = useStore.getState().sync;
+    expect(moi).toBeTruthy();
+    expect(appareils.map((a) => a.id)).toEqual([moi]);
+  }, 30_000);
+
+  it('fait apparaître l’autre appareil, et se distingue de lui', async () => {
+    /* LE TEST QUI RÉPOND À LA QUESTION POSÉE : « comment savoir que
+       l'appairage a marché ? » Un appareil seul ne prouve rien ; deux
+       appareils qui se voient, si. */
+    await useStore.getState().activerSync(CODE);
+    const premier = useStore.getState().sync.moi!;
+
+    /* Appareil B : base vierge — donc nouvel identifiant — même code. */
+    db.close();
+    await db.delete();
+    await db.open();
+    await seedEmpty();
+    await useStore.getState().hydrate();
+    await useStore.getState().activerSync(CODE);
+
+    const { appareils, moi } = useStore.getState().sync;
+    expect(moi).not.toBe(premier);
+    expect(appareils).toHaveLength(2);
+    expect(appareils.map((a) => a.id)).toContain(premier);
+    /* Cet appareil vient EN TÊTE : on se cherche soi-même en premier. */
+    expect(appareils[0]!.id).toBe(moi);
+  }, 30_000);
+
+  it('rend compte de ce qui a transité', async () => {
+    /* Sans ce compte, « dernière synchronisation : 15 h 22 » s'affiche
+       exactement pareil qu'un échange ait eu lieu ou non. */
+    await useStore.getState().activerSync(CODE);
+    await creerHabitude('Courir');
+    await useStore.getState().synchroniserMaintenant();
+
+    expect(useStore.getState().sync.bilan!.envoyes).toBeGreaterThan(0);
+
+    /* Un second passage n'a plus rien à dire, et le bilan doit le refléter
+       plutôt que de rester sur les chiffres du précédent. */
+    await useStore.getState().synchroniserMaintenant();
+    expect(useStore.getState().sync.bilan).toEqual({ recus: 0, envoyes: 0 });
+  }, 30_000);
+
+  it('ne réécrit pas sa présence à chaque passage', async () => {
+    /* Une ligne poussée à chaque aller-retour, pour une information dont la
+       précision utile est l'heure : c'est le palier gratuit qu'on dépense. */
+    await useStore.getState().activerSync(CODE);
+    const avant = useStore.getState().sync.appareils[0]!.at;
+
+    await useStore.getState().synchroniserMaintenant();
+
+    expect(useStore.getState().sync.appareils[0]!.at).toBe(avant);
+  }, 30_000);
+
+  it('oublie les présences au désappairage, mais garde son identité', async () => {
+    await useStore.getState().activerSync(CODE);
+    const moi = useStore.getState().sync.moi;
+
+    await useStore.getState().desactiverSync();
+    expect(useStore.getState().sync.appareils).toEqual([]);
+
+    /* L'identifiant local SURVIT : sans lui, chaque réappairage depuis le même
+       appareil ajouterait un fantôme de plus à la liste. */
+    expect(await metaRepo.get(META_KEYS.syncDeviceId)).toBe(moi);
   }, 30_000);
 });
 

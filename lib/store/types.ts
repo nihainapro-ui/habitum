@@ -17,6 +17,7 @@ import type {
   ProjectTask,
 } from '@/lib/domain';
 import type { CreateInput, ImportReport, UpdatePatch } from '@/lib/data';
+import type { Presence } from '@/lib/sync/appareils';
 
 /* Types transverses des tranches.
 
@@ -268,6 +269,18 @@ export interface SyncState {
   lastAt: string | null;
   /** Motif du dernier échec, effacé par le premier succès. */
   echec: SyncEchec | null;
+  /** Ce que le DERNIER aller-retour a réellement échangé. `null` tant qu'il
+   *  n'y en a pas eu dans cette session.
+   *
+   *  Sans ce compte, « dernière synchronisation : 15 h 22 » s'affiche
+   *  exactement pareil qu'un échange ait eu lieu ou non — et celui qui vient
+   *  d'appairer son téléphone n'a aucun moyen de savoir si ça a marché. */
+  bilan: { recus: number; envoyes: number } | null;
+  /** Les appareils qui partagent ce code, celui-ci compris. Reconstruite à
+   *  chaque synchronisation depuis les présences reçues. */
+  appareils: Presence[];
+  /** Identifiant de CET appareil, pour se reconnaître dans la liste. */
+  moi: string | null;
 }
 
 export interface SyncActions {

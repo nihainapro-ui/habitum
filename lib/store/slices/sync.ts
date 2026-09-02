@@ -4,7 +4,14 @@ import { logError } from '@/lib/logger';
 import {
   codeValide,
   deriverCles,
+  doitAnnoncer,
+  ecrireAppareil,
+  engendrerIdAppareil,
+  familleCourante,
+  lireAppareils,
   normaliserCode,
+  ordonner,
+  PREFIXE_APPAREIL,
   SyncErreur,
   synchroniser,
   syncDisponible,
@@ -48,6 +55,25 @@ async function clesPour(code: string): Promise<Cles> {
   return cles;
 }
 
+/** Écrit la présence de CET appareil, si elle a plus d'une heure.
+ *
+ *  Rend son identifiant dans tous les cas — l'appelant en a besoin pour se
+ *  reconnaître dans la liste, qu'on ait réécrit ou non. */
+async function annoncer(): Promise<string> {
+  let moi = await metaRepo.get<string>(META_KEYS.syncDeviceId);
+  if (!moi) {
+    moi = engendrerIdAppareil();
+    await metaRepo.set(META_KEYS.syncDeviceId, moi);
+  }
+
+  const connues = await lireAppareils();
+  const mienne = connues.find((p) => p.id === moi);
+  if (!doitAnnoncer(mienne?.at, Date.now())) return moi;
+
+  await ecrireAppareil({ id: moi, famille: familleCourante(), at: new Date().toISOString() });
+  return moi;
+}
+
 export const syncInitial: SyncState = {
   /* Lu à la construction du store. La valeur est figée à la compilation côté
      navigateur : elle ne peut pas changer en cours de session. */
@@ -57,13 +83,22 @@ export const syncInitial: SyncState = {
   enCours: false,
   lastAt: null,
   echec: null,
+  bilan: null,
+  appareils: [],
+  moi: null,
 };
 
 export const createSyncSlice: StateCreator<AppState, [], [], SyncActions> = (set, get) => ({
   async chargerSync(): Promise<void> {
     const code = await metaRepo.get<string>(META_KEYS.syncCode);
     const lastAt = (await metaRepo.get<string>(META_KEYS.syncLastAt)) ?? null;
-    set((s) => ({ sync: { ...s.sync, actif: Boolean(code), code: code ?? null, lastAt } }));
+    const moi = (await metaRepo.get<string>(META_KEYS.syncDeviceId)) ?? null;
+    /* La liste est relue ici pour qu'un appareil appairé affiche ses pairs
+       DÈS L'OUVERTURE, sans attendre la première synchronisation. */
+    const appareils = ordonner(await lireAppareils(), moi);
+    set((s) => ({
+      sync: { ...s.sync, actif: Boolean(code), code: code ?? null, lastAt, moi, appareils },
+    }));
   },
 
   async activerSync(saisi: string): Promise<boolean> {
@@ -107,9 +142,29 @@ export const createSyncSlice: StateCreator<AppState, [], [], SyncActions> = (set
     await metaRepo.remove(META_KEYS.syncCursor);
     await metaRepo.remove(META_KEYS.syncWatermark);
     await metaRepo.remove(META_KEYS.syncLastAt);
+
+    /* Les présences des AUTRES appareils partent aussi : elles décrivent un
+       partage auquel on ne participe plus. La nôtre part avec — elle serait
+       sinon republiée telle quelle au prochain appairage, avec une date qui
+       n'a plus de sens. L'identifiant local, lui, RESTE : le réappairage
+       depuis le même appareil doit reprendre la même identité, sans quoi
+       chaque désappairage laisserait un fantôme de plus dans la liste. */
+    for (const p of await lireAppareils()) {
+      await metaRepo.remove(`${PREFIXE_APPAREIL}${p.id}`);
+    }
+
     cache = null;
     set((s) => ({
-      sync: { ...s.sync, actif: false, code: null, lastAt: null, echec: null, enCours: false },
+      sync: {
+        ...s.sync,
+        actif: false,
+        code: null,
+        lastAt: null,
+        echec: null,
+        enCours: false,
+        bilan: null,
+        appareils: [],
+      },
     }));
     return true;
   },
@@ -126,6 +181,13 @@ export const createSyncSlice: StateCreator<AppState, [], [], SyncActions> = (set
     set((s) => ({ sync: { ...s.sync, enCours: true } }));
     try {
       const cles = await clesPour(sync.code);
+
+      /* L'ANNONCE PASSE AVANT L'ALLER-RETOUR, et c'est ce qui la fait voyager :
+         `lireDepuis` ramasse ce qui a bougé depuis le filigrane, donc une
+         présence écrite après le départ attendrait le tour suivant pour
+         partir. Écrite ici, elle voyage dans la foulée. */
+      const moi = await annoncer();
+
       const bilan = await synchroniser({ transport: transportHttp(urlSync()), cles });
 
       /* On ne recharge QUE si quelque chose est arrivé. Sans cette garde, une
@@ -133,10 +195,13 @@ export const createSyncSlice: StateCreator<AppState, [], [], SyncActions> = (set
          à chaque passage — et ferait clignoter les listes pour rien. */
       const donnees = bilan.recus > 0 ? await rechargerDonnees() : null;
       const lastAt = (await metaRepo.get<string>(META_KEYS.syncLastAt)) ?? null;
+      /* Relue APRÈS l'aller-retour : c'est là que les présences des autres
+         appareils viennent d'être écrites par `ecrire`. */
+      const appareils = ordonner(await lireAppareils(), moi);
 
       set((s) => ({
         ...(donnees ?? {}),
-        sync: { ...s.sync, enCours: false, lastAt, echec: null },
+        sync: { ...s.sync, enCours: false, lastAt, echec: null, bilan, moi, appareils },
       }));
     } catch (e) {
       /* `SyncErreur` porte un genre traduisible ; tout le reste est un vrai

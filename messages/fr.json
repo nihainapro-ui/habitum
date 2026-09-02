@@ -33,7 +33,16 @@
     "backupNote": "Appairer n’est pas sauvegarder : ce qui est supprimé sur un appareil disparaît sur tous. L’export reste votre seule copie de secours.",
     "wipe": "Effacer aussi mes données sur le serveur",
     "wipeHint": "Efface les données chiffrées déposées sur le relais. Irréversible, et valable pour tous vos appareils : ceux qui n’ont pas encore reçu une modification ne la recevront plus. Vos données locales ne sont pas touchées.",
-    "offYesWipe": "Oui, désappairer et effacer"
+    "offYesWipe": "Oui, désappairer et effacer",
+    "devices": "Appareils appairés",
+    "devicesHint": "Chaque appareil s’annonce à la synchronisation. Un appareil absent d’ici ne s’est jamais connecté avec ce code.",
+    "devAlone": "Seul cet appareil s’est annoncé pour l’instant. Appairez-en un second pour le voir apparaître ici.",
+    "devMe": "cet appareil",
+    "devMobile": "Téléphone",
+    "devBureau": "Ordinateur",
+    "devSeen": "vu {date}",
+    "exchange": "{recus} reçus · {envoyes} envoyés",
+    "exchangeNone": "rien à échanger — les deux appareils étaient déjà à jour"
   },
   "app": {
     "activity": "Activité",
