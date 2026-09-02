@@ -1,5 +1,67 @@
 # Journal des modifications
 
+## 2026-09-02 (suite 4) — Clôture du lot A : six défauts d'affichage, mesurés
+
+Le lot A partait d'un audit jetable : chaque vue rendue dans le navigateur à
+360/390/768/1060/1440 px, débordements relevés à l'œil. **339 relevés bruts.**
+Après filtrage des faux positifs — éléments d'accessibilité invisibles
+(boîtes de 1 px par construction), troncatures volontaires (points de
+suspension assumés), halo décoratif du logo (`aria-hidden`) et marge négative
+déjà documentée de l'interrupteur — **six défauts réels**. Ce qui est voulu
+n'a jamais été « corrigé » : chaque exclusion est justifiée dans
+`tests/e2e/debordements.spec.ts`, qui remplace désormais l'audit jetable par
+une mesure permanente (`scrollWidth > clientWidth`, six vues, cinq largeurs,
+30 cas).
+
+**Les tuiles (Tableau de bord, Statistiques).** Les libellés en petites
+majuscules tenaient plus large que leur tuile — « prioritaires » mesuré à
+80 px pour 47 à 62 px disponibles selon la largeur, et le mot seul réclame
+encore 61 px à interlettrage nul : resserrer ne suffisait jamais. Sous 480 px,
+l'interlettrage se resserre et le retour à la ligne est autorisé
+(`break-words`) ; au-delà, rien ne change, le rendu y était déjà bon.
+
+**La ligne d'Aujourd'hui à 360 px.** L'hypothèse du plan était fausse : la
+jauge de progression était accusée, la mesure a montré qu'elle est déjà hors
+flux (`display:none`) sous 768 px et n'a aucune part dans le débordement. Le
+vrai coupable est la quantité et le compteur −/+, qui n'accaparaient que
+36 à 43 px pour le titre. Une première version faisait céder les mots
+eux-mêmes (`break-words` sur le nom) — « Méditer » s'affichait « Médit »
+puis « er » — constatée et **refusée** en revue. Le correctif retenu fait
+plutôt céder la quantité et le compteur, groupés avec la jauge, sur une
+ligne suivante sous 400 px : le bloc central passe de 36-43 à 220 px, où même
+le mot le plus long du jeu de démonstration tient sans jamais se scinder.
+
+**Le tiroir « ⋮ ».** Ce même correctif l'avait décroché sur une troisième
+ligne, à 86 px du titre au lieu des 5 à 18 px des lignes correctement
+ancrées. Réancré par un ordre visuel (`order`) qui ne touche pas au DOM ni à
+l'ordre de tabulation ; un garde-fou dans `vue-today.spec.ts` vérifie
+désormais cet écart sous 30 px et a été confirmé par mutation.
+
+**Le crayon des habitudes.** L'édition existait déjà — taper le nom ouvrait
+l'éditeur — mais rien ne le signalait, contrairement à Work et aux Tâches.
+Le crayon reprend leur dessin à l'identique.
+
+**Deux défauts non reproduits, donc non corrigés.** L'élément fantôme du
+Calendrier (un `div` vide hors écran relevé par l'audit) reste introuvable
+après un balayage exhaustif — cinq largeurs, quatre modes, compte démo et
+vierge, deux moteurs. La date coupée de l'onglet Tâches (« 2026-08- / 31 »)
+n'a pas été reproduite non plus, y compris sur un cas fabriqué à l'extrême
+(largeur forcée à 110 px). Hypothèse retenue pour les deux : capture ou
+défaut d'un ancien APK. Un correctif sans défaut vu serait une fabrication ;
+aucun code n'a été touché pour ces deux-là (détail dans les entrées
+« suite 2 » et « suite 3 » ci-dessous).
+
+**Le filet permanent.** `tests/e2e/debordements.spec.ts` couvre maintenant
+`/app`, `/app/stats`, `/app/today`, `/app/tasks`, `/app/calendar` et
+`/app/habits` — cette dernière ajoutée en clôture de lot puisque c'est elle
+que le crayon vient de modifier, la moins couverte du lot jusque-là (mesurée
+à la main à 360 px avant l'ajout : aucun débordement). Une coupure de texte
+est stable d'une exécution à l'autre, donc invisible à une recette de
+captures comparées — seule cette mesure l'attrape.
+
+**Ce qui reste ouvert.** La recette visuelle (`npm run test:visual`) n'a pas
+pu tourner faute de Docker sur ce poste ; à passer en CI avant fusion.
+
 ## 2026-09-02 (suite 3) — La date coupée : toujours pas reproduite, même à l'extrême
 
 Une capture d'écran utilisateur montrait, dans l'onglet Tâches, une date coupée en plein

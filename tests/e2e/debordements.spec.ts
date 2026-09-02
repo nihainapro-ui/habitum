@@ -24,8 +24,20 @@ const LARGEURS = [360, 390, 768, 1060, 1440] as const;
    l'audit initial : `/app/tasks` et `/app/calendar` sont corrigées par des
    tâches ultérieures du même lot, qui ont besoin de ce filet pour ne pas
    travailler à l'aveugle. L'audit n'y a relevé aucune coupe, donc leur ajout
-   ne crée aucun échec supplémentaire attendu. */
-const VUES = ['/app', '/app/stats', '/app/today', '/app/tasks', '/app/calendar'] as const;
+   ne crée aucun échec supplémentaire attendu.
+
+   `/app/habits` rejoint la liste en clôture de lot (tâche 7) : c'est la vue
+   que la tâche 5 vient de modifier (bouton crayon sur `HabitCard`), donc la
+   moins couverte du lot avant cet ajout. Mesurée à la main à 360 px par la
+   revue : aucun débordement, titres intacts. */
+const VUES = [
+  '/app',
+  '/app/stats',
+  '/app/today',
+  '/app/tasks',
+  '/app/calendar',
+  '/app/habits',
+] as const;
 
 async function releverDebordements(page: import('@playwright/test').Page) {
   return page.evaluate(() => {
