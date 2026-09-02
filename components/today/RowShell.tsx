@@ -141,9 +141,19 @@ export function RowShell({
             que de forcer le titre ou la pastille à rétrécir sous leur propre
             mot. La quantité elle-même reste NON coupée : « 5/8 verres » EST
             l'information de la ligne, c'est sa PLACE qui change, pas son
-            texte. */}
+            texte.
+
+            `max-[399px]:order-2` : sans lui, le tiroir d'actions (juste après
+            ce groupe dans le flux) suit le même retour à la ligne que lui —
+            constaté en ronde de correction 2, sur toute ligne qui affiche une
+            quantité, à une largeur inférieure à 400 px : un « ⋮ » esseulé sur
+            une TROISIÈME ligne, quand les lignes sans quantité le gardent en
+            haut à droite. Le tiroir passe devant ce groupe dans l'ORDRE
+            visuel (`max-[399px]:order-1` sur le tiroir, ci-dessous) sans
+            bouger dans le DOM — l'ordre de tabulation, qui suit le DOM et non
+            l'affichage, reste : case, quantité/compteur, tiroir, inchangé. */}
         {amount || controls || (ratio !== null && ratio !== undefined) ? (
-          <div className="flex flex-none items-center gap-3 max-[399px]:basis-full max-[399px]:justify-end">
+          <div className="flex flex-none items-center gap-3 max-[399px]:order-2 max-[399px]:basis-full max-[399px]:justify-end">
             {amount ? (
               <span
                 className="font-mono text-[11px] whitespace-nowrap"
@@ -174,7 +184,13 @@ export function RowShell({
           </div>
         ) : null}
 
-        {drawer}
+        {/* `max-[399px]:order-1` : reste sur la première ligne (avec la case,
+            le glyphe et le titre) au lieu de suivre le groupe
+            quantité/jauge/compteur sur la ligne suivante — voir le
+            commentaire ci-dessus, sur ce même groupe. Au-dessus de 400 px,
+            aucun ordre n'est forcé : le tiroir garde sa position naturelle,
+            en fin de rangée. */}
+        <div className="max-[399px]:order-1">{drawer}</div>
       </div>
 
       {sub}

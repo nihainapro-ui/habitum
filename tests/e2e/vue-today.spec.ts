@@ -208,6 +208,46 @@ test.describe('today', () => {
     await verifierPaliers(page, ROUTE);
   });
 
+  /* Garde-fou — tâche 3 (lot A), ronde de correction 2. Le tiroir « ⋮ »
+     (`ActionDrawer`) était resté enfant direct de la rangée de premier
+     niveau, hors du groupe quantité/jauge/compteur passé à la ligne suivante
+     sous 400 px (`RowShell.tsx`) : il suivait le même retour à la ligne et
+     atterrissait seul sur une TROISIÈME ligne, décroché du titre. Sondé :
+     86 px d'écart entre le haut du titre et le haut du tiroir dans cet état
+     fautif, contre 5 à 18 px une fois l'ordre visuel corrigé
+     (`max-[399px]:order-1` sur le tiroir, `order-2` sur le groupe) — 30 px
+     sépare proprement les deux, avec marge des deux côtés. `debordements.spec.ts`
+     ne l'aurait jamais vu : il ne mesure que des coupures de texte, jamais une
+     position aberrante. */
+  test('le tiroir d’actions reste ancré au titre à 360 px, même quand la quantité passe à la ligne', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 360, height: 900 });
+    await ouvrirAvecDemo(page, ROUTE);
+
+    // Quatre lignes du jeu de démonstration affichent une quantité (et donc
+    // le groupe qui passe à la ligne sous 400 px) : les quatre sont vérifiées,
+    // pas une seule, puisque c'est justement ce groupe qui entraînait le défaut.
+    for (const nom of [
+      'Méditer',
+      "Boire 8 verres d'eau",
+      'Courir au moins 3 km',
+      'Lire au moins 20 pages',
+    ]) {
+      const ligne = lignes(page).filter({ hasText: nom });
+      const titre = ligne.locator('[data-name]');
+      const tiroir = ligne.getByRole('button', { name: new RegExp(`Plus d.actions : ${nom}`) });
+
+      const boiteTitre = await titre.boundingBox();
+      const boiteTiroir = await tiroir.boundingBox();
+      expect(boiteTitre, `titre introuvable : ${nom}`).not.toBeNull();
+      expect(boiteTiroir, `tiroir introuvable : ${nom}`).not.toBeNull();
+
+      const ecart = Math.abs(boiteTiroir!.y - boiteTitre!.y);
+      expect(ecart, `${nom} : tiroir décroché de son titre (${ecart} px)`).toBeLessThan(30);
+    }
+  });
+
   test('accessible', async ({ page }) => {
     await ouvrirAvecDemo(page, ROUTE);
     const { violations } = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).analyze();
