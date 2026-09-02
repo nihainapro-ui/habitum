@@ -137,15 +137,36 @@ export function StatsView() {
               className="rounded-field border p-3"
               style={{ borderColor: 'var(--line)', background: 'var(--panel2)' }}
             >
+              {/* L'interlettrage de 0.18em rendait le seul mot « prioritaires » plus
+                  large (80 px) que la tuile de 360 px (62 px) : un mot insécable qui
+                  ne tient pas DÉBORDE, il ne passe pas à la ligne. Sous 480 px
+                  l'interlettrage se resserre et le retour à la ligne est permis ; au-
+                  delà, rien ne change — le rendu y était bon, et les captures de
+                  recette ne doivent pas bouger.
+
+                  Les tuiles de Stats sont plus étroites que celles du tableau de bord
+                  (l'anneau y fait 132 px contre 108) : à 360 px, même « Jours parfaits »
+                  déborde encore après le resserrement. Resserrer davantage ou réduire la
+                  police ne suffirait pas non plus (mesuré : le mot « parfaits » seul
+                  dépasse la tuile même à interlettrage nul). `break-words` scinde le mot
+                  au lieu de le couper hors champ : toutes les lettres restent visibles,
+                  réparties sur deux lignes. */}
               <div
-                className="font-mono text-[8.5px] tracking-[0.18em] uppercase"
+                className="font-mono text-[8.5px] leading-[1.5] tracking-[0.04em] uppercase break-words min-[480px]:tracking-[0.18em]"
                 style={{ color: 'var(--txt2)' }}
               >
                 {i.libelle}
               </div>
+              {/* La valeur est UNE grandeur — « 4 h 36 » cassé en trois lignes se lit
+                  « 4 h » puis « 36 », deux nombres qui n'existent pas. Mais l'insécable
+                  est lui-même gardé sous 480 px : mesuré, « 2 h 18 » y réclame 79 px
+                  quand la tuile n'en offre que 33 — forcé sur une ligne, il DÉBORDE au
+                  lieu de passer à la ligne. Un débordement (texte tronqué hors champ)
+                  est pire que le retour à la ligne qu'il était censé éviter ; l'un cache
+                  des caractères, l'autre les garde tous visibles. */}
               <div
                 data-testid={`kpi-${i.cle}`}
-                className="mt-1 font-mono text-[22px] font-bold"
+                className="mt-1 font-mono text-[22px] font-bold min-[480px]:whitespace-nowrap"
                 style={{ color: i.couleur }}
               >
                 {i.valeur}

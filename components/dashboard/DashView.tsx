@@ -139,15 +139,36 @@ export function DashView() {
               className="rounded-field border p-3"
               style={{ borderColor: 'var(--line)', background: 'var(--panel2)' }}
             >
+              {/* L'interlettrage de 0.18em rendait le seul mot « prioritaires » plus
+                  large (80 px) que la tuile de 360 px (62 px) : un mot insécable qui
+                  ne tient pas DÉBORDE, il ne passe pas à la ligne. Sous 480 px
+                  l'interlettrage se resserre et le retour à la ligne est permis ; au-
+                  delà, rien ne change — le rendu y était bon, et les captures de
+                  recette ne doivent pas bouger.
+
+                  Mesuré : même à interlettrage NUL, « prioritaires » (12 lettres)
+                  réclame ~61 px quand la tuile de 360 px n'en offre que 47 — resserrer
+                  l'interlettrage ne suffit jamais à le faire tenir, et une police assez
+                  petite pour y arriver (~6 px) ne se lirait plus. `break-words` scinde
+                  le mot lui-même au lieu de le couper hors champ : toutes les lettres
+                  restent visibles, réparties sur deux lignes, ce que `whitespace-nowrap`
+                  interdirait et que la troncature (`truncate`) masquerait. */}
               <div
-                className="font-mono text-[8.5px] tracking-[0.18em] uppercase"
+                className="font-mono text-[8.5px] leading-[1.5] tracking-[0.04em] uppercase break-words min-[480px]:tracking-[0.18em]"
                 style={{ color: 'var(--txt2)' }}
               >
                 {c.libelle}
               </div>
+              {/* La valeur est UNE grandeur — « 4 h 36 » cassé en trois lignes se lit
+                  « 4 h » puis « 36 », deux nombres qui n'existent pas. Mais l'insécable
+                  est lui-même gardé sous 480 px : mesuré, « 2 h 18 » y réclame 72 px
+                  quand la tuile n'en offre que 47 — forcé sur une ligne, il DÉBORDE au
+                  lieu de passer à la ligne. Un débordement (texte tronqué hors champ)
+                  est pire que le retour à la ligne qu'il était censé éviter ; l'un cache
+                  des caractères, l'autre les garde tous visibles. */}
               <div
                 data-testid={`compteur-${c.cle}`}
-                className="mt-1 font-mono text-[20px] font-bold"
+                className="mt-1 font-mono text-[20px] font-bold min-[480px]:whitespace-nowrap"
               >
                 {c.valeur}
               </div>
