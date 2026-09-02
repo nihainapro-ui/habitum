@@ -70,15 +70,28 @@ export function RowShell({
         transition: 'border-color .2s ease',
       }}
     >
-      <div className="flex items-center gap-3">
+      <div className="flex max-[399px]:flex-wrap items-center gap-3">
         {check}
         <CategoryGlyph category={category} />
 
         <div className="flex min-w-0 flex-1 flex-col gap-0.5">
           <div className="flex flex-wrap items-center gap-2">
+            {/* Pas de `break-words` ici non plus : à 360 px, sondé sur la
+                ligne « Méditer », le titre débordait sa boîte de 5 px (48
+                pour 43 disponibles) — assez pour que `break-words` le
+                scinde visiblement (« Médit »/« er »), constaté et refusé en
+                ronde de correction 1. `min-w-0` reste, seul : il n'autorise
+                que le retour à la ligne normal (aux espaces, comme n'importe
+                quel paragraphe), jamais la coupe DANS un mot. Le vrai
+                correctif est en amont, sur la rangée : le groupe
+                quantité/jauge/compteur libère assez de largeur (36 → 220 px
+                sur cette même ligne à 360 px, sonde en pièce jointe du
+                rapport) pour que même le mot le plus long du jeu de
+                démonstration (« Méditer », 48 px) tienne sans jamais y
+                toucher. */}
             <span
               data-name
-              className="min-w-0 text-[13.5px] font-medium break-words"
+              className="min-w-0 text-[13.5px] font-medium"
               style={{
                 color: done ? 'var(--mut)' : 'var(--txt)',
                 textDecoration: done ? 'line-through' : 'none',
@@ -92,66 +105,75 @@ export function RowShell({
                 10,5. La catégorie, elle, est ÉCRITE dans la ligne d'appoint :
                 le glyphe coloré redevient ce qu'il doit être, décoratif.
 
-                `min-w-0 break-words` : sondé à 360 px sur `/app/today`, cette
-                pastille est le SEUL des deux voisins de la ligne à réellement
-                manger la place — mesuré à 59 px de large (« Habitude ») pour
-                36 px disponibles, soit 23 px de trop, exactement le
-                débordement de boîte relevé par l'audit. Un mot seul, sans
-                espace, ne peut normalement pas se briser : sans ces deux
-                classes, ni `flex-wrap` sur la ligne ni `min-w-0` sur son
-                parent ne peuvent le faire céder. La jauge, elle, a été sondée
-                à 0 × 0 (`display:none`) à cette même largeur — elle
-                disparaît déjà sous 768 px et n'est pour rien dans ce
-                débordement ; ce n'est donc pas elle qu'il fallait faire
-                céder plus tôt. */}
+                `whitespace-nowrap`, sans césure : une pastille cassée en deux
+                lignes (« Habi »/« tude ») est un mot mutilé, pas une mise en
+                page qui cède — la sonde de la ronde précédente avait établi
+                la largeur qui manquait (59 px pour 36 disponibles) mais pas
+                la bonne réponse. Le vrai coupable a été mesuré plus bas
+                (voir le groupe quantité/jauge/compteur) : ce sont EUX qui
+                cèdent la place sous 400 px, pas ce texte. Restée seule sur sa
+                ligne grâce à `flex-wrap` sur la rangée parente, la pastille
+                garde son mot intact et descend au besoin sous le titre. */}
             <span
-              className="min-w-0 rounded-chip px-1.5 py-px text-[10.5px] font-semibold tracking-[0.04em] break-words"
+              className="rounded-chip px-1.5 py-px text-[10.5px] font-semibold tracking-[0.04em] whitespace-nowrap"
               style={{ color: 'var(--txt2)', background: 'var(--panel2)' }}
             >
               {tag}
             </span>
           </div>
           {meta ? (
-            // `break-words` : sondé à 360 px, cette ligne d'appoint dépasse sa
-            // boîte de 2 px (38 pour 36 disponibles) — l'heure (« 13:30 ») est
-            // un jeton sans espace, donc insécable par défaut ; le laisser
-            // céder au besoin coûte moins qu'un débordement horizontal.
-            <span className="font-mono text-[10.5px] break-words" style={{ color: 'var(--mut)' }}>
+            <span className="font-mono text-[10.5px]" style={{ color: 'var(--mut)' }}>
               {meta}
             </span>
           ) : null}
         </div>
 
-        {/* La quantité reste visible sur téléphone : « 5/8 verres » EST
-            l'information de la ligne. C'est la jauge, redondante avec elle,
-            qui disparaît quand la place manque. */}
-        {amount ? (
-          <span
-            className="font-mono text-[11px] whitespace-nowrap"
-            style={{ color: 'var(--txt2)' }}
-          >
-            {amount}
-          </span>
+        {/* Quantité + jauge + compteur, groupés : à eux trois, MOINS porteurs
+            d'information que le titre ou la pastille de type — c'est donc à
+            eux de céder. Sondé à 360 px sur `/app/today`, avant puis après ce
+            groupement (sonde en pièce jointe du rapport) : sans ce groupe sur
+            la ligne, le bloc central passe de 36 à 220 px pour la ligne
+            « Lire au moins 20 pages » et de 43 à 220 px pour « Méditer » —
+            largement au-dessus des 59 px que réclame la pastille « Habitude »,
+            le mot le plus large mesuré sur toute la vue. Sous 400 px (seuil
+            déjà présent dans l'intention du commentaire d'origine, repris ici
+            littéralement), ce groupe passe donc À LA LIGNE SUIVANTE plutôt
+            que de forcer le titre ou la pastille à rétrécir sous leur propre
+            mot. La quantité elle-même reste NON coupée : « 5/8 verres » EST
+            l'information de la ligne, c'est sa PLACE qui change, pas son
+            texte. */}
+        {amount || controls || (ratio !== null && ratio !== undefined) ? (
+          <div className="flex flex-none items-center gap-3 max-[399px]:basis-full max-[399px]:justify-end">
+            {amount ? (
+              <span
+                className="font-mono text-[11px] whitespace-nowrap"
+                style={{ color: 'var(--txt2)' }}
+              >
+                {amount}
+              </span>
+            ) : null}
+
+            {ratio === null || ratio === undefined ? null : (
+              <span
+                aria-hidden="true"
+                className="rounded-pill hidden h-[5px] w-14 flex-none overflow-hidden md:block"
+                style={{ background: 'var(--panel2)' }}
+              >
+                <span
+                  className="block h-full"
+                  style={{
+                    width: `${Math.round(Math.min(1, Math.max(0, ratio)) * 100)}%`,
+                    background: couleur,
+                    transition: 'width .4s ease',
+                  }}
+                />
+              </span>
+            )}
+
+            {controls}
+          </div>
         ) : null}
 
-        {ratio === null || ratio === undefined ? null : (
-          <span
-            aria-hidden="true"
-            className="rounded-pill hidden h-[5px] w-14 flex-none overflow-hidden md:block"
-            style={{ background: 'var(--panel2)' }}
-          >
-            <span
-              className="block h-full"
-              style={{
-                width: `${Math.round(Math.min(1, Math.max(0, ratio)) * 100)}%`,
-                background: couleur,
-                transition: 'width .4s ease',
-              }}
-            />
-          </span>
-        )}
-
-        {controls}
         {drawer}
       </div>
 
