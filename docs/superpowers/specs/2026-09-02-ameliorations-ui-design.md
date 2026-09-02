@@ -61,6 +61,10 @@ sensible (il touche à ce que la politique de confidentialité décrit).
    l'audit ; la capture provient vraisemblablement de l'ancien APK, antérieur au
    correctif de séparateur déjà présent dans `TaskItem.tsx`. À vérifier sur le nouvel
    APK ; ne corriger que si reproduit.
+   **Vérifié le 2026-09-02, toujours non reproduit** : mesuré `scrollWidth`/`clientWidth`
+   de chaque segment (catégorie/heure/date) des huit tâches de démonstration à 360 et
+   390 px, puis d'un cas fabriqué à l'extrême (ligne forcée à 110 px de large) — aucune
+   coupe. Aucun correctif appliqué ; détail au CHANGELOG.
 
 ### Ce qui est VOULU et ne sera pas « corrigé »
 

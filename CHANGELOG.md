@@ -1,5 +1,28 @@
 # Journal des modifications
 
+## 2026-09-02 (suite 3) — La date coupée : toujours pas reproduite, même à l'extrême
+
+Une capture d'écran utilisateur montrait, dans l'onglet Tâches, une date coupée en plein
+milieu : « 2026-08- » en fin de ligne, « 31 » à la suivante. `TaskItem.tsx` porte déjà
+`whitespace-nowrap` sur chaque segment de la ligne d'appoint (catégorie, heure, date) et
+un commentaire de correctif antérieur ; l'audit automatisé du même jour ne l'avait pas
+reproduit non plus. Hypothèse : la capture vient d'un APK antérieur à ce correctif.
+
+**Vérification, avant toute correction.** Les huit tâches du jeu de démonstration ont été
+mesurées sur `/app/tasks` à 360 et 390 px : pour chacune, `scrollWidth` contre
+`clientWidth` de CHAQUE segment (« Travail · », « ⏰ 09:00 · », « 2026-08-05 »…) — aucun
+dépassement.
+
+**Puis le pire cas, fabriqué.** Une neuvième tâche a été injectée directement dans
+IndexedDB avec la date de la capture (`2026-08-31`), et la largeur de la ligne forcée à
+110 px — bien en deçà de tout ce qu'un téléphone produit. Toujours aucune coupe : le
+`flex-wrap` du conteneur fait passer un segment ENTIER à la ligne suivante plutôt que de
+le fendre, exactement ce que le commentaire de `TaskItem.tsx` décrit.
+
+**Rien n'est corrigé.** Un correctif sans défaut reproduit est du bruit. L'hypothèse de
+l'ancien APK est retenue ; `/app/tasks` reste couvert par
+`tests/e2e/debordements.spec.ts` aux cinq paliers.
+
 ## 2026-09-02 (suite 2) — L'élément fantôme du Calendrier : introuvable à la mesure
 
 L'audit du 2026-09-02 relevait, sur `/app/calendar`, un `div` vide à −344 px (360 px de
