@@ -59,6 +59,17 @@ for (const route of ROUTES_AVEC_INTERRUPTEURS) {
 test('le réglage `cloud` ne prétend plus rien synchroniser', async ({ page }) => {
   await ouvrirVierge(page, '/app/settings');
 
-  await expect(page.getByText(/cloud|nuage|synchronis/i)).toHaveCount(0);
+  /* Le motif ne couvre plus « synchronis », et le resserrement est volontaire.
+
+     T4.4 reprochait au réglage `cloud` de PROMETTRE un nuage qui n'existait pas :
+     il décrivait la persistance locale sous un nom de service distant. Ce
+     défaut-là est toujours interdit, et c'est ce que ce test garde.
+
+     Depuis le 2026-09-01, une vraie synchronisation existe (ADR-0009). Continuer
+     à bannir le mot ferait échouer la recette sur une fonctionnalité qui, elle,
+     tient sa promesse — et pousserait à la cacher plutôt qu'à la nommer. Ce
+     qu'elle affiche est vérifié ailleurs, dans `vue-reglages.spec.ts`, y compris
+     son absence totale sur un déploiement sans relais. */
+  await expect(page.getByText(/cloud|nuage/i)).toHaveCount(0);
   await expect(page.getByText('Sauvegarde locale sur cet appareil')).toBeVisible();
 });

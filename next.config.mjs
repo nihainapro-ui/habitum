@@ -81,7 +81,23 @@ const CSP = [
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob:",
   "font-src 'self'",
-  "connect-src 'self'",
+  /* LE SEUL APPEL SORTANT DE L'APPLICATION, et il n'est autorisé que vers
+     l'adresse fixée à la construction. Sans `NEXT_PUBLIC_SYNC_URL`, la
+     directive reste `'self'` — la politique d'un déploiement sans
+     synchronisation ne bouge pas d'un caractère.
+
+     Une ORIGINE EXACTE, jamais un joker. Ouvrir `connect-src` à `https:`
+     rendrait la politique décorative, alors qu'elle est justement l'argument
+     de confidentialité que le site invite à vérifier dans l'onglet
+     « Réseau ». La barre finale est retirée : une source CSP se compare à
+     l'origine, et `https://x/` n'est pas `https://x`.
+
+     C'est cette ligne qui manquait pour que la synchronisation FONCTIONNE :
+     sans elle le navigateur bloque la requête avant qu'elle parte, et
+     l'utilisateur voit une panne réseau qu'aucun réseau n'explique. */
+  ['connect-src', "'self'", (process.env.NEXT_PUBLIC_SYNC_URL ?? '').replace(/\/+$/, '')]
+    .filter(Boolean)
+    .join(' '),
   "worker-src 'self' blob:",
   "manifest-src 'self'",
   "media-src 'self'",

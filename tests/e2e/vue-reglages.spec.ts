@@ -16,22 +16,86 @@ test.describe('settings', () => {
     await expect(page.getByText('Sauvegarde locale sur cet appareil')).toBeVisible();
   });
 
-  /* La synchronisation est FACULTATIVE, et ce déploiement n'a pas de relais
-     (`NEXT_PUBLIC_SYNC_URL` absente en recette). La section entière — titre du
-     panneau compris — doit alors disparaître : proposer un appairage qui ne
-     peut aboutir serait le même mensonge d'interface que l'ancien réglage
-     `cloud` juste au-dessus.
+  /* --- Synchronisation ----------------------------------------------------
 
-     Ce test vérifie la dégradation dans l'application RÉELLE, là où les tests
-     unitaires ne voient que l'état : c'est la construction Next qui fige la
-     variable, et une erreur d'inlining ne se verrait qu'ici. */
+     Ces deux tests sont EXCLUSIFS : chacun ne vaut que dans une configuration,
+     et se saute dans l'autre. C'est voulu — la disponibilité du relais est
+     figée à la construction Next, une même exécution ne peut donc pas voir les
+     deux états. Les écrire tous les deux garde la dégradation couverte le jour
+     où quelqu'un clonerà le dépôt sans relais. */
+  const RELAIS = process.env.NEXT_PUBLIC_SYNC_URL ?? '';
+
   test('sans relais configuré, la synchronisation ne s’affiche pas du tout', async ({ page }) => {
+    test.skip(RELAIS !== '', 'ce déploiement a un relais');
     await ouvrirVierge(page, ROUTE);
     await attendreHydratation(page);
 
+    /* Proposer un appairage qui ne peut aboutir serait le même mensonge
+       d'interface que l'ancien réglage `cloud` juste au-dessus. */
     await expect(page.getByRole('heading', { name: 'Synchronisation' })).toHaveCount(0);
     await expect(page.getByText('Créer un code')).toHaveCount(0);
     await expect(page.getByTestId('sync-code')).toHaveCount(0);
+  });
+
+  test('avec un relais configuré, appairer engendre un code et signale le succès', async ({
+    page,
+  }) => {
+    test.skip(RELAIS === '', 'aucun relais configuré sur ce déploiement');
+
+    /* LE RELAIS EST SIMULÉ, et ce n'est pas de la commodité. Le laisser
+       joindre le vrai ferait écrire ce test dans la base de production à
+       chaque exécution, et rendrait la recette dépendante d'une panne réseau.
+       Ce qu'on éprouve ici est le BRANCHEMENT — l'écran, la tranche, le
+       chiffrement, le transport —, pas le serveur, qui a ses propres tests. */
+    let appels = 0;
+    /* Le filtre est un PRÉDICAT sur l'hôte, pas un motif glob. Un motif qui ne
+       correspondrait pas laisserait l'appel joindre le VRAI relais : le test
+       passerait au vert en écrivant dans la base de production, et le compteur
+       resterait à zéro sans qu'on sache pourquoi. Comparer l'hôte ne peut pas
+       rater. */
+    const hote = new URL(RELAIS).host;
+    await page.route(
+      (url) => url.host === hote,
+      async (route) => {
+        appels += 1;
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ seq: 0, lignes: [] }),
+        });
+      },
+    );
+
+    await ouvrirVierge(page, ROUTE);
+    await attendreHydratation(page);
+
+    await expect(page.getByRole('heading', { name: 'Synchronisation' })).toBeVisible();
+    await page.getByRole('button', { name: 'Créer un code' }).click();
+
+    /* Le code est MASQUÉ d'abord : c'est le seul secret, et une capture
+       d'écran de réglages circule plus facilement qu'un mot de passe. */
+    const code = page.getByTestId('sync-code');
+    await expect(code).toBeVisible();
+    await expect(code).toHaveText(/^•+$/);
+
+    await page.getByRole('button', { name: 'Afficher' }).click();
+    /* Vingt caractères de l'alphabet de Crockford, groupés par quatre — et
+       jamais I, L, O ni U, qu'on confond en lisant à voix haute. Le motif est
+       déplié plutôt qu'écrit `(-\w{4}){4}` : `security/detect-unsafe-regex`
+       refuse les quantificateurs imbriqués, et il a raison de ne pas faire
+       d'exception pour un cas où ils seraient inoffensifs. */
+    await expect(code).toHaveText(
+      /^[0-9A-HJKMNP-TV-Z]{4}-[0-9A-HJKMNP-TV-Z]{4}-[0-9A-HJKMNP-TV-Z]{4}-[0-9A-HJKMNP-TV-Z]{4}-[0-9A-HJKMNP-TV-Z]{4}$/,
+    );
+
+    /* L'ÉCRAN D'ABORD, LE COMPTEUR ENSUITE. L'appairage dérive une clé par
+       PBKDF2 — 600 000 itérations, près d'une seconde sur une machine chargée —
+       puis fait son aller-retour. Interroger le compteur juste après le clic
+       le trouve encore à zéro : ce n'est pas une panne, c'est une course. On
+       attend donc le seul signal qui dit que la passe est TERMINÉE, et le
+       compteur n'est plus qu'une confirmation. */
+    await expect(page.getByTestId('sync-state')).toContainText('Dernière synchronisation');
+    expect(appels).toBeGreaterThan(0);
   });
 
   /* Tâche 5.4 — plus aucun interrupteur en attente d'une phase future : les

@@ -1,7 +1,7 @@
 # Habitum
 
 Gestionnaire d'habitudes, de tâches, d'objectifs et de temps de focus.
-**Local-first** : aucune donnée ne quitte l'appareil, aucun compte, aucun appel réseau.
+**Local-first** : aucun compte, et aucun appel réseau tant que la synchronisation n'est pas activée. Une fois activée, elle reste sans compte et le relais ne peut pas lire vos données — elles sont chiffrées sur l'appareil avant de partir.
 FR / EN, trois thèmes.
 
 [![CI](https://github.com/nihainapro-ui/habitum/actions/workflows/ci.yml/badge.svg)](https://github.com/nihainapro-ui/habitum/actions/workflows/ci.yml)

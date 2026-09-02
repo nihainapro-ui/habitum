@@ -44,6 +44,27 @@ Une règle non évidente le gouverne : **si l'effacement échoue, on ne désappa
 Jeter le code d'abord laisserait l'utilisateur déconnecté ET définitivement incapable de
 reprendre ses octets — c'est le code qui dérive l'espace à effacer. Il a son test.
 
+### Le relais est déployé — et la CSP l'a d'abord bloqué
+
+Worker Cloudflare + D1, région WEUR, palier gratuit. `NEXT_PUBLIC_SYNC_URL` renseignée,
+`connect-src` ouverte à **cette origine et à aucune autre**.
+
+Cette dernière ligne manquait, et c'est le fait marquant de la livraison : le tout premier
+appairage réel a échoué non pas sur le réseau, mais sur notre propre politique de sécurité.
+`connect-src 'self'` interdisait la requête **avant qu'elle parte** — l'écran annonçait une
+panne réseau qu'aucun réseau n'expliquait. La synchronisation n'aurait jamais fonctionné en
+ligne.
+
+Ce qu'il faut en retenir : **aucun test unitaire ne pouvait l'attraper**, ils ne servent pas
+d'en-têtes. Seul un test de bout en bout, sur le build de production, l'a vu. Il est
+désormais dans la recette, et `headers.spec.ts` a été resserré plutôt que relâché — il
+nomme l'origine autorisée, et toute autre reste un échec.
+
+Vérifié pour de vrai, contre le relais déployé : un appareil A avec des données, un
+appareil B parti d'un compte **vierge**, le même code — B affiche les données de A. L'espace
+de test a été effacé ensuite par la route `DELETE`, et la base de production compte
+0 ligne.
+
 ### Ce que le site disait, et qui n'était plus vrai
 
 Huit affirmations sont devenues fausses le jour où la synchronisation est devenue
@@ -59,6 +80,17 @@ déploiement sans relais, où l'utilisateur ne peut de toute façon rien activer
 L'argument de vérifiabilité est conservé et étendu plutôt qu'abandonné : ouvrez l'onglet
 « Réseau », aucune requête ne part ; appairez, et vous en verrez exactement deux, dont le
 contenu est illisible.
+
+### Un test qui interdisait la fonctionnalité
+
+`interrupteurs.spec.ts` vérifiait qu'aucun réglage ne contient « cloud », « nuage » **ou
+« synchronis »**. Le motif datait de T4.4, où le réglage `cloud` promettait un nuage
+inexistant — il décrivait la persistance locale sous un nom de service distant.
+
+Ce défaut-là reste interdit. Mais bannir le mot lui-même faisait désormais échouer la
+recette sur une fonctionnalité qui, elle, tient sa promesse — et poussait à la cacher
+plutôt qu'à la nommer. Le motif est donc resserré à « cloud | nuage », et ce que la section
+affiche est vérifié ailleurs, y compris son absence totale sur un déploiement sans relais.
 
 ### La politique de confidentialité est conditionnelle
 
@@ -100,9 +132,12 @@ Création et suppression tombent dans la même milliseconde. Deux horodatages é
 
 ### Ce qui reste
 
-- **Le relais n'est pas déployé** : il demande un compte Cloudflare, `wrangler login` et
-  quatre commandes (`sync-server/README.md`). Tant que `NEXT_PUBLIC_SYNC_URL` est vide, le
-  produit se comporte exactement comme avant.
+- **`NEXT_PUBLIC_SYNC_URL` doit être posée là où le site est publié** (Vercel). Elle ne
+  l'est pour l'instant que dans le `.env.local` de la machine de développement : en ligne,
+  la section de synchronisation n'apparaîtra pas tant que la variable n'y est pas.
+- **Un déploiement sans relais reste pleinement supporté**, et testé comme tel : la section
+  disparaît, la CSP ne bouge pas d'un caractère, la politique de confidentialité cesse de
+  décrire un relais.
 - **Aucune purge des espaces abandonnés.** Un code perdu laisse ses octets en base pour
   toujours. Ce n'est pas une fuite — ils sont illisibles et rattachés à personne — mais
   c'est du stockage qui ne se libère jamais. Écrit dans le README plutôt que tu.

@@ -7,7 +7,13 @@ compatibility_date = "2026-01-01"
 binding = "DB"
 database_name = "habitum-sync"
 # `wrangler d1 create habitum-sync` rend cet identifiant — le coller ici.
-database_id = ""
+# Base créée le 2026-09-01, région WEUR (Europe de l'Ouest).
+#
+# `binding` reste DB et NON le `habitum_sync` suggéré par la sortie de
+# `d1 create` : c'est `env.DB` que lit `src/index.ts`. Recopier la suggestion
+# telle quelle donnerait un Worker qui déploie sans erreur et échoue à la
+# première requête, sur un binding introuvable.
+database_id = "683a75ba-e661-4a18-9fcb-5278e71e94fc"
 
 # Le palier gratuit suffit très largement : 100 000 requêtes par jour, quand un
 # appareil en fait quelques dizaines.

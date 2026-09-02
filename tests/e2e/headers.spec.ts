@@ -34,8 +34,37 @@ test("la CSP verrouille ce qui peut l'être aujourd'hui", async ({ request }) =>
   expect(csp).toMatch(/form-action 'self'/);
   // La promesse produit : rien ne sort de l'appareil.
   expect(csp).toMatch(/connect-src 'self'/);
-  // Aucune origine tierce, quelle que soit la directive.
-  expect(csp).not.toMatch(/https?:\/\//);
+
+  /* LA SEULE ORIGINE EXTERNE TOLÉRÉE EST LE RELAIS DE SYNCHRONISATION, et
+     seulement s'il est configuré.
+
+     Ce test disait auparavant « aucune origine tierce, quelle que soit la
+     directive ». C'était juste tant que l'application ne parlait à personne ;
+     ce serait aujourd'hui un test qui interdit à la fonctionnalité de
+     fonctionner. Il est donc resserré plutôt que relâché : l'origine attendue
+     est nommée, et toute AUTRE reste un échec.
+
+     C'est la CSP qui a fait échouer la première tentative d'appairage réelle :
+     le navigateur bloquait la requête avant qu'elle parte, et l'écran
+     annonçait une panne réseau qu'aucun réseau n'expliquait. Aucun test
+     unitaire ne pouvait l'attraper — ils ne servent pas d'en-têtes. */
+  const relais = (process.env.NEXT_PUBLIC_SYNC_URL ?? '').replace(/\/+$/, '');
+  const origines = csp.match(/https?:\/\/[^\s;]+/g) ?? [];
+
+  if (relais) {
+    expect(csp).toContain(`connect-src 'self' ${relais}`);
+    expect(origines).toEqual([relais]);
+  } else {
+    /* Déploiement sans relais : la politique ne bouge pas d'un caractère. */
+    expect(origines).toEqual([]);
+  }
+
+  /* Aucun joker, dans les deux cas. Ouvrir `connect-src` à `https:` rendrait la
+     politique décorative — et c'est exactement ce qu'elle est censée
+     empêcher. */
+  const connect = csp.split(';').find((d) => d.trim().startsWith('connect-src')) ?? '';
+  expect(connect).not.toContain('*');
+  expect(connect).not.toMatch(/\shttps:(?!\/\/)/);
 });
 
 /* `script-src 'unsafe-inline'` est une tolérance connue, pas un oubli : sans

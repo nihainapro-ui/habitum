@@ -1,4 +1,29 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { defineConfig, devices } from '@playwright/test';
+
+/* Next lit `.env.local` à la construction ; le processus Playwright, non. Sans
+   ce petit relevé, un test ne PEUT PAS savoir dans quelle configuration
+   l'application a été bâtie — et le test de dégradation de la synchronisation
+   (`vue-reglages.spec.ts`) affirmerait une absence dans une application qui,
+   elle, affiche la section.
+
+   Un relevé à la main plutôt que `dotenv` : une dépendance de plus pour six
+   lignes, sur un dépôt qui refuse déjà `@cloudflare/workers-types` pour la
+   même raison. Seules les variables `NEXT_PUBLIC_` sont reprises — elles sont
+   publiques par construction ; un secret n'a rien à faire dans l'environnement
+   d'un test. Ce qui est déjà posé dans l'environnement gagne. */
+try {
+  /* `process.cwd()` et non `import.meta.url` : Playwright charge sa configuration
+     en CommonJS, où `import.meta` n'existe pas. */
+  const brut = readFileSync(join(process.cwd(), '.env.local'), 'utf8');
+  for (const ligne of brut.split(/\r?\n/)) {
+    const m = /^\s*(NEXT_PUBLIC_[A-Z0-9_]+)\s*=\s*(.*)$/.exec(ligne);
+    if (m && !process.env[m[1]!]) process.env[m[1]!] = m[2]!.trim().replace(/^["']|["']$/g, '');
+  }
+} catch {
+  /* Pas de `.env.local` : c'est le cas normal en intégration continue. */
+}
 
 export default defineConfig({
   testDir: './tests/e2e',
