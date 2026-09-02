@@ -78,7 +78,7 @@ export function RowShell({
           <div className="flex flex-wrap items-center gap-2">
             <span
               data-name
-              className="text-[13.5px] font-medium"
+              className="min-w-0 text-[13.5px] font-medium break-words"
               style={{
                 color: done ? 'var(--mut)' : 'var(--txt)',
                 textDecoration: done ? 'line-through' : 'none',
@@ -90,16 +90,33 @@ export function RowShell({
                 le prototype, elle tombait à 3,95 — la couleur d'un domaine de
                 vie est faite pour un glyphe de 30 px, pas pour du texte de
                 10,5. La catégorie, elle, est ÉCRITE dans la ligne d'appoint :
-                le glyphe coloré redevient ce qu'il doit être, décoratif. */}
+                le glyphe coloré redevient ce qu'il doit être, décoratif.
+
+                `min-w-0 break-words` : sondé à 360 px sur `/app/today`, cette
+                pastille est le SEUL des deux voisins de la ligne à réellement
+                manger la place — mesuré à 59 px de large (« Habitude ») pour
+                36 px disponibles, soit 23 px de trop, exactement le
+                débordement de boîte relevé par l'audit. Un mot seul, sans
+                espace, ne peut normalement pas se briser : sans ces deux
+                classes, ni `flex-wrap` sur la ligne ni `min-w-0` sur son
+                parent ne peuvent le faire céder. La jauge, elle, a été sondée
+                à 0 × 0 (`display:none`) à cette même largeur — elle
+                disparaît déjà sous 768 px et n'est pour rien dans ce
+                débordement ; ce n'est donc pas elle qu'il fallait faire
+                céder plus tôt. */}
             <span
-              className="rounded-chip px-1.5 py-px text-[10.5px] font-semibold tracking-[0.04em]"
+              className="min-w-0 rounded-chip px-1.5 py-px text-[10.5px] font-semibold tracking-[0.04em] break-words"
               style={{ color: 'var(--txt2)', background: 'var(--panel2)' }}
             >
               {tag}
             </span>
           </div>
           {meta ? (
-            <span className="font-mono text-[10.5px]" style={{ color: 'var(--mut)' }}>
+            // `break-words` : sondé à 360 px, cette ligne d'appoint dépasse sa
+            // boîte de 2 px (38 pour 36 disponibles) — l'heure (« 13:30 ») est
+            // un jeton sans espace, donc insécable par défaut ; le laisser
+            // céder au besoin coûte moins qu'un débordement horizontal.
+            <span className="font-mono text-[10.5px] break-words" style={{ color: 'var(--mut)' }}>
               {meta}
             </span>
           ) : null}
