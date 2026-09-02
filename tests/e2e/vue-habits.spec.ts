@@ -1,7 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 import golden from '@/tests/fixtures/golden.json';
-import { ouvrirAvecDemo, ouvrirVierge, verifierPaliers } from './helpers/app';
+import { attendreHydratation, ouvrirAvecDemo, ouvrirVierge, verifierPaliers } from './helpers/app';
 
 /* Vue « Habitudes » — 05-SPEC-VUES.md § 4, plan 5 tâche 5.2. */
 
@@ -98,5 +98,22 @@ test.describe('habits', () => {
     await ouvrirAvecDemo(page, ROUTE, { historique: true });
     const { violations } = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).analyze();
     expect(violations.filter((v) => v.impact === 'critical' || v.impact === 'serious')).toEqual([]);
+  });
+
+  test('le crayon ouvre l’éditeur — l’édition cesse d’être un secret', async ({ page }) => {
+    await ouvrirAvecDemo(page, ROUTE);
+    await attendreHydratation(page);
+
+    /* Le nom cliquable existait déjà (HabitCard.tsx:45) ; rien ne le signalait.
+       Le crayon rend l'action VISIBLE, du même dessin que Work et Tâches.
+       Le nom de l'habitude est dans le libellé du bouton — c'est ce que fait
+       déjà ProjectCard, et c'est ce qui distingue les crayons entre eux pour
+       un lecteur d'écran. */
+    await page
+      .getByRole('button', { name: /^Modifier / })
+      .first()
+      .click();
+
+    await expect(page.getByRole('dialog')).toBeVisible();
   });
 });

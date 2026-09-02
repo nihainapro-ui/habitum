@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
+import { Pencil } from 'lucide-react';
 import { habitWeek, type Habit } from '@/lib/domain';
 import { useHabitMetrics, useSettings, useStore } from '@/lib/store';
 import { CategoryGlyph, Ring } from '@/components/ui';
@@ -73,6 +74,19 @@ export function HabitCard({ habit }: { habit: Habit }) {
             {pourcentage}
           </span>
         </div>
+
+        {/* Le nom cliquable ouvrait déjà l'éditeur (ci-dessus) mais rien ne le
+            signalait. Dessin repris à l'identique de ProjectCard.tsx:61-69 —
+            même geste, même repère visuel, dans les trois onglets. */}
+        <button
+          type="button"
+          onClick={() => openEditor({ kind: 'habit', id: habit.id })}
+          aria-label={t('editFor', { name: habit.name })}
+          className="rounded-btn-sm grid h-7 w-7 flex-none cursor-pointer place-items-center border"
+          style={{ borderColor: 'var(--line)', color: 'var(--mut)' }}
+        >
+          <Pencil size={12} aria-hidden="true" />
+        </button>
       </div>
 
       <div className="px-4 pb-4">
