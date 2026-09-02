@@ -130,33 +130,29 @@ export function StatsView() {
           </span>
         </div>
 
-        <div className="grid min-w-0 flex-1 grid-cols-2 gap-3 min-[1060px]:grid-cols-4">
+        {/* Même arbitrage que le Tableau de bord (voir `DashView.tsx`, où
+            l'exposé complet vit) : sous 480 px, l'anneau — ici 132 px, plus
+            large que celui du Tableau de bord — cède sa ligne à cette grille
+            plutôt que de la partager, `max-[479px]:basis-full` forçant le
+            retour. Sans lui, la tuile la plus étroite du lot descendait à
+            33 px offerts au libellé, quand « parfaits » seul réclame 41 px à
+            interlettrage nul : aucun resserrement n'aurait suffi. */}
+        <div className="grid min-w-0 flex-1 grid-cols-2 gap-3 max-[479px]:basis-full min-[1060px]:grid-cols-4">
           {indicateurs.map((i) => (
             <div
               key={i.cle}
               className="rounded-field border p-3"
               style={{ borderColor: 'var(--line)', background: 'var(--panel2)' }}
             >
-              {/* Tuiles Stats plus étroites que Dash (anneau 132 px contre 108) : à
-                  360 px, « Jours parfaits » déborde à tracking-[0.18em] (tâche 1).
-                  Resserrer ne suffit pas : sondé hors composant à interlettrage nul
-                  (même police, même taille), le seul mot « parfaits » réclame encore
-                  41 px pour 33 offerts. `break-words` scinde le mot au lieu de le
-                  couper hors champ ; au-delà de 480 px rien ne change. */}
               <div
-                className="font-mono text-[8.5px] leading-[1.5] tracking-[0.04em] uppercase break-words min-[480px]:tracking-[0.18em]"
+                className="font-mono text-[8.5px] leading-[1.5] tracking-[0.18em] uppercase"
                 style={{ color: 'var(--txt2)' }}
               >
                 {i.libelle}
               </div>
-              {/* Même raisonnement que Dash : sondé, « 2 h 18 » réclame 79 px pour
-                  33 offerts sous 480 px — le retour à la ligne (tout visible) est
-                  préféré au débordement (coupe hors champ, invisible). Non couvert
-                  par un test automatique : aucune valeur de démonstration n'atteint
-                  cette longueur. */}
               <div
                 data-testid={`kpi-${i.cle}`}
-                className="mt-1 font-mono text-[22px] font-bold min-[480px]:whitespace-nowrap"
+                className="mt-1 font-mono text-[22px] font-bold whitespace-nowrap"
                 style={{ color: i.couleur }}
               >
                 {i.valeur}

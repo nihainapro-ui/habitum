@@ -1,7 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 import golden from '@/tests/fixtures/golden.json';
-import { attendreHydratation, ouvrirAvecDemo, ouvrirVierge, verifierPaliers } from './helpers/app';
+import { ouvrirAvecDemo, ouvrirVierge, verifierPaliers } from './helpers/app';
 
 /* Vue « Habitudes » — 05-SPEC-VUES.md § 4, plan 5 tâche 5.2. */
 
@@ -102,7 +102,6 @@ test.describe('habits', () => {
 
   test('le crayon ouvre l’éditeur — l’édition cesse d’être un secret', async ({ page }) => {
     await ouvrirAvecDemo(page, ROUTE);
-    await attendreHydratation(page);
 
     /* Le nom cliquable existait déjà (HabitCard.tsx:45) ; rien ne le signalait.
        Le crayon rend l'action VISIBLE, du même dessin que Work et Tâches.

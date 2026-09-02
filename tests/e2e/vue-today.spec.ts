@@ -218,35 +218,42 @@ test.describe('today', () => {
      (`max-[399px]:order-1` sur le tiroir, `order-2` sur le groupe) — 30 px
      sépare proprement les deux, avec marge des deux côtés. `debordements.spec.ts`
      ne l'aurait jamais vu : il ne mesure que des coupures de texte, jamais une
-     position aberrante. */
-  test('le tiroir d’actions reste ancré au titre à 360 px, même quand la quantité passe à la ligne', async ({
-    page,
-  }) => {
-    await page.setViewportSize({ width: 360, height: 900 });
-    await ouvrirAvecDemo(page, ROUTE);
+     position aberrante.
 
-    // Quatre lignes du jeu de démonstration affichent une quantité (et donc
-    // le groupe qui passe à la ligne sous 400 px) : les quatre sont vérifiées,
-    // pas une seule, puisque c'est justement ce groupe qui entraînait le défaut.
-    for (const nom of [
-      'Méditer',
-      "Boire 8 verres d'eau",
-      'Courir au moins 3 km',
-      'Lire au moins 20 pages',
-    ]) {
-      const ligne = lignes(page).filter({ hasText: nom });
-      const titre = ligne.locator('[data-name]');
-      const tiroir = ligne.getByRole('button', { name: new RegExp(`Plus d.actions : ${nom}`) });
+     Boucle sur 360 ET 390 px, pas seulement 360 : le régime `max-[399px]`
+     qui porte tout le correctif couvre les deux, et 390 px est la largeur de
+     l'iPhone le plus répandu — un garde-fou qui ne le couvrirait pas
+     laisserait passer une régression sur l'appareil le plus commun. */
+  for (const largeur of [360, 390]) {
+    test(`le tiroir d’actions reste ancré au titre à ${largeur} px, même quand la quantité passe à la ligne`, async ({
+      page,
+    }) => {
+      await page.setViewportSize({ width: largeur, height: 900 });
+      await ouvrirAvecDemo(page, ROUTE);
 
-      const boiteTitre = await titre.boundingBox();
-      const boiteTiroir = await tiroir.boundingBox();
-      expect(boiteTitre, `titre introuvable : ${nom}`).not.toBeNull();
-      expect(boiteTiroir, `tiroir introuvable : ${nom}`).not.toBeNull();
+      // Quatre lignes du jeu de démonstration affichent une quantité (et donc
+      // le groupe qui passe à la ligne sous 400 px) : les quatre sont vérifiées,
+      // pas une seule, puisque c'est justement ce groupe qui entraînait le défaut.
+      for (const nom of [
+        'Méditer',
+        "Boire 8 verres d'eau",
+        'Courir au moins 3 km',
+        'Lire au moins 20 pages',
+      ]) {
+        const ligne = lignes(page).filter({ hasText: nom });
+        const titre = ligne.locator('[data-name]');
+        const tiroir = ligne.getByRole('button', { name: new RegExp(`Plus d.actions : ${nom}`) });
 
-      const ecart = Math.abs(boiteTiroir!.y - boiteTitre!.y);
-      expect(ecart, `${nom} : tiroir décroché de son titre (${ecart} px)`).toBeLessThan(30);
-    }
-  });
+        const boiteTitre = await titre.boundingBox();
+        const boiteTiroir = await tiroir.boundingBox();
+        expect(boiteTitre, `titre introuvable : ${nom}`).not.toBeNull();
+        expect(boiteTiroir, `tiroir introuvable : ${nom}`).not.toBeNull();
+
+        const ecart = Math.abs(boiteTiroir!.y - boiteTitre!.y);
+        expect(ecart, `${nom} : tiroir décroché de son titre (${ecart} px)`).toBeLessThan(30);
+      }
+    });
+  }
 
   test('accessible', async ({ page }) => {
     await ouvrirAvecDemo(page, ROUTE);

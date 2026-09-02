@@ -42,6 +42,14 @@ sensible (il touche à ce que la politique de confidentialité décrit).
    insécable qui ne tient pas déborde au lieu de passer à la ligne.
 2. **« 4 h 36 » cassé en trois lignes** — tuile « Temps de focus ». La valeur
    (`text-[20px]`) n'est pas insécable.
+   **Corrigé en clôture de lot (revue finale, 2026-09-02)** : une première
+   version forçait l'insécabilité de la valeur seulement au-delà de 480 px
+   (`min-[480px]:whitespace-nowrap`), donc encore cassable en dessous. Revu en
+   même temps que le défaut n°1 : c'est l'anneau qui cède sa ligne à la grille
+   de tuiles (`max-[479px]:basis-full`), ce qui porte le libellé disponible à
+   ~111 px mesurés — largement assez pour que la valeur tienne en
+   `whitespace-nowrap` simple, à toutes les largeurs, sans condition de
+   palier. Détail au CHANGELOG.
 3. **Ligne d'Aujourd'hui écrasée à 360 px** — le conteneur central de la ligne tombe
    à 36 px de large : le titre déborde de 1 px, la pastille « Habitude » de 23 px, la
    méta est coupée. La jauge censée disparaître « quand la place manque » (commentaire
@@ -76,18 +84,26 @@ sensible (il touche à ce que la politique de confidentialité décrit).
 
 ### Correctifs
 
-- **Tuiles** : libellé autorisé à passer à la ligne (`leading` resserré), interlettrage
-  réduit sous 480 px ; valeur en `whitespace-nowrap`. Aucun changement au-delà de
-  768 px — le rendu actuel y est bon.
+- **Tuiles** : c'est l'anneau qui cède sa ligne à la grille de tuiles sous 480 px
+  (`max-[479px]:basis-full`), lui seul étant décoratif à cette largeur — jamais le
+  texte. Libellé et valeur restent en interlettrage et `whitespace-nowrap` normaux
+  à toutes les largeurs ; aucun changement au-delà de 768 px — le rendu y était déjà
+  bon. Une version antérieure resserrait l'interlettrage et autorisait la coupure du
+  mot (`break-words`) sous 480 px : incohérente avec le refus de la même coupure sur
+  la vue Aujourd'hui, elle a été abandonnée en revue finale au profit de ce qui
+  précède. Détail au CHANGELOG.
 - **Aujourd'hui** : diagnostic d'abord (règle du dépôt : pas de correctif sans cause
   prouvée), puis correction — vraisemblablement le seuil de disparition de la jauge
   et un `min-w-0` manquant sur le titre.
 - **Crayon sur `HabitCard`** : même dessin que celui de Work (`Pencil` de lucide,
   bouton bordé), même position. Le nom reste cliquable — on ajoute, on ne déplace pas.
 - **Verrou de non-régression** : un test e2e reprend la détection de l'audit
-  (débordement mesuré, pas capture comparée) sur les vues Tableau de bord,
-  Statistiques et Aujourd'hui, aux quatre paliers plus 360 px. Les coupes de texte ne
-  reviendront pas en silence.
+  (débordement mesuré, pas capture comparée), aux cinq paliers (360/390/768/1060/
+  1440 px). Il couvre sept vues à la clôture du lot — Tableau de bord, Statistiques,
+  Aujourd'hui, Tâches, Calendrier, Habitudes et Profil — et non les trois prévues
+  ici : les vues touchées par des tâches ultérieures du même lot en avaient besoin
+  pour ne pas travailler à l'aveugle, et la dernière vue portant le motif de tuile a
+  été ajoutée en clôture. Les coupes de texte ne reviendront pas en silence.
 
 ---
 

@@ -30,7 +30,7 @@ export function Switch({
   const idRaison = useId();
 
   return (
-    <label className="flex items-center justify-between gap-3 py-1.5">
+    <label data-switch-row className="flex items-center justify-between gap-3 py-1.5">
       <span className="flex min-w-0 flex-col">
         <span className="truncate text-[13px]" style={{ color: 'var(--txt)' }}>
           {label}
@@ -67,7 +67,11 @@ export function Switch({
           /* La marge négative rend au dessin la place que la cible prend en
              plus : le rail reste exactement où il était, au pixel près. Les
              3 px qui débordent horizontalement tombent dans le rembourrage du
-             panneau (14 px) — les quatre paliers le vérifient. */
+             panneau (14 px) — les cinq paliers le vérifient. C'est ce même
+             débordement, documenté et volontaire, que `data-switch-row`
+             (sur le `<label>` ci-dessus) permet à `debordements.spec.ts`
+             d'exclure de sa mesure — un vrai texte coupé, lui, ne se cache
+             jamais derrière cet attribut. */
           margin: '-11px -3px',
           background: 'transparent',
           border: 0,

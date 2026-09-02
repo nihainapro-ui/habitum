@@ -10,15 +10,28 @@ suspension assumés), halo décoratif du logo (`aria-hidden`) et marge négative
 déjà documentée de l'interrupteur — **six défauts réels**. Ce qui est voulu
 n'a jamais été « corrigé » : chaque exclusion est justifiée dans
 `tests/e2e/debordements.spec.ts`, qui remplace désormais l'audit jetable par
-une mesure permanente (`scrollWidth > clientWidth`, six vues, cinq largeurs,
-30 cas).
+une mesure permanente (`scrollWidth > clientWidth`, sept vues, cinq largeurs,
+35 cas). Le test assertionne désormais aussi le nombre d'éléments RETENUS
+après exclusions (> 20) : sans ce garde-fou, un `<main>` renommé ou une route
+qui cesse de rendre quoi que ce soit ferait passer les 35 cas au vert sans
+avoir rien mesuré — `querySelectorAll('main *')` rend `[]` aussi facilement
+qu'un résultat honnête. Le fichier documente aussi ses angles morts assumés :
+l'en-tête, la barre basse et tout contenu porté par un portail (`Dialog`,
+tiroir, palette, menu) vivent hors de `<main>` et ne sont jamais balayés.
 
 **Les tuiles (Tableau de bord, Statistiques).** Les libellés en petites
 majuscules tenaient plus large que leur tuile — « prioritaires » mesuré à
 80 px pour 47 à 62 px disponibles selon la largeur, et le mot seul réclame
-encore 61 px à interlettrage nul : resserrer ne suffisait jamais. Sous 480 px,
-l'interlettrage se resserre et le retour à la ligne est autorisé
-(`break-words`) ; au-delà, rien ne change, le rendu y était déjà bon.
+encore 61 px à interlettrage nul : resserrer ne suffisait jamais. Une première
+version autorisait la coupure du mot (`break-words`) sous 480 px — exactement
+ce que la vue Aujourd'hui refusait pour le même genre de débordement, une
+incohérence relevée en revue finale. Revu : c'est l'ANNEAU qui cède sa ligne
+à la grille de tuiles (`max-[479px]:basis-full`), lui seul étant décoratif à
+cette largeur, jamais le texte. Les tuiles passent à ~111 px de libellé
+disponible (mesuré) — largeur où « Tâches prioritaires » tient sans jamais
+casser un mot, et où « 4 h 36 » tient enfin sur une seule ligne à toutes les
+largeurs. Ce dernier point ferme le défaut n°2 de la spécification, resté
+ouvert jusqu'à cette clôture.
 
 **La ligne d'Aujourd'hui à 360 px.** L'hypothèse du plan était fausse : la
 jauge de progression était accusée, la mesure a montré qu'elle est déjà hors
@@ -28,14 +41,18 @@ vrai coupable est la quantité et le compteur −/+, qui n'accaparaient que
 eux-mêmes (`break-words` sur le nom) — « Méditer » s'affichait « Médit »
 puis « er » — constatée et **refusée** en revue. Le correctif retenu fait
 plutôt céder la quantité et le compteur, groupés avec la jauge, sur une
-ligne suivante sous 400 px : le bloc central passe de 36-43 à 220 px, où même
+ligne suivante sous 400 px : le bloc central passe de 36-43 à 180 px, où même
 le mot le plus long du jeu de démonstration tient sans jamais se scinder.
 
 **Le tiroir « ⋮ ».** Ce même correctif l'avait décroché sur une troisième
 ligne, à 86 px du titre au lieu des 5 à 18 px des lignes correctement
-ancrées. Réancré par un ordre visuel (`order`) qui ne touche pas au DOM ni à
-l'ordre de tabulation ; un garde-fou dans `vue-today.spec.ts` vérifie
-désormais cet écart sous 30 px et a été confirmé par mutation.
+ancrées. Réancré par un ordre visuel (`order`) qui ne touche pas au DOM — mais
+qui déplace, lui, l'ordre de tabulation : sous 400 px, Tab atteint désormais
+le groupe quantité/compteur (2ᵉ ligne à l'écran) avant le tiroir (1ʳᵉ ligne),
+l'inverse de l'ordre visuel. Un compromis assumé, pas un correctif sans coût
+— voir le commentaire de `RowShell.tsx`. Un garde-fou dans `vue-today.spec.ts`
+vérifie l'ancrage du tiroir sous 30 px d'écart, à 360 et 390 px, confirmé par
+mutation.
 
 **Le crayon des habitudes.** L'édition existait déjà — taper le nom ouvrait
 l'éditeur — mais rien ne le signalait, contrairement à Work et aux Tâches.
@@ -52,12 +69,13 @@ aucun code n'a été touché pour ces deux-là (détail dans les entrées
 « suite 2 » et « suite 3 » ci-dessous).
 
 **Le filet permanent.** `tests/e2e/debordements.spec.ts` couvre maintenant
-`/app`, `/app/stats`, `/app/today`, `/app/tasks`, `/app/calendar` et
-`/app/habits` — cette dernière ajoutée en clôture de lot puisque c'est elle
-que le crayon vient de modifier, la moins couverte du lot jusque-là (mesurée
-à la main à 360 px avant l'ajout : aucun débordement). Une coupure de texte
-est stable d'une exécution à l'autre, donc invisible à une recette de
-captures comparées — seule cette mesure l'attrape.
+`/app`, `/app/stats`, `/app/today`, `/app/tasks`, `/app/calendar`,
+`/app/habits` et `/app/profile` — les deux dernières ajoutées en clôture de
+lot : `/app/habits` parce que c'est elle que le crayon vient de modifier,
+`/app/profile` parce que c'est la dernière vue du produit à porter le motif
+de tuile sans être surveillée. Une coupure de texte est stable d'une
+exécution à l'autre, donc invisible à une recette de captures comparées —
+seule cette mesure l'attrape.
 
 **Ce qui reste ouvert.** La recette visuelle (`npm run test:visual`) n'a pas
 pu tourner faute de Docker sur ce poste ; à passer en CI avant fusion.

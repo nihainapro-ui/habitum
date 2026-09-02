@@ -132,37 +132,43 @@ export function DashView() {
           </span>
         </div>
 
-        <div className="grid min-w-0 flex-1 grid-cols-2 gap-3 min-[1060px]:grid-cols-4">
+        {/* `max-[479px]:basis-full` : sous 480 px, l'anneau et cette grille
+            partageaient la même ligne de la rangée parente (`flex flex-wrap`)
+            faute de manquer de place pour forcer le retour — la grille se
+            contentait alors du reste, 73 px par tuile à 360 px (47 offerts au
+            libellé une fois le rembourrage `p-3` déduit), 88 px à 390 (62 au
+            libellé). Sondé : à cette largeur, « prioritaires » seul réclame
+            61 px à interlettrage nul — resserrer l'interlettrage ne pouvait
+            donc jamais suffire, quel que soit son réglage.
+
+            C'est l'ANNEAU qu'on fait céder, pas le texte : entre les deux
+            voisins de la rangée, lui seul est décoratif à cette largeur — sa
+            valeur est déjà répétée en toutes lettres dans les quatre tuiles
+            (`c.valeur`). `basis-full` force la grille à réclamer toute la
+            largeur de sa ligne ; n'ayant plus la place de rester à côté,
+            l'anneau passe seul sur la ligne précédente. Les tuiles sondées
+            après ce changement font ~111 px de large (largeur de section moins
+            le rembourrage, divisée en deux colonnes) : « Tâches prioritaires »
+            (le libellé le plus long) y tient sans jamais casser un mot, et
+            « 4 h 36 » (la valeur la plus longue) tient sur une seule ligne à
+            toutes les largeurs — l'interlettrage resserré et le retour à la
+            ligne forcé de la valeur n'ont donc plus lieu d'être. */}
+        <div className="grid min-w-0 flex-1 grid-cols-2 gap-3 max-[479px]:basis-full min-[1060px]:grid-cols-4">
           {compteurs.map((c) => (
             <div
               key={c.cle}
               className="rounded-field border p-3"
               style={{ borderColor: 'var(--line)', background: 'var(--panel2)' }}
             >
-              {/* Tâche 1 (mesuré par le test de débordement) : à tracking-[0.18em],
-                  « Tâches prioritaires » déborde (scrollWidth 80 px pour 47 px
-                  disponibles à 360 px, 62 à 390). Resserrer ne suffit pas : sondé
-                  hors composant à interlettrage nul (même police, même taille),
-                  le seul mot « prioritaires » réclame encore 61 px pour 47 offerts.
-                  `break-words` scinde le mot au lieu de le couper hors champ ; au-
-                  delà de 480 px rien ne change (rendu déjà bon, captures stables). */}
               <div
-                className="font-mono text-[8.5px] leading-[1.5] tracking-[0.04em] uppercase break-words min-[480px]:tracking-[0.18em]"
+                className="font-mono text-[8.5px] leading-[1.5] tracking-[0.18em] uppercase"
                 style={{ color: 'var(--txt2)' }}
               >
                 {c.libelle}
               </div>
-              {/* La valeur est UNE grandeur : « 4 h 36 » coupé en deux lignes se
-                  lirait comme deux nombres qui n'existent pas — d'où l'insécable
-                  à partir de 480 px. En dessous, sondé : « 2 h 18 » réclame 72 px
-                  pour 47 offerts ; forcée sur une ligne, elle DÉBORDERAIT (coupe
-                  hors champ, invisible). Sous 480 px on préfère donc le retour à
-                  la ligne au débordement — un caractère caché est pire qu'une
-                  grandeur sur deux lignes. Non couvert par un test automatique :
-                  aucune valeur de démonstration n'atteint cette longueur. */}
               <div
                 data-testid={`compteur-${c.cle}`}
-                className="mt-1 font-mono text-[20px] font-bold min-[480px]:whitespace-nowrap"
+                className="mt-1 font-mono text-[20px] font-bold whitespace-nowrap"
               >
                 {c.valeur}
               </div>

@@ -83,12 +83,9 @@ export function RowShell({
                 ronde de correction 1. `min-w-0` reste, seul : il n'autorise
                 que le retour à la ligne normal (aux espaces, comme n'importe
                 quel paragraphe), jamais la coupe DANS un mot. Le vrai
-                correctif est en amont, sur la rangée : le groupe
-                quantité/jauge/compteur libère assez de largeur (36 → 220 px
-                sur cette même ligne à 360 px, sonde en pièce jointe du
-                rapport) pour que même le mot le plus long du jeu de
-                démonstration (« Méditer », 48 px) tienne sans jamais y
-                toucher. */}
+                correctif est en amont : voir le commentaire du groupe
+                quantité/jauge/compteur plus bas, qui explique QUI cède la
+                place et pourquoi. */}
             <span
               data-name
               className="min-w-0 text-[13.5px] font-medium"
@@ -109,11 +106,9 @@ export function RowShell({
                 lignes (« Habi »/« tude ») est un mot mutilé, pas une mise en
                 page qui cède — la sonde de la ronde précédente avait établi
                 la largeur qui manquait (59 px pour 36 disponibles) mais pas
-                la bonne réponse. Le vrai coupable a été mesuré plus bas
-                (voir le groupe quantité/jauge/compteur) : ce sont EUX qui
-                cèdent la place sous 400 px, pas ce texte. Restée seule sur sa
-                ligne grâce à `flex-wrap` sur la rangée parente, la pastille
-                garde son mot intact et descend au besoin sous le titre. */}
+                la bonne réponse. Le vrai coupable, et pourquoi c'est lui :
+                voir le commentaire du groupe quantité/jauge/compteur plus
+                bas. */}
             <span
               className="rounded-chip px-1.5 py-px text-[10.5px] font-semibold tracking-[0.04em] whitespace-nowrap"
               style={{ color: 'var(--txt2)', background: 'var(--panel2)' }}
@@ -130,28 +125,42 @@ export function RowShell({
 
         {/* Quantité + jauge + compteur, groupés : à eux trois, MOINS porteurs
             d'information que le titre ou la pastille de type — c'est donc à
-            eux de céder. Sondé à 360 px sur `/app/today`, avant puis après ce
-            groupement (sonde en pièce jointe du rapport) : sans ce groupe sur
-            la ligne, le bloc central passe de 36 à 220 px pour la ligne
-            « Lire au moins 20 pages » et de 43 à 220 px pour « Méditer » —
-            largement au-dessus des 59 px que réclame la pastille « Habitude »,
-            le mot le plus large mesuré sur toute la vue. Sous 400 px (seuil
-            déjà présent dans l'intention du commentaire d'origine, repris ici
-            littéralement), ce groupe passe donc À LA LIGNE SUIVANTE plutôt
-            que de forcer le titre ou la pastille à rétrécir sous leur propre
-            mot. La quantité elle-même reste NON coupée : « 5/8 verres » EST
-            l'information de la ligne, c'est sa PLACE qui change, pas son
-            texte.
+            eux de céder. Même doctrine que sur les tuiles du Tableau de bord
+            et des Statistiques (`DashView.tsx`, `StatsView.tsx`) : entre
+            voisins d'une même rangée, celui qui porte le moins d'information
+            cède sa place ; aucun mot n'est jamais scindé pour autant.
+
+            Sondé à 360 px sur `/app/today`, avant puis après ce groupement
+            (sonde en pièce jointe du rapport), tiroir déjà ancré en première
+            ligne (`order-1` ci-dessous, voir plus bas) : sans ce groupe sur
+            la ligne, le bloc central (titre + pastille) passe de 36 à 180 px
+            pour la ligne « Lire au moins 20 pages » et de 43 à 180 px pour
+            « Méditer » — largement au-dessus des 59 px que réclame la
+            pastille « Habitude », le mot le plus large mesuré sur toute la
+            vue. Sous 400 px (seuil déjà présent dans l'intention du
+            commentaire d'origine, repris ici littéralement), ce groupe passe
+            donc À LA LIGNE SUIVANTE plutôt que de forcer le titre ou la
+            pastille à rétrécir sous leur propre mot. La quantité elle-même
+            reste NON coupée : « 5/8 verres » EST l'information de la ligne,
+            c'est sa PLACE qui change, pas son texte.
 
             `max-[399px]:order-2` : sans lui, le tiroir d'actions (juste après
-            ce groupe dans le flux) suit le même retour à la ligne que lui —
-            constaté en ronde de correction 2, sur toute ligne qui affiche une
-            quantité, à une largeur inférieure à 400 px : un « ⋮ » esseulé sur
-            une TROISIÈME ligne, quand les lignes sans quantité le gardent en
-            haut à droite. Le tiroir passe devant ce groupe dans l'ORDRE
-            visuel (`max-[399px]:order-1` sur le tiroir, ci-dessous) sans
-            bouger dans le DOM — l'ordre de tabulation, qui suit le DOM et non
-            l'affichage, reste : case, quantité/compteur, tiroir, inchangé. */}
+            ce groupe dans le flux) suivrait le même retour à la ligne —
+            constaté en ronde de correction 2 : un « ⋮ » esseulé sur une
+            TROISIÈME ligne, à 86 px de son titre au lieu des 5 à 18 px des
+            lignes correctement ancrées. Le tiroir passe donc devant ce groupe
+            dans l'ORDRE VISUEL (`max-[399px]:order-1`, ci-dessous) sans
+            bouger dans le DOM.
+
+            Ce déplacement a un prix, et il faut le dire plutôt que le taire :
+            l'ordre de tabulation suit le DOM, pas l'affichage. Sous 400 px,
+            Tab atteint donc les boutons −/+ de ce groupe (2ᵉ ligne à l'écran)
+            AVANT le tiroir « ⋮ » (1ʳᵉ ligne) — l'ordre visuel et l'ordre de
+            focus divergent, exactement ce que WCAG 2.4.3 demande d'éviter, et
+            qu'aucun outil automatique ne détecte. Le compromis est jugé
+            étroit et acceptable — l'écart ne joue que sous 400 px, et le
+            tiroir reste atteignable un Tab plus tard — mais c'est un prix
+            payé, pas la preuve que l'ordre serait sans conséquence. */}
         {amount || controls || (ratio !== null && ratio !== undefined) ? (
           <div className="flex flex-none items-center gap-3 max-[399px]:order-2 max-[399px]:basis-full max-[399px]:justify-end">
             {amount ? (
