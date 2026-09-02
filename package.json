@@ -32,7 +32,7 @@
     "lighthouse": "npx --yes @lhci/cli@0.15.x autorun",
     "paquet:web": "node scripts/paquet.mjs",
     "paquet:sync": "npm run paquet:web && cap sync android",
-    "paquet:apk": "npm run paquet:sync && cd packaging/android && gradlew assembleDebug",
+    "paquet:apk": "npm run paquet:sync && node scripts/apk.mjs",
     "icons:android": "node scripts/icones-android.mjs",
     "check:icons:android": "node scripts/icones-android.mjs --check",
     "paquet:verifier": "node scripts/verifier-paquet.mjs"
