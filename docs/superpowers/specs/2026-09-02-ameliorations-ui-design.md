@@ -50,6 +50,10 @@ sensible (il touche à ce que la politique de confidentialité décrit).
 4. **Élément fantôme du Calendrier** — un `div` vide positionné à −344 px hors écran,
    à toutes les largeurs. À élucider : soit un artefact de positionnement à corriger,
    soit un élément volontaire à documenter (comme le halo du logo).
+   **Investigué le 2026-09-02, introuvable** : balayage `getBoundingClientRect().right < 0`
+   sur tout le document, cinq paliers, quatre modes, compte démo et vierge, moteurs
+   desktop et mobile — zéro élément hors écran. Aucun correctif appliqué faute de défaut
+   à corriger ; détail au CHANGELOG.
 5. **L'édition d'une habitude est invisible** — taper le nom ouvre l'éditeur
    (`HabitCard.tsx:45`) mais rien ne le signale, alors que Tâches et Work affichent un
    crayon. Ce n'est pas une fonctionnalité manquante, c'est une affordance absente.

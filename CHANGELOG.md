@@ -1,5 +1,32 @@
 # Journal des modifications
 
+## 2026-09-02 (suite 2) — L'élément fantôme du Calendrier : introuvable à la mesure
+
+L'audit du 2026-09-02 relevait, sur `/app/calendar`, un `div` vide à −344 px (360 px de
+fenêtre) et −374 px (390 px) à gauche de son parent, à toutes les largeurs. Avant de
+corriger quoi que ce soit, la tâche qui devait trancher (« défaut réel » ou « artefact
+voulu ») a commencé par tenter de le RETROUVER sur le build courant.
+
+**Ce qui a été balayé**, à chaque fois par `getBoundingClientRect().right < 0` sur
+`document.querySelectorAll('body *')` (pas seulement `main div`, pour ne rien manquer d'un
+élément de coque) : les cinq paliers (360/390/768/1060/1440 px), les quatre modes du
+calendrier (mois, semaine, jour, agenda — y compris en cliquant explicitement sur le
+sélecteur segmenté, pas seulement via le repli automatique sous 768 px), un compte avec le
+jeu de démonstration et un compte vierge, sur les deux moteurs du script `test:e2e`
+(`desktop` et `mobile`, ce dernier avec émulation tactile Pixel 7).
+
+**Résultat : zéro élément hors écran, dans toutes ces combinaisons.** Le seul artefact
+d'accessibilité réellement présent est la région d'annonce de `@dnd-kit` (`role="status"`,
+id `DndLiveRegion-*`, déjà connue du dépôt — voir le commentaire `data-toast` dans
+`toast-host.tsx`) : mesurée à `{ left: -1, top: -1, width: 1, height: 1, right: 0,
+bottom: 0 }` à 360 px. Une boîte de 1×1 px, dont le bord droit est à 0 et non à −344 —
+ce n'est pas elle.
+
+**Aucun correctif appliqué.** Sans l'élément sous la main, marquer un composant au hasard
+en `aria-hidden` aurait été une correction fabriquée, pas une correction vue — exactement
+ce que la règle n° 3 du dépôt interdit. `/app/calendar` était déjà couvert par
+`tests/e2e/debordements.spec.ts` (ajouté par anticipation) et reste vert.
+
 ## 2026-09-02 (suite) — « Comment savoir que ça a marché ? »
 
 La question est venue d'un usage réel, après un appairage réussi : l'écran affichait
