@@ -1,5 +1,56 @@
 # Journal des modifications
 
+## 2026-09-02 — Un espace abandonné ne pèse plus éternellement
+
+La livraison de la veille laissait une réserve écrite noir sur blanc : rien n'effaçait
+jamais ce qui était déposé sur le relais. Un essai sans lendemain occupait la base pour
+toujours. C'est fermé.
+
+Une minuterie quotidienne efface les espaces dont **plus aucun appareil n'a donné signe
+depuis six mois**. Six mois, et pas trois : on décroche l'été, on reprend en septembre, et
+un usage saisonnier ne doit jamais coûter ses données à personne.
+
+### Par espace entier, jamais ligne à ligne
+
+Effacer « les lignes de plus de six mois » paraît plus fin. C'est un piège, et il méritait
+d'être écrit : une habitude créée il y a deux ans et jamais modifiée depuis porte un
+horodatage ancien **alors qu'elle est parfaitement vivante**. On l'effacerait du relais, et
+le prochain appareil appairé ne la recevrait jamais — une synchronisation incomplète,
+silencieuse, impossible à diagnostiquer depuis l'appareil.
+
+En raisonnant par espace, le piège disparaît : un espace vivant garde tout, un espace
+abandonné part en entier. Et rien n'est perdu pour autant — le relais est une boîte aux
+lettres, pas un coffre-fort. Les données vivent sur les appareils ; un espace expiré qui
+redevient actif se remplit de lui-même au prochain envoi.
+
+### L'horodatage vient du serveur, pas du client
+
+`touche_le` est posé par le relais avec sa propre horloge, dans une nouvelle table
+`espaces`. Le `updated_at` des lignes existait déjà et aurait suffi en apparence — mais il
+vient du CLIENT : il dit quand l'utilisateur a modifié son habitude, pas quand le serveur a
+eu de ses nouvelles. Une horloge d'appareil déréglée, c'est fréquent, et elle ferait
+expirer un espace vivant ou en maintiendrait un mort pendant des années.
+
+Toute requête rafraîchit la marque, **lecture comprise** : un téléphone qui ne fait que
+recevoir garde son espace en vie. L'écriture est sautée si la marque a moins d'un jour —
+sans cette retenue, chaque lecture coûterait une écriture, or c'est précisément le quota
+que cette fonctionnalité cherche à ménager.
+
+### L'ordre d'effacement est un invariant, et il a son test
+
+Les lignes d'abord, la marque ensuite. Interrompue entre les deux, la purge laisse un
+espace vide mais toujours marqué : il repassera au tour suivant, sans dommage. Dans l'autre
+sens, elle laisserait des lignes que plus aucune marque ne désigne — invisibles pour la
+purge, donc éternelles. C'est exactement la fuite qu'on vient fermer.
+
+Inverser les deux lignes fait tomber le test. Vérifié par mutation, comme le reste.
+
+### Vérifié en production
+
+Migration appliquée sur la base en ligne, Worker redéployé avec sa minuterie
+(`schedule: 0 3 * * *`). Une lecture crée bien la marque, un `DELETE` la retire avec les
+lignes. L'espace d'un utilisateur réel, présent en base, n'a pas été touché.
+
 ## 2026-09-01 — La synchronisation est branchée, et le site cesse de promettre l'inverse
 
 Le moteur existait depuis cinq livraisons ; il n'était relié à rien. Cette livraison lui

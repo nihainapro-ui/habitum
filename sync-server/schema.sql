@@ -42,3 +42,24 @@ CREATE INDEX IF NOT EXISTS idx_lignes_curseur ON lignes (espace, seq);
 -- normal et sans conséquence : le curseur de lecture ne demande jamais un
 -- numéro précis, seulement « ce qui est strictement supérieur à N ». Ne pas
 -- « corriger » ces trous.
+
+-- Date de DERNIER ACCÈS par espace, en millisecondes depuis 1970.
+--
+-- Une table à part, et non une colonne de `lignes` : la question posée est
+-- « cet espace sert-il encore ? », qui n'a qu'une réponse par espace. La
+-- porter sur chaque ligne obligerait à la réécrire partout à chaque passage,
+-- et à faire un MAX() sur toute la table pour la relire.
+--
+-- POURQUOI PAS `MAX(updated_at)` DE `lignes`, qui existe déjà. Parce que cet
+-- horodatage vient du CLIENT : il décrit quand l'utilisateur a modifié son
+-- habitude, pas quand le serveur a eu de ses nouvelles. Une horloge d'appareil
+-- déréglée — c'est fréquent — ferait expirer un espace vivant, ou en
+-- maintiendrait un mort pour des années. `touche_le` est posé par le serveur,
+-- avec sa propre horloge, et ne ment donc pas.
+CREATE TABLE IF NOT EXISTS espaces (
+  espace    TEXT PRIMARY KEY,
+  touche_le INTEGER NOT NULL
+);
+
+-- La seule requête de la purge : « quels espaces n'ont plus donné signe de vie ».
+CREATE INDEX IF NOT EXISTS idx_espaces_touche ON espaces (touche_le);

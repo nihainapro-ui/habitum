@@ -42,10 +42,24 @@ dépendance, aucune nouvelle surface d'approvisionnement, pour cinq méthodes
 réellement utilisées. Le contrôle de vérité sur ces types reste
 `wrangler deploy` — pas la compilation locale, qui exclut ce dossier.
 
-## Ce qui n'est pas encore fait
+## Expiration des espaces abandonnés
 
-**Aucune purge automatique.** Un espace abandonné — code perdu, utilisateur parti — reste
-en base indéfiniment. Ce n'est pas une fuite (les octets sont illisibles sans le code, et
-rien ne les rattache à une personne), mais c'est du stockage qui ne se libère jamais. Une
-expiration sur `updated_at` serait le prochain geste utile ; elle n'est pas écrite, et le
-README le dit plutôt que de le laisser croire.
+Une minuterie quotidienne (3 h UTC) efface les espaces dont **plus aucun appareil n'a donné
+signe depuis six mois**. Sans elle, un essai sans lendemain occupait la base pour toujours.
+
+**Par espace entier, jamais ligne à ligne.** Effacer « les lignes de plus de six mois »
+paraît plus fin ; c'est un piège. Une habitude créée il y a deux ans et jamais modifiée
+depuis porte un `updatedAt` ancien alors qu'elle est vivante : on l'effacerait, et le
+prochain appareil appairé ne la recevrait jamais — une synchronisation incomplète,
+silencieuse, indiagnosticable depuis l'appareil.
+
+**Et rien n'est perdu.** Le relais est une boîte aux lettres, pas un coffre-fort : les
+données vivent sur les appareils. Un espace expiré qui redevient actif se remplit de
+lui-même au prochain envoi.
+
+**`touche_le` est posé par le SERVEUR**, dans la table `espaces`, et non déduit du
+`updated_at` des lignes — celui-ci vient du client, et une horloge d'appareil déréglée
+ferait expirer un espace vivant ou en maintiendrait un mort pendant des années. Toute
+requête rafraîchit la marque, lecture comprise : un téléphone qui ne fait que recevoir
+garde son espace en vie. L'écriture est sautée si la marque a moins d'un jour — sans cette
+retenue, chaque lecture coûterait une écriture, or c'est le quota qu'on cherche à ménager.

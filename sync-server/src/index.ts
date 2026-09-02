@@ -1,4 +1,4 @@
-import { accepterLigne, ligneValide } from './logique';
+import { accepterLigne, doitRafraichir, ligneValide, seuilExpiration } from './logique';
 
 /* Interfaces D1 minimales, déclarées ici plutôt que fournies par
  * `@cloudflare/workers-types` : ce paquet n'est PAS ajouté au dépôt — aucune
@@ -49,7 +49,61 @@ const json = (corps: unknown, statut = 200): Response =>
     },
   });
 
+/** Note que cet espace vient de servir.
+ *
+ *  Appelé sur TOUTE requête utile — lecture comprise. Une lecture prouve
+ *  qu'un appareil s'en sert encore, même si rien ne change : un téléphone qui
+ *  ne fait que recevoir maintient son espace en vie, comme il se doit.
+ *
+ *  L'écriture est SAUTÉE si la marque a moins d'un jour (`doitRafraichir`).
+ *  Sans cette retenue, chaque lecture coûterait une écriture — et le quota
+ *  d'écritures est précisément ce que la purge cherche à ménager. */
+async function marquer(env: Env, espace: string, maintenant: number): Promise<void> {
+  const vu = await env.DB.prepare('SELECT touche_le AS toucheLe FROM espaces WHERE espace = ?')
+    .bind(espace)
+    .first<{ toucheLe: number }>();
+
+  if (!doitRafraichir(vu?.toucheLe, maintenant)) return;
+
+  await env.DB.prepare(
+    `INSERT INTO espaces (espace, touche_le) VALUES (?, ?)
+     ON CONFLICT (espace) DO UPDATE SET touche_le = excluded.touche_le`,
+  )
+    .bind(espace, maintenant)
+    .run();
+}
+
+/** Efface les espaces dont plus aucun appareil n'a donné signe depuis six mois.
+ *
+ *  L'ORDRE COMPTE : les lignes d'abord, la marque ensuite. Interrompue entre
+ *  les deux, la purge laisse un espace vide mais toujours marqué — il
+ *  repassera au prochain tour, sans dommage. Dans l'autre sens, elle
+ *  laisserait des lignes que plus aucune marque ne désigne : invisibles pour
+ *  la purge, elles resteraient pour toujours. C'est exactement la fuite qu'on
+ *  vient fermer. */
+export async function purger(env: Env, maintenant: number): Promise<number> {
+  const seuil = seuilExpiration(maintenant);
+
+  const { results } = await env.DB.prepare('SELECT espace FROM espaces WHERE touche_le < ?')
+    .bind(seuil)
+    .all<{ espace: string }>();
+
+  for (const { espace } of results) {
+    await env.DB.prepare('DELETE FROM lignes WHERE espace = ?').bind(espace).run();
+    await env.DB.prepare('DELETE FROM espaces WHERE espace = ?').bind(espace).run();
+  }
+
+  return results.length;
+}
+
 export default {
+  /* La purge tourne SEULE, sur minuterie (`[triggers]` de wrangler.toml), et
+     jamais au fil d'une requête d'utilisateur : personne ne doit attendre le
+     ménage d'un autre. */
+  async scheduled(_event: unknown, env: Env): Promise<void> {
+    await purger(env, Date.now());
+  },
+
   async fetch(req: Request, env: Env): Promise<Response> {
     if (req.method === 'OPTIONS') return json({});
 
@@ -58,6 +112,7 @@ export default {
     if (!ESPACE.test(espace)) return json({ erreur: 'espace' }, 400);
 
     if (req.method === 'GET') {
+      await marquer(env, espace, Date.now());
       const depuis = Number(url.searchParams.get('depuis') ?? 0) || 0;
       const { results } = await env.DB.prepare(
         'SELECT kind, id, updated_at, seq, blob FROM lignes WHERE espace = ? AND seq > ? ORDER BY seq LIMIT ?',
@@ -96,6 +151,8 @@ export default {
       if (lignes.length > MAX_LIGNES) return json({ erreur: 'trop de lignes' }, 413);
 
       try {
+        await marquer(env, espace, Date.now());
+
         /* `seq` attribué à la DERNIÈRE ligne acceptée pendant cette requête —
            c'est ce que la réponse rend. Reste `undefined` si aucune ligne
            n'a été acceptée : dans ce cas la requête ne modifie rien, elle se
@@ -180,6 +237,9 @@ export default {
          impossible à son légitime propriétaire. */
       try {
         await env.DB.prepare('DELETE FROM lignes WHERE espace = ?').bind(espace).run();
+        /* La marque part AVEC les lignes : la laisser derrière ferait
+           réapparaître un espace vide dans la purge pendant six mois. */
+        await env.DB.prepare('DELETE FROM espaces WHERE espace = ?').bind(espace).run();
         /* `seq: 0` remet le client à l'état d'un espace neuf : le prochain
            appareil qui tire ne reçoit rien, sans cas particulier. */
         return json({ seq: 0 });

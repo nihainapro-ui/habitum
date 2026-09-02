@@ -50,3 +50,46 @@ export function ligneValide(brute: unknown): brute is LigneValidee {
     b.blob !== ''
   );
 }
+
+/* --- Expiration des espaces abandonnés ------------------------------------
+
+   POURQUOI UN ESPACE ENTIER, ET JAMAIS UNE LIGNE ISOLÉE.
+
+   Effacer « les lignes de plus de six mois » paraît plus fin. C'est un piège :
+   une habitude créée il y a deux ans et jamais modifiée depuis a un
+   `updatedAt` ancien, alors qu'elle est parfaitement vivante. On l'effacerait,
+   et le prochain appareil appairé ne la recevrait JAMAIS — une synchronisation
+   incomplète, silencieuse, impossible à diagnostiquer depuis l'appareil.
+
+   En raisonnant par espace, ce piège disparaît : un espace vivant garde tout,
+   un espace abandonné part en entier.
+
+   ET RIEN N'EST PERDU pour autant. Le relais est une boîte aux lettres, pas un
+   coffre-fort : les données vivent sur les appareils. Un espace expiré qui
+   redevient actif se remplit de lui-même à la synchronisation suivante — le
+   filigrane local n'a pas bougé, mais un appareil qui repousse tout ce qu'il a
+   reconstitue l'espace. */
+
+/** Six mois. Assez long pour qu'un usage saisonnier — on décroche l'été, on
+ *  reprend en septembre — ne soit jamais coupé ; assez court pour que le
+ *  stockage d'un essai sans lendemain ne pèse pas éternellement. */
+export const RETENTION_JOURS = 180;
+
+const JOUR_MS = 86_400_000;
+
+/** Horodatage en deçà duquel un espace est considéré comme abandonné. */
+export function seuilExpiration(maintenant: number): number {
+  return maintenant - RETENTION_JOURS * JOUR_MS;
+}
+
+/** Faut-il réécrire la date de dernier accès ?
+ *
+ *  Toute lecture prouve qu'un espace sert, et devrait donc le maintenir en
+ *  vie. Mais écrire à CHAQUE lecture doublerait le nombre d'écritures du
+ *  serveur — or c'est précisément le quota que cette fonctionnalité cherche à
+ *  ménager. Une fois par jour suffit : la précision demandée est de six mois,
+ *  pas de la seconde. */
+export function doitRafraichir(toucheLe: number | undefined, maintenant: number): boolean {
+  if (toucheLe === undefined) return true;
+  return maintenant - toucheLe >= JOUR_MS;
+}

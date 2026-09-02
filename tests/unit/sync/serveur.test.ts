@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { accepterLigne, ligneValide } from '../../../sync-server/src/logique';
+import {
+  accepterLigne,
+  doitRafraichir,
+  ligneValide,
+  RETENTION_JOURS,
+  seuilExpiration,
+} from '../../../sync-server/src/logique';
 
 const l = (updatedAt: string, blob = 'AAA') => ({ updatedAt, blob });
 
@@ -84,7 +90,7 @@ interface RequeteVue {
   params: unknown[];
 }
 
-function d1Factice(reponse: unknown = { seq: 0 }) {
+function d1Factice(reponse: unknown = { seq: 0 }, lignes: unknown[] = []) {
   const vues: RequeteVue[] = [];
   const db = {
     prepare(sql: string) {
@@ -96,7 +102,7 @@ function d1Factice(reponse: unknown = { seq: 0 }) {
           return st;
         },
         first: async () => reponse,
-        all: async () => ({ results: [] }),
+        all: async () => ({ results: lignes }),
         run: async () => ({}),
       };
       return st;
@@ -158,5 +164,74 @@ describe('effacement d’un espace', () => {
     );
 
     expect(r.headers.get('access-control-allow-methods')).toContain('DELETE');
+  });
+});
+
+/* --- Expiration des espaces abandonnés ---------------------------------- */
+
+const JOUR = 86_400_000;
+const MAINTENANT = Date.parse('2026-09-02T12:00:00.000Z');
+
+describe('règle d’expiration', () => {
+  it('retient six mois', () => {
+    expect(RETENTION_JOURS).toBe(180);
+    expect(seuilExpiration(MAINTENANT)).toBe(MAINTENANT - 180 * JOUR);
+  });
+
+  it('épargne un usage saisonnier', () => {
+    /* On décroche l'été, on reprend en septembre. Trois mois de silence ne
+       doivent jamais coûter ses données à quelqu'un. */
+    const troisMois = MAINTENANT - 90 * JOUR;
+    expect(troisMois > seuilExpiration(MAINTENANT)).toBe(true);
+  });
+
+  it('ne rafraîchit la marque qu’une fois par jour', () => {
+    /* Écrire à chaque lecture doublerait le nombre d'écritures du serveur —
+       or c'est le quota que cette fonctionnalité cherche à ménager. */
+    expect(doitRafraichir(undefined, MAINTENANT)).toBe(true);
+    expect(doitRafraichir(MAINTENANT - 60_000, MAINTENANT)).toBe(false);
+    expect(doitRafraichir(MAINTENANT - JOUR, MAINTENANT)).toBe(true);
+  });
+});
+
+describe('purge', () => {
+  it('efface les lignes AVANT la marque, et jamais l’inverse', async () => {
+    /* L'ORDRE EST L'INVARIANT. Interrompue entre les deux, la purge laisse un
+       espace vide mais marqué : il repassera au tour suivant, sans dommage.
+       Dans l'autre sens, elle laisserait des lignes que plus aucune marque ne
+       désigne — invisibles pour la purge, donc éternelles. C'est exactement la
+       fuite que cette fonctionnalité vient fermer. */
+    const { purger } = await import('../../../sync-server/src/index');
+    const { db, vues } = d1Factice(undefined, [{ espace: 'MORT' }]);
+
+    const efface = await purger({ DB: db } as never, MAINTENANT);
+
+    expect(efface).toBe(1);
+    const ordre = vues.filter((v) => v.sql.startsWith('DELETE')).map((v) => v.sql);
+    expect(ordre[0]).toContain('FROM lignes');
+    expect(ordre[1]).toContain('FROM espaces');
+  });
+
+  it('ne demande que les espaces sous le seuil', async () => {
+    const { purger } = await import('../../../sync-server/src/index');
+    const { db, vues } = d1Factice(undefined, [{ espace: 'MORT' }]);
+
+    await purger({ DB: db } as never, MAINTENANT);
+
+    /* La sélection porte sur `touche_le`, l'horodatage posé par le SERVEUR —
+       jamais sur `updated_at`, qui vient du client et dont l'horloge peut
+       être déréglée. */
+    const selection = vues.find((v) => v.sql.startsWith('SELECT espace'))!;
+    expect(selection.sql).toContain('touche_le < ?');
+    expect(selection.params).toEqual([MAINTENANT - 180 * JOUR]);
+  });
+
+  it('n’efface rien quand aucun espace n’a expiré', async () => {
+    const { purger } = await import('../../../sync-server/src/index');
+    /* `all()` de la doublure rend une liste vide : aucun espace sous le seuil. */
+    const { db, vues } = d1Factice();
+
+    expect(await purger({ DB: db } as never, MAINTENANT)).toBe(0);
+    expect(vues.filter((v) => v.sql.startsWith('DELETE'))).toEqual([]);
   });
 });

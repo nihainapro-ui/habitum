@@ -48,9 +48,10 @@ ambiguïté, puisqu'il n'y a personne pour le réinitialiser.
 - **`connect-src` s'ouvre à une origine**, fixée à la construction. Jamais de joker : ouvrir la
   directive à `https:` rendrait décorative la politique que le site invite justement à vérifier
   dans l'onglet « Réseau ».
-- **Aucune purge des espaces abandonnés.** Un code perdu laisse ses octets en base indéfiniment.
-  Ce n'est pas une fuite — illisibles, rattachés à personne — mais c'est du stockage qui ne se
-  libère jamais. Noté dans `sync-server/README.md` plutôt que tu.
+- **Un espace abandonné expire au bout de six mois** (ajouté le 2026-09-02). La purge raisonne
+  par espace entier et jamais ligne à ligne : une habitude ancienne mais jamais modifiée serait
+  sinon effacée alors qu'elle est vivante, et le prochain appareil appairé ne la recevrait jamais.
+  Rien n'est perdu pour autant — le relais est une boîte aux lettres, pas un coffre-fort.
 
 ## Ce que cela a obligé à corriger ailleurs
 

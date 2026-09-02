@@ -17,3 +17,8 @@ database_id = "683a75ba-e661-4a18-9fcb-5278e71e94fc"
 
 # Le palier gratuit suffit très largement : 100 000 requêtes par jour, quand un
 # appareil en fait quelques dizaines.
+
+# Purge quotidienne des espaces abandonnés (3 h UTC, heure creuse).
+# Les minuteries sont incluses dans le palier gratuit.
+[triggers]
+crons = ["0 3 * * *"]
