@@ -2,13 +2,22 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { Maximize2, Menu, PanelLeft, PanelLeftClose, Plus, Search } from 'lucide-react';
+import {
+  CalendarDays,
+  Maximize2,
+  Menu,
+  PanelLeft,
+  PanelLeftClose,
+  Plus,
+  Search,
+} from 'lucide-react';
 import { useProgression, useStore } from '@/lib/store';
 import { applyRail, readRailCookie, type EtatRail } from '@/lib/rail';
 import { ENCRE_SUR_TEINTE } from '@/components/ui/encre';
 import { itemActif } from './nav-items';
+import { MonthPicker } from './month-picker';
 
 /* En-tête — porté de `<header data-topbar>` (`Habitum.dc.html`, lignes 208–235).
  *
@@ -54,6 +63,28 @@ export function Header() {
   const openEditor = useStore((s) => s.openEditor);
   const menuOpen = useStore((s) => s.ui.menuOpen);
   const setMenuOpen = useStore((s) => s.setMenuOpen);
+
+  const [moisOuvert, setMoisOuvert] = useState(false);
+
+  /* `MonthPicker` clôt l'en-tête (dernier enfant), le bouton qui l'ouvre vit
+     plus haut, juste avant la recherche : les deux ne partagent donc PAS le
+     même `RadixDialog.Root`, et ce bouton n'est jamais le `Dialog.Trigger`
+     que Radix reconnaît. Son retour de focus automatique — `context
+     .triggerRef.current?.focus()` dans `@radix-ui/react-dialog` — vise
+     exactement CET élément-là ; ici `triggerRef` reste `null` pour toujours,
+     et à la fermeture le focus tombe hors du document. Trouvé par le test de
+     la tâche 2 (`toBeFocused` échouait après `Escape`), pas supposé : on
+     referme donc la boucle nous-mêmes, une fois le dialogue DÉMONTÉ (l'effet
+     réagit à `moisOuvert`, pas au clic d'Échap) pour ne pas se faire reprendre
+     la main par le piège de focus encore actif. */
+  const boutonCalendrierRef = useRef<HTMLButtonElement>(null);
+  const moisEtaitOuvert = useRef(false);
+  useEffect(() => {
+    if (moisEtaitOuvert.current && !moisOuvert) {
+      boutonCalendrierRef.current?.focus();
+    }
+    moisEtaitOuvert.current = moisOuvert;
+  }, [moisOuvert]);
 
   /* Lecture APRÈS montage, comme `RailFooter` le fait pour le thème : la
      préférence n'existe que dans le navigateur, la lire au rendu divergerait à
@@ -246,6 +277,25 @@ export function Header() {
         style={{ width: '1px', height: '26px', background: 'var(--line)' }}
       />
 
+      {/* Le calendrier est visible à TOUTES les largeurs, contrairement au mode
+          zen et à la pilule de profil qui disparaissent sous 640 px. C'est le
+          geste que la spec vient chercher — « aller voir un autre jour, vite » —
+          et il est né de captures prises sur téléphone : le masquer là serait le
+          retirer à l'appareil qui l'a demandé. Sa cible fait 34 px, `flex-none`,
+          comme la recherche repliée : le bloc de titre reste le seul à s'étirer.
+          `tests/e2e/shell.spec.ts` mesure l'en-tête aux cinq largeurs. */}
+      <button
+        ref={boutonCalendrierRef}
+        type="button"
+        onClick={() => setMoisOuvert(true)}
+        aria-label={t('app.openMonth')}
+        title={t('app.openMonth')}
+        className="grid h-[34px] w-[34px] flex-none cursor-pointer place-items-center rounded-[10px] border"
+        style={{ borderColor: 'var(--line)', background: 'var(--panel2)', color: 'var(--txt2)' }}
+      >
+        <CalendarDays size={15} strokeWidth={1.8} aria-hidden="true" />
+      </button>
+
       <button
         type="button"
         onClick={() => setCommandOpen(true)}
@@ -292,6 +342,8 @@ export function Header() {
         <Plus size={13} strokeWidth={2.4} aria-hidden="true" />
         <span className="hidden sm:inline">{t('app.newItem')}</span>
       </button>
+
+      <MonthPicker open={moisOuvert} onOpenChange={setMoisOuvert} />
     </header>
   );
 }

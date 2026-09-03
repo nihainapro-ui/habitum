@@ -94,6 +94,25 @@ test('le changement de vue est annoncé aux lecteurs d’écran', async ({ page 
   await expect(region).toContainText(/habitudes/i);
 });
 
+test('le calendrier de l’en-tête s’ouvre, se ferme, et rend le focus', async ({ page }) => {
+  await ouvrirAvecDemo(page, '/app/today');
+
+  const bouton = page.getByRole('button', { name: 'Ouvrir le calendrier' });
+  await expect(bouton).toBeVisible();
+  await bouton.click();
+
+  const boite = page.getByRole('dialog', { name: 'Choisir un jour' });
+  await expect(boite).toBeVisible();
+
+  /* Échap ferme, et LE FOCUS REVIENT au bouton : sans ce retour, l'utilisateur
+     au clavier est renvoyé au début du document à chaque fermeture. Radix le
+     garantit — encore faut-il que le test le dise, sinon un jour où le
+     dialogue sera remonté à la main, personne ne s'en apercevra. */
+  await page.keyboard.press('Escape');
+  await expect(boite).toBeHidden();
+  await expect(bouton).toBeFocused();
+});
+
 /* L'EN-TÊTE N'ÉTAIT MESURÉ PAR RIEN. `debordements.spec.ts` balaie `main *` et
    documente l'en-tête parmi ses angles morts assumés ; or `header.tsx` porte
    lui-même la trace d'un piège déjà payé — « un élément à largeur fixe dans
