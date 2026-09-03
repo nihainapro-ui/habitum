@@ -30,7 +30,7 @@ export function Switch({
   const idRaison = useId();
 
   return (
-    <label data-switch-row className="flex items-center justify-between gap-3 py-1.5">
+    <label className="flex items-center justify-between gap-3 py-1.5">
       <span className="flex min-w-0 flex-col">
         <span className="truncate text-[13px]" style={{ color: 'var(--txt)' }}>
           {label}
@@ -60,6 +60,7 @@ export function Switch({
         onCheckedChange={onChange}
         disabled={disabled}
         aria-describedby={reason ? idRaison : undefined}
+        data-switch-rail
         className="grid shrink-0 place-items-center"
         style={{
           width: 44,
@@ -67,11 +68,23 @@ export function Switch({
           /* La marge négative rend au dessin la place que la cible prend en
              plus : le rail reste exactement où il était, au pixel près. Les
              3 px qui débordent horizontalement tombent dans le rembourrage du
-             panneau (14 px) — les cinq paliers le vérifient. C'est ce même
-             débordement, documenté et volontaire, que `data-switch-row`
-             (sur le `<label>` ci-dessus) permet à `debordements.spec.ts`
-             d'exclure de sa mesure — un vrai texte coupé, lui, ne se cache
-             jamais derrière cet attribut. */
+             panneau (14 px) — les cinq paliers le vérifient.
+
+             `data-switch-rail` est posé ICI, sur le rail (`RadixSwitch.Root`)
+             lui-même, et non sur le `<label>` comme avant : c'est ce
+             déplacement qui permet à `debordements.spec.ts` de retrouver, à
+             coup sûr et sans en prendre d'autres, les deux seuls éléments que
+             ce débordement atteint réellement — le `<label>` (parent DIRECT
+             du rail) et le conteneur de ce `<label>` (son propre parent
+             DIRECT, une `<div>` de `ProfileView`). Le rail porte l'attribut
+             mais ne déborde jamais lui-même : sa largeur est fixée à 44 px et
+             rien à l'intérieur ne la dépasse. L'exclusion ne remonte donc que
+             de deux niveaux ancêtres au-dessus du rail, jamais plus haut et
+             jamais par le contenu (`querySelector` sur tout un sous-arbre) —
+             elle ne couvre ni le texte du libellé, ni `span[data-reason]`
+             (une case de plus bas dans le même `<label>`), ni quoi que ce
+             soit hors de ces deux ancêtres précis. Un vrai texte coupé, y
+             compris sur `reason`, reste mesuré normalement partout ailleurs. */
           margin: '-11px -3px',
           background: 'transparent',
           border: 0,

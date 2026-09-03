@@ -1,5 +1,18 @@
 # Journal des modifications
 
+## 2026-09-03 — Le filet du lot A ne se referme plus sur un trou qu'il vient de creuser
+
+En revue finale de clôture du lot A, l'exclusion ajoutée pour la marge
+négative documentée du `Switch` (3 px, tâche 8.3) écartait, via `closest` +
+`querySelector` non bornés sur `data-switch-row`, 8 éléments au lieu des 2
+réellement fautifs — dont `span[data-reason]`, un vrai texte traduit
+(`soundHint`, `vibrateHint`…) partagé par `SettingsView`, `NotificationSetting`
+et `FeedbackSettings`. Resserré : `data-switch-rail` marque maintenant le rail
+(`RadixSwitch.Root`) plutôt que le `<label>`, et `debordements.spec.ts`
+n'exclut plus que ses deux ancêtres directs, mesuré à 2 avant fusion — un
+garde-fou assertionne désormais ce chiffre pour qu'un futur relâchement de la
+formule ne se taise plus.
+
 ## 2026-09-02 (suite 4) — Clôture du lot A : six défauts d'affichage, mesurés
 
 Le lot A partait d'un audit jetable : chaque vue rendue dans le navigateur à

@@ -10,19 +10,32 @@ import { ouvrirAvecDemo } from './helpers/app';
    `sr-only` (boîte de 1 px par définition), `truncate` (troncature choisie,
    assumée par des points de suspension), les conteneurs défilants (déborder
    est leur fonction), le halo du logo (`aria-hidden`, décoratif) et la ligne
-   d'un `Switch` (`data-switch-row`, posé par `components/ui/Switch.tsx`) —
-   3 px de marge négative DOCUMENTÉE là où le composant est défini (la cible
-   tactile de 44 px dépasse volontairement le rail dessiné de 38 px),
-   rencontrée pour la première fois par ce filet en clôture de lot avec
-   l'ajout de `/app/profile`, la première vue surveillée à en afficher une.
-   Un vrai texte coupé, lui, n'a jamais cet attribut, sur cette ligne ni sur
-   aucune de ses ancêtres ou descendantes — `closest` ET `querySelector` sont
-   nécessaires pour l'exclure : l'élément qui déborde de 3 px n'est pas
-   seulement le `<label>` marqué, c'est aussi SON PARENT immédiat (le
-   rembourrage du panneau absorbe le débordement plus haut dans l'arbre, mais
-   pas à ce niveau-là) ; `closest` remonte l'arbre et ne le descend jamais,
-   donc un parent d'élément marqué ne matche pas `closest('[data-switch-row]')`
-   seul.
+   d'un `Switch` — 3 px de marge négative DOCUMENTÉE là où le composant est
+   défini (la cible tactile de 44 px dépasse volontairement le rail dessiné de
+   38 px), rencontrée pour la première fois par ce filet en clôture de lot
+   avec l'ajout de `/app/profile`, la première vue surveillée à en afficher
+   une.
+
+   RESSERRÉ EN REVUE FINALE : une première version marquait le `<label>`
+   lui-même de `data-switch-row` et l'excluait via `closest` OU
+   `querySelector` — cette dernière descend TOUT le sous-arbre du `<label>`,
+   donc n'importe lequel de ses ANCÊTRES en hérite aussi (il a, quelque part
+   en dessous, un descendant marqué), sans limite de hauteur. Sur
+   `/app/profile`, cette formule écartait 8 éléments — la racine de la vue, la
+   `<section>` « Préférences » entière, et surtout `span[data-reason]`, un
+   VRAI texte traduit (`soundHint`, `vibrateHint`…) partagé par trois vues —
+   alors que seuls 2 éléments débordent réellement.
+
+   `components/ui/Switch.tsx` porte maintenant `data-switch-rail` sur le RAIL
+   (`RadixSwitch.Root`), pas sur le `<label>`. Le rail lui-même ne déborde
+   jamais (sa largeur est fixée à 44 px) ; ce sont ses deux ANCÊTRES DIRECTS —
+   le `<label>`, puis le parent de ce `<label>` — qui absorbent le
+   débordement, et seulement eux : le rembourrage du panneau y met fin plus
+   haut dans l'arbre. `estRailOuConteneurDeSwitch` ci-dessous ne descend donc
+   que de DEUX niveaux exacts sous chaque élément testé (enfant direct marqué,
+   ou petit-enfant direct marqué) — jamais `closest` (remontée sans limite),
+   jamais `querySelector` non borné (sous-arbre entier) : rien d'autre que ces
+   deux ancêtres précis ne peut plus se glisser dans l'exclusion.
 
    `button` N'EST PAS exclu, à la différence de l'audit dont ce test hérite.
    Ce test ne mesure que les COUPES (`scrollWidth > clientWidth`) ; l'audit
@@ -73,17 +86,31 @@ const VUES = [
 
 async function releverDebordements(page: import('@playwright/test').Page) {
   return page.evaluate(() => {
-    const estLigneDeSwitch = (el: Element): boolean =>
-      el.closest('[data-switch-row]') !== null || el.querySelector('[data-switch-row]') !== null;
+    /* Le rail (`data-switch-rail`, posé par `components/ui/Switch.tsx` sur
+       `RadixSwitch.Root`) ne déborde jamais lui-même — sa largeur est fixée.
+       Ce sont ses deux ANCÊTRES DIRECTS qui absorbent les 3 px de la cible
+       tactile : le `<label>` de la ligne, et le parent de ce `<label>`. On ne
+       descend donc que de DEUX niveaux exacts sous l'élément testé — un
+       enfant direct marqué, ou un petit-enfant direct marqué — jamais par
+       `closest` (remontée sans limite) ni par un `querySelector` qui
+       fouillerait tout le sous-arbre : rien au-delà de ces deux ancêtres
+       précis ne peut matcher. */
+    const estRailOuConteneurDeSwitch = (el: Element): boolean =>
+      el.querySelector(':scope > [data-switch-rail]') !== null ||
+      el.querySelector(':scope > * > [data-switch-rail]') !== null;
 
     const releve: string[] = [];
     let balayes = 0;
+    let exclusSwitch = 0;
     for (const el of Array.from(document.querySelectorAll('main *'))) {
       const st = getComputedStyle(el);
       if (st.display === 'none' || st.visibility === 'hidden') continue;
       if (st.overflowX === 'auto' || st.overflowX === 'scroll') continue;
       if (el.closest('[aria-hidden="true"], .sr-only, [class*="truncate"]')) continue;
-      if (estLigneDeSwitch(el)) continue;
+      if (estRailOuConteneurDeSwitch(el)) {
+        exclusSwitch++;
+        continue;
+      }
       if (el.clientWidth === 0) continue;
       balayes++;
       if (el.scrollWidth > el.clientWidth + 1) {
@@ -91,7 +118,7 @@ async function releverDebordements(page: import('@playwright/test').Page) {
         releve.push(`${el.tagName.toLowerCase()} « ${texte} » ${el.scrollWidth}>${el.clientWidth}`);
       }
     }
-    return { releve, balayes };
+    return { releve, balayes, exclusSwitch };
   });
 }
 
@@ -101,7 +128,7 @@ for (const largeur of LARGEURS) {
       await page.setViewportSize({ width: largeur, height: 900 });
       await ouvrirAvecDemo(page, vue);
 
-      const { releve, balayes } = await releverDebordements(page);
+      const { releve, balayes, exclusSwitch } = await releverDebordements(page);
 
       /* Le filet peut passer au vert sans avoir rien mesuré : un `<main>`
          renommé, déplacé, ou une route qui ne rend plus rien, et
@@ -114,6 +141,22 @@ for (const largeur of LARGEURS) {
         balayes,
         `${vue} à ${largeur}px : seulement ${balayes} élément(s) balayé(s) — la mesure est suspecte, pas concluante`,
       ).toBeGreaterThan(20);
+
+      /* GARDE-FOU contre le trou que ce filet a lui-même creusé une première
+         fois (voir l'en-tête du fichier) : l'exclusion du Switch ne doit
+         écarter QUE le `<label>` de sa ligne et le parent direct de ce
+         `<label>`, jamais plus. `/app/profile` est la seule vue surveillée à
+         afficher un interrupteur — 2 éléments y sont donc attendus ; 0
+         partout ailleurs. Un chiffre plus HAUT que celui-ci n'est jamais un
+         hasard : c'est l'exclusion qui recommence à couvrir plus que le rail
+         et ses deux ancêtres directs — exactement le défaut relevé en revue
+         finale, quand `span[data-reason]` s'y était glissé sans que rien ne
+         le remarque. */
+      const exclusSwitchAttendus = vue === '/app/profile' ? 2 : 0;
+      expect(
+        exclusSwitch,
+        `${vue} à ${largeur}px : l'exclusion du Switch écarte ${exclusSwitch} élément(s), ${exclusSwitchAttendus} attendu(s) — un nombre plus haut est un trou qui s'élargit`,
+      ).toBe(exclusSwitchAttendus);
 
       expect(releve).toEqual([]);
     });
