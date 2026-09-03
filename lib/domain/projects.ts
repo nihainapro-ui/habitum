@@ -23,6 +23,15 @@ export function groupProjectTasks(
   return groupes;
 }
 
+/** Sous-tâches d'une étape, absence comprise.
+ *
+ *  LE SEUL `?? []` DU PRODUIT SUR CE CHAMP. Recopié dans chaque vue, il
+ *  finirait par manquer dans une — et cette vue-là planterait sur la première
+ *  étape d'avant le lot B, c'est-à-dire sur toutes celles des utilisateurs
+ *  actuels. */
+export const projectSubItems = (t: ProjectTask): readonly { label: string; done: boolean }[] =>
+  t.subItems ?? [];
+
 export interface AvancementProjet {
   done: number;
   total: number;

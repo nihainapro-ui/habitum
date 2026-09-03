@@ -138,6 +138,18 @@ export const legacyProjectTask = z.object({
   deadline: z.string().default(''),
   status: z.enum(['todo', 'doing', 'done']).catch('todo'),
   note: z.string().default(''),
+  /* Sous-tâches — lot B. `.default([])` n'est pas de la complaisance : une
+     sauvegarde produite avant ce lot n'a pas la clé, et l'absence ne doit
+     écarter aucune étape. Même forme que `sub` sur `legacyTask`. */
+  sub: z
+    .array(
+      z.object({
+        fr: z.string().optional(),
+        en: z.string().optional(),
+        done: z.boolean().default(false),
+      }),
+    )
+    .default([]),
 });
 
 export const habitumExport = z.object({

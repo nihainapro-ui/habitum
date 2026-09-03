@@ -77,6 +77,65 @@ describe('aller-retour de sauvegarde', () => {
     expect(new Set(etapes.map((t) => t.projectId))).toEqual(new Set([projets[0]!.id]));
   });
 
+  it('les sous-tâches d’une étape traversent l’aller-retour', async () => {
+    /* LE PIÈGE DU LOT B, pris de face. `export.ts` et `import.ts` énumèrent les
+       champs de `ProjectTask` UN PAR UN : un champ ajouté au domaine et oublié
+       là ne casse rien, ne dit rien, et se perd à chaque sauvegarde restaurée.
+       Ce test est écrit AVANT le champ pour cette seule raison. */
+    const projet = await projectsRepo.create({ name: 'Refonte', note: '' });
+    await projectTasksRepo.create({
+      projectId: projet.id,
+      name: 'Intégration',
+      assignee: '',
+      deadline: '',
+      status: 'doing',
+      note: '',
+      subItems: [
+        { label: 'Pages statiques', done: true },
+        { label: 'Menu mobile', done: false },
+      ],
+    });
+
+    const charge = await exportToJson();
+    await db.projects.clear();
+    await db.projectTasks.clear();
+    await importFromJson(JSON.stringify(charge));
+
+    const etapes = await projectTasksRepo.list();
+    /* L'ORDRE ET LE `done` COMPTENT AUTANT QUE LES INTITULÉS : une liste
+       restituée toute décochée serait « importée » et pourtant fausse. */
+    expect(etapes[0]?.subItems).toEqual([
+      { label: 'Pages statiques', done: true },
+      { label: 'Menu mobile', done: false },
+    ]);
+  });
+
+  it('une étape d’AVANT le lot B s’importe, sans sous-tâche et sans erreur', async () => {
+    /* Toutes les sauvegardes produites jusqu'à aujourd'hui ont des `ptask`
+       SANS clé `sub`. Rendre la clé obligatoire écarterait toutes leurs
+       étapes — la disparition silencieuse, dans l'autre sens. */
+    const charge = JSON.stringify({
+      app: 'Habitum',
+      v: 5,
+      habits: [],
+      tasks: [],
+      obj: [],
+      log: {},
+      ov: {},
+      notes: {},
+      sessions: [],
+      shop: [],
+      occ: {},
+      proj: [{ id: 'p1', name: 'P', note: '' }],
+      ptask: [{ id: 't1', projectId: 'p1', name: 'X', status: 'todo' }],
+    });
+
+    const rapport = await importFromJson(charge);
+    expect(rapport.byEntity.projectTasks).toEqual({ read: 1, kept: 1 });
+    const etapes = await projectTasksRepo.list();
+    expect(etapes[0]?.subItems).toEqual([]);
+  });
+
   it('une sauvegarde d’AVANT Work s’importe sans erreur', async () => {
     /* Toutes celles produites jusqu'à aujourd'hui n'ont ni `proj` ni `ptask`.
        Les rendre obligatoires aurait cassé la restauration de tout le monde. */

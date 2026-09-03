@@ -4,6 +4,7 @@ import {
   groupProjectTasks,
   isOverdue,
   projectProgress,
+  projectSubItems,
   PROJECT_STATUSES,
   type ProjectStatus,
   type ProjectTask,
@@ -127,5 +128,21 @@ describe('les statuts sont déclarés une seule fois', () => {
     expect(PROJECT_STATUSES).toEqual(['todo', 'doing', 'done']);
     const _exhaustif: ProjectStatus[] = ['todo', 'doing', 'done'];
     expect(_exhaustif).toHaveLength(PROJECT_STATUSES.length);
+  });
+});
+
+describe('projectSubItems', () => {
+  it('rend une liste vide pour une étape écrite AVANT le lot B', () => {
+    /* Une étape d'avant ce lot n'a pas le champ — ni en base locale, ni dans
+       une ligne reçue d'un appareil resté en arrière (la synchronisation
+       transporte l'entité telle quelle, sans validation). Lire `.length` sur
+       `undefined` planterait le tableau ; c'est ici, et ici seulement, que
+       l'absence est défaite. */
+    expect(projectSubItems(tache({ id: 'a' }))).toEqual([]);
+  });
+
+  it('rend la liste telle quelle quand elle existe', () => {
+    const items = [{ label: 'Menu mobile', done: false }];
+    expect(projectSubItems(tache({ id: 'a', subItems: items }))).toEqual(items);
   });
 });

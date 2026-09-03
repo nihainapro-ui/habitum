@@ -111,7 +111,12 @@ sensible (il touche à ce que la politique de confidentialité décrit).
 
 ### Modèle
 
-`ProjectTask` gagne `subItems: { label: string; done: boolean }[]`, défaut `[]`.
+`ProjectTask` gagne `subItems?: { label: string; done: boolean }[]`. **Optionnel, et non
+requis comme annoncé au cadrage** : les étapes déjà écrites n'ont pas ce champ — ni en
+base, ni dans une ligne reçue d'un appareil resté en arrière, la synchronisation écrivant
+l'entité telle quelle sans valeur par défaut. Le déclarer requis mentirait au compilateur
+et ferait planter le tableau sur `.length`. L'absence est défaite en un seul endroit,
+`projectSubItems()` dans `lib/domain/projects.ts`, jamais dans les vues.
 Différence assumée avec `Habit.subItems` (`{ label }` seul) : pour une habitude,
 l'accompli du jour vit dans le journal ; pour une étape de projet, l'accompli est
 intrinsèque et unique — il vit donc dans l'entité.

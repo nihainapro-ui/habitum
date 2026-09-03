@@ -307,6 +307,7 @@ export async function importFromJson(input: unknown): Promise<ImportReport> {
       deadline: t.deadline,
       status: t.status,
       note: t.note,
+      subItems: t.sub.map((s) => ({ label: texte(s.fr, s.en), done: s.done })),
       createdAt: at,
       updatedAt: at,
     }));

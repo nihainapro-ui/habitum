@@ -1,5 +1,5 @@
 import { LEGACY_SCHEMA_VERSION } from '@/lib/storage/keys';
-import { logKey, parseOccurrenceKey, type Frequence } from '@/lib/domain';
+import { logKey, parseOccurrenceKey, projectSubItems, type Frequence } from '@/lib/domain';
 import { META_KEYS } from './seed';
 import { nowIso } from './repositories/base';
 import {
@@ -64,6 +64,10 @@ export interface ExportedProjectTask {
   deadline: string;
   status: string;
   note: string;
+  /** Sous-tâches — clé NEUVE (lot B). Format `{ fr, en, done }` comme les
+   *  sous-tâches de `tasks` : c'est celui que l'importateur sait déjà lire, et
+   *  il garde la place d'un libellé traduit sans en inventer un. */
+  sub: { fr: string; en: string; done: boolean }[];
 }
 
 export interface ExportedHabit {
@@ -265,6 +269,7 @@ export async function exportToJson(): Promise<HabitumExport> {
       deadline: t.deadline,
       status: t.status,
       note: t.note,
+      sub: projectSubItems(t).map((s) => ({ fr: s.label, en: s.label, done: s.done })),
     })),
   };
 }

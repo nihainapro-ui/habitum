@@ -161,6 +161,20 @@ export interface ProjectTask {
   deadline: DateKey | '';
   status: ProjectStatus;
   note: string;
+  /** Sous-tâches de l'étape — lot B (spec du 2026-09-02).
+   *
+   *  DIFFÉRENCE ASSUMÉE avec `Habit.subItems` (`{ label }` seul) : pour une
+   *  habitude, l'accompli du jour vit dans le journal, une même liste étant
+   *  recochée chaque jour ; pour une étape de projet, l'accompli est
+   *  intrinsèque et unique — il vit donc dans l'entité.
+   *
+   *  OPTIONNEL, ET CE N'EST PAS UN OUBLI. Les étapes écrites avant ce lot n'ont
+   *  pas ce champ : ni celles déjà en base, ni celles qu'un appareil resté en
+   *  arrière enverra (`lib/sync/entites.ts` écrit la ligne reçue telle quelle,
+   *  sans validation ni valeur par défaut). Le déclarer requis mentirait au
+   *  compilateur — la ligne existe, sans le champ — et le tableau planterait
+   *  sur `.length`. `projectSubItems()` défait l'absence, en un seul endroit. */
+  subItems?: { label: string; done: boolean }[];
   createdAt: string;
   updatedAt: string;
   deletedAt?: string;
