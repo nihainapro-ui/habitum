@@ -55,6 +55,28 @@ lot B n'a pas cassé cette recette, mais il ne pouvait pas se clore
 par-dessus : livrer sur une recette rouge rend indiscernable « c'était déjà
 rouge » de « je viens de le casser ».
 
+**Post-scriptum de revue finale : le scan d'accessibilité de Work regardait
+la mauvaise page.** `vue-work.spec.ts` lançait axe juste après avoir ouvert
+`/app/work` — c'est-à-dire sur la LISTE des projets, le tableau ne s'ouvrant
+qu'au clic, `WorkView` gardant le projet ouvert en état local. Aucun des
+contrôles interactifs de ce lot — chevron, cases des sous-tâches — n'avait
+donc jamais été mesuré. Le lot avait pourtant identifié cet angle mort pour
+l'autre filet, celui des textes coupés, et écrit un test exprès pour l'y
+amener ; le même raisonnement n'avait pas été porté jusqu'à l'accessibilité.
+Le scan déplie désormais le tableau avant de mesurer : **zéro violation, tous
+impacts confondus, desktop et mobile.**
+
+Trois correctifs sont partis avec lui. Le compteur visible (« 1/3 ») entre
+dans le nom accessible du chevron — remplacé par le seul libellé, il rendait
+muette la commande vocale, qui prononce ce qui est écrit (WCAG 2.5.3). Le
+chevron désigne la liste qu'il déplie (`aria-controls`), ce qui rend enfin
+utile son annonce `aria-expanded`. Et le garde-fou du `Switch` compare, dans
+la vue Work aussi, ce que la page rend plutôt qu'un zéro écrit en dur : la
+correction du filet mobile venait d'être faite dans le fichier voisin, elle
+se serait défaite ici au premier interrupteur ajouté à Work — pendant que
+les cinq largeurs de la mesure fine cessent, elles, de se recopier d'un
+fichier à l'autre.
+
 ## 2026-09-03 — Le filet du lot A ne se referme plus sur un trou qu'il vient de creuser
 
 En revue finale de clôture du lot A, l'exclusion ajoutée pour la marge
