@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
-import { installer } from './helpers/app';
+import { installer, ouvrirAvecDemo } from './helpers/app';
+import { LARGEURS_MESUREES, releverDebordements } from './helpers/debordement';
 
 /* ADR-0007 : l'application vit sous /app. */
 
@@ -91,4 +92,44 @@ test('le changement de vue est annoncé aux lecteurs d’écran', async ({ page 
     .getByRole('link', { name: /habitudes/i })
     .click();
   await expect(region).toContainText(/habitudes/i);
+});
+
+/* L'EN-TÊTE N'ÉTAIT MESURÉ PAR RIEN. `debordements.spec.ts` balaie `main *` et
+   documente l'en-tête parmi ses angles morts assumés ; or `header.tsx` porte
+   lui-même la trace d'un piège déjà payé — « un élément à largeur fixe dans
+   l'en-tête vole la place du titre et du sous-titre ». Le lot C y ajoute un
+   bouton : il mesure d'abord, il ajoute ensuite.
+
+   Ce test est VERT dès son écriture, et c'est voulu : il fixe l'état d'avant.
+   S'il rougit à la tâche 2, c'est le bouton qui est en trop, pas la mesure. */
+test.describe('en-tête', () => {
+  for (const largeur of LARGEURS_MESUREES) {
+    test(`l'en-tête ne déborde pas et ne coupe aucun texte à ${largeur}px`, async ({ page }) => {
+      await page.setViewportSize({ width: largeur, height: 900 });
+      await ouvrirAvecDemo(page, '/app/today');
+
+      /* LA MESURE DÉCISIVE est celle de l'en-tête LUI-MÊME : c'est un conteneur
+         en ligne sans repli (`flex-nowrap`), donc un enfant de trop ne coupe
+         aucun texte — il pousse la boîte. `scrollWidth > clientWidth` sur le
+         `<header>` est la seule chose qui l'attrape. */
+      const boite = await page.evaluate(() => {
+        const h = document.querySelector('header');
+        return h ? { scroll: h.scrollWidth, client: h.clientWidth } : null;
+      });
+      expect(boite, 'aucun <header> trouvé — la coque a changé de forme').not.toBeNull();
+      expect(
+        boite!.scroll,
+        `l'en-tête déborde de ${boite!.scroll - boite!.client} px à ${largeur} px`,
+      ).toBeLessThanOrEqual(boite!.client + 1);
+
+      /* Et les textes de ses enfants, avec la même mesure que le filet des
+         vues — mêmes exclusions, même doctrine, une seule implémentation. */
+      const { releve, balayes } = await releverDebordements(page, 'header');
+      expect(
+        balayes,
+        `${balayes} élément(s) balayé(s) dans l'en-tête — la mesure est suspecte`,
+      ).toBeGreaterThan(5);
+      expect(releve).toEqual([]);
+    });
+  }
 });

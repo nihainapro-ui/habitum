@@ -72,13 +72,21 @@ import type { Page } from '@playwright/test';
  *  celle de `helpers/app.ts` : elle sert des fichiers hors de ce lot. */
 export const LARGEURS_MESUREES = [360, 390, 768, 1060, 1440] as const;
 
-export async function releverDebordements(page: Page): Promise<{
+export async function releverDebordements(
+  page: Page,
+  /** Racine du balayage. `'main'` par défaut — les sept vues du filet. Le lot C
+   *  passe `'header'` : la coque vit HORS de `<main>`, elle n'était donc mesurée
+   *  par rien, et c'est là qu'il ajoute un bouton. Les exclusions et la doctrine
+   *  ne changent pas d'un iota d'une racine à l'autre : c'est tout l'intérêt de
+   *  n'avoir qu'une implémentation. */
+  racine = 'main',
+): Promise<{
   releve: string[];
   balayes: number;
   exclusSwitch: number;
   exclusSwitchAttendus: number;
 }> {
-  return page.evaluate(() => {
+  return page.evaluate((sel) => {
     /* Le rail (`data-switch-rail`, posé par `components/ui/Switch.tsx` sur
        `RadixSwitch.Root`) ne déborde jamais lui-même — sa largeur est fixée.
        Ce sont ses deux ANCÊTRES DIRECTS qui absorbent les 3 px de la cible
@@ -95,7 +103,7 @@ export async function releverDebordements(page: Page): Promise<{
     const releve: string[] = [];
     let balayes = 0;
     let exclusSwitch = 0;
-    for (const el of Array.from(document.querySelectorAll('main *'))) {
+    for (const el of Array.from(document.querySelectorAll(`${sel} *`))) {
       const st = getComputedStyle(el);
       if (st.display === 'none' || st.visibility === 'hidden') continue;
       if (st.overflowX === 'auto' || st.overflowX === 'scroll') continue;
@@ -133,5 +141,5 @@ export async function releverDebordements(page: Page): Promise<{
     }
 
     return { releve, balayes, exclusSwitch, exclusSwitchAttendus: attendus.size };
-  });
+  }, racine);
 }
