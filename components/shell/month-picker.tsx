@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, type ReactNode } from 'react';
 import { useTranslations } from 'next-intl';
 import { Dialog } from '@/components/ui';
 
@@ -14,17 +15,17 @@ import { Dialog } from '@/components/ui';
    fermeture par Échap, piège de focus et retour du focus au déclencheur sont
    fournis, pas réécrits. */
 
-export function MonthPicker({
-  open,
-  onOpenChange,
-}: {
-  open: boolean;
-  onOpenChange: (v: boolean) => void;
-}) {
+export function MonthPicker({ trigger }: { trigger: ReactNode }) {
   const t = useTranslations('app');
 
+  /* L'état vit ICI et non dans l'en-tête : le dialogue est le seul à en avoir
+     besoin, et le garder auprès de son déclencheur laisse Radix apparier les
+     deux — c'est ce qui rend le focus au bouton après Échap, sans une ligne de
+     code de notre part. */
+  const [ouvert, setOuvert] = useState(false);
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange} title={t('pickDay')}>
+    <Dialog open={ouvert} onOpenChange={setOuvert} title={t('pickDay')} trigger={trigger}>
       <div />
     </Dialog>
   );
