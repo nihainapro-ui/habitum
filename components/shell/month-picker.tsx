@@ -46,11 +46,16 @@ export function MonthPicker({ trigger }: { trigger: ReactNode }) {
   }, [locale, weekStart]);
 
   const titreMois = useMemo(() => {
-    const maintenant = today();
-    return new Intl.DateTimeFormat(locale, { month: 'long', year: 'numeric' }).format(
-      new Date(maintenant.getFullYear(), maintenant.getMonth() + offset, 1),
-    );
-  }, [locale, offset]);
+    /* Le mois affiché se LIT dans la grille plutôt que de se recalculer :
+       toute case `inMonth` appartient par construction au mois demandé.
+       Refaire ici l'ancrage de `monthGrid` (`new Date(y, m + offset, 1)`)
+       ferait vivre la même formule à deux endroits, et le titre pourrait un
+       jour désigner un autre mois que la grille sous les yeux du lecteur. */
+    const ancre = cases.find((c) => c.inMonth) ?? cases[0];
+    return ancre
+      ? new Intl.DateTimeFormat(locale, { month: 'long', year: 'numeric' }).format(ancre.date)
+      : '';
+  }, [cases, locale]);
 
   const jourLong = useMemo(
     () => new Intl.DateTimeFormat(locale, { weekday: 'long', day: 'numeric', month: 'long' }),
