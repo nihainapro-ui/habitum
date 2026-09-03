@@ -66,6 +66,45 @@ test.describe('work', () => {
     await expect(page.getByText(/1 en retard/)).toBeVisible();
   });
 
+  test('les sous-tâches se comptent, se déplient et se cochent sur la ligne', async ({ page }) => {
+    await ouvrirAvecDemo(page, ROUTE);
+    await page.getByRole('button', { name: 'Ouvrir Refonte du site' }).click();
+
+    const detail = page.getByRole('button', { name: 'Afficher les sous-tâches : Intégration' });
+    await expect(detail).toContainText('1/3');
+
+    /* Une étape SANS sous-tâche n'affiche pas « 0/0 » : il n'y a rien à
+       avancer, et un compteur vide serait un chiffre fabriqué (règle 3). */
+    await expect(
+      page.getByRole('button', { name: 'Afficher les sous-tâches : Mise en ligne' }),
+    ).toHaveCount(0);
+
+    /* Replié par défaut : trois colonnes de listes ouvertes rendraient le
+       tableau illisible sur téléphone. */
+    await expect(page.getByRole('checkbox', { name: 'Menu mobile' })).toHaveCount(0);
+    await detail.click();
+
+    const projet = page.getByText('2 sur 5');
+    await expect(projet).toBeVisible();
+
+    await page.getByRole('checkbox', { name: 'Menu mobile' }).click();
+    await expect(detail).toContainText('2/3');
+
+    /* LA JAUGE DU PROJET NE BOUGE PAS. Les sous-tâches détaillent une étape,
+       elles ne la fractionnent pas : deux jauges qui bougent d'un même geste
+       ne mesurent plus rien de compréhensible. */
+    await expect(projet).toBeVisible();
+    await expect(page.locator('[data-colonne="done"] [data-ptask]')).toHaveCount(2);
+
+    /* ÉCRIT EN BASE, pas seulement à l'écran : un cochage qui ne survit pas au
+       rechargement est un cochage perdu. */
+    await page.reload();
+    await page.getByRole('button', { name: 'Ouvrir Refonte du site' }).click();
+    await expect(
+      page.getByRole('button', { name: 'Afficher les sous-tâches : Intégration' }),
+    ).toContainText('2/3');
+  });
+
   test('sans débordement horizontal aux quatre paliers', async ({ page }) => {
     await ouvrirAvecDemo(page, ROUTE);
     await verifierPaliers(page, ROUTE);

@@ -394,11 +394,23 @@ export async function seedDemo(): Promise<void> {
     note: 'Vitrine et pages de contenu',
   });
   for (const etape of [
-    { name: 'Cadrer le besoin', assignee: 'Alex', off: -6, status: 'done' },
-    { name: 'Maquettes des trois pages', assignee: 'Sam', off: -2, status: 'done' },
-    { name: 'Intégration', assignee: 'Alex', off: -1, status: 'doing' },
-    { name: 'Relire les textes', assignee: '', off: 4, status: 'todo' },
-    { name: 'Mise en ligne', assignee: 'Sam', off: null, status: 'todo' },
+    { name: 'Cadrer le besoin', assignee: 'Alex', off: -6, status: 'done', sub: [] },
+    { name: 'Maquettes des trois pages', assignee: 'Sam', off: -2, status: 'done', sub: [] },
+    {
+      name: 'Intégration',
+      assignee: 'Alex',
+      off: -1,
+      status: 'doing',
+      /* Une seule étape détaillée : montrer à quoi sert le dépliage sans
+         transformer la démonstration en liste de courses. */
+      sub: [
+        { label: 'Pages statiques', done: true },
+        { label: 'Formulaire de contact', done: false },
+        { label: 'Menu mobile', done: false },
+      ],
+    },
+    { name: 'Relire les textes', assignee: '', off: 4, status: 'todo', sub: [] },
+    { name: 'Mise en ligne', assignee: 'Sam', off: null, status: 'todo', sub: [] },
   ] as const) {
     await projectTasksRepo.create({
       projectId: projet.id,
@@ -407,6 +419,7 @@ export async function seedDemo(): Promise<void> {
       deadline: etape.off === null ? '' : dateKey(addDays(maintenant, etape.off)),
       status: etape.status,
       note: '',
+      subItems: [...etape.sub],
     });
   }
 

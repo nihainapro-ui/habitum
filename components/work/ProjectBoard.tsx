@@ -1,12 +1,15 @@
 'use client';
 
+import { useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { Pencil } from 'lucide-react';
+import { ChevronDown, Pencil } from 'lucide-react';
 import {
   groupProjectTasks,
   isOverdue,
   projectProgress,
+  projectSubItems,
   PROJECT_STATUSES,
+  subItemCount,
   type DateKey,
   type Project,
   type ProjectStatus,
@@ -16,6 +19,7 @@ import { useStore } from '@/lib/store';
 import { Select } from '@/components/ui/select';
 import { EmptyState } from '@/components/shell/empty-state';
 import { PrimaryButton } from '@/components/shell/primary-button';
+import { SubList } from '@/components/today/SubList';
 
 /* Les étapes d'un projet, rangées par statut.
 
@@ -132,8 +136,17 @@ function LigneTache({ tache, aujourdHui }: { tache: ProjectTask; aujourdHui: Dat
   const t = useTranslations('app');
   const setProjectTaskStatus = useStore((s) => s.setProjectTaskStatus);
   const openEditor = useStore((s) => s.openEditor);
+  const toggleProjectSubItem = useStore((s) => s.toggleProjectSubItem);
+  /* Replié par défaut, état LOCAL à la ligne : trois colonnes de listes
+     ouvertes rendraient le tableau illisible sur téléphone, et le pli d'une
+     ligne n'intéresse ni la base ni les autres appareils. */
+  const [deplie, setDeplie] = useState(false);
 
   const enRetard = isOverdue(tache, aujourdHui);
+  const sous = subItemCount(tache);
+  /* Assemblé en JavaScript et non en JSX : « / » entre deux accolades est un
+     littéral, que `react/jsx-no-literals` refuse. Même forme que `TaskItem`. */
+  const avancement = sous ? `${sous.done}/${sous.total}` : '';
 
   return (
     <li
@@ -151,6 +164,23 @@ function LigneTache({ tache, aujourdHui }: { tache: ProjectTask; aujourdHui: Dat
         >
           {tache.name}
         </span>
+        {sous ? (
+          <button
+            type="button"
+            onClick={() => setDeplie((x) => !x)}
+            aria-expanded={deplie}
+            aria-label={`${t('subA')} : ${tache.name}`}
+            className="rounded-btn-sm flex h-7 flex-none cursor-pointer items-center gap-1 border px-1.5"
+            style={{ borderColor: 'var(--line)', color: 'var(--txt2)' }}
+          >
+            <span className="font-mono text-[11px] whitespace-nowrap">{avancement}</span>
+            <ChevronDown
+              size={12}
+              aria-hidden="true"
+              style={{ transform: deplie ? 'rotate(180deg)' : 'none' }}
+            />
+          </button>
+        ) : null}
         <button
           type="button"
           onClick={() => openEditor({ kind: 'projectTask', id: tache.id })}
@@ -194,6 +224,16 @@ function LigneTache({ tache, aujourdHui }: { tache: ProjectTask; aujourdHui: Dat
         label={`${t('status')} : ${tache.name}`}
         variant="inline"
       />
+
+      {sous && deplie ? (
+        /* `indent={0}` : la ligne du tableau n'a pas de case à cocher en tête,
+           donc rien sous quoi aligner la sous-liste. */
+        <SubList
+          items={projectSubItems(tache)}
+          indent={0}
+          onToggle={(i) => void toggleProjectSubItem(tache.id, i)}
+        />
+      ) : null}
     </li>
   );
 }

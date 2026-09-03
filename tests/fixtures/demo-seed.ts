@@ -350,6 +350,14 @@ export const demoProjectTasks = () => [
     deadline: '2026-08-04',
     status: 'doing',
     note: '',
+    /* UNE SEULE étape en porte, et les quatre autres restent SANS le champ :
+       c'est l'état réel d'une base d'avant le lot B, reproduit dans le jeu de
+       test plutôt que supposé absent. */
+    subItems: [
+      { label: 'Pages statiques', done: true },
+      { label: 'Formulaire de contact', done: false },
+      { label: 'Menu mobile', done: false },
+    ],
     createdAt: ISO,
     updatedAt: ISO,
   },

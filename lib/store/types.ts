@@ -178,6 +178,8 @@ export interface ProjectsActions {
   createProjectTask(input: CreateInput<ProjectTask>): Promise<void>;
   updateProjectTask(id: string, patch: UpdatePatch<ProjectTask>): Promise<void>;
   setProjectTaskStatus(id: string, status: ProjectStatus): Promise<void>;
+  /** Coche ou décoche la sous-tâche à cette position. */
+  toggleProjectSubItem(id: string, index: number): Promise<void>;
   deleteProjectTask(id: string): Promise<void>;
 }
 

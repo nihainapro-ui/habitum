@@ -15,18 +15,23 @@ export function SubList({
   items,
   disabled,
   onToggle,
+  indent = 38,
 }: {
   items: readonly SousElement[];
   disabled?: boolean;
   onToggle: (index: number) => void;
+  /** Décalage à gauche, en pixels. 38 = largeur de la case à cocher qui ouvre
+   *  les lignes d'Aujourd'hui et de Tâches, sous laquelle la sous-liste
+   *  s'aligne. Le tableau de projet n'a pas cette case : il passe 0. */
+  indent?: number | undefined;
 }) {
   const t = useTranslations('app');
   if (items.length === 0) return null;
 
   return (
     <ul
-      className="m-0 flex list-none flex-col gap-2 border-t p-0 pt-2.5 pl-[38px]"
-      style={{ borderColor: 'var(--line)' }}
+      className="m-0 flex list-none flex-col gap-2 border-t p-0 pt-2.5"
+      style={{ borderColor: 'var(--line)', paddingLeft: indent }}
       aria-label={t('toggleSub')}
     >
       {items.map((s, i) => (

@@ -1,5 +1,6 @@
 import type { StateCreator } from 'zustand';
 import { projectsRepo, projectTasksRepo } from '@/lib/data';
+import { projectSubItems } from '@/lib/domain';
 import { withUndo } from '../undo';
 import type { AppState, ProjectsActions } from '../types';
 
@@ -57,6 +58,21 @@ export const createProjectsSlice: StateCreator<AppState, [], [], ProjectsActions
      la vue, et il ne mérite pas d'ouvrir l'éditeur. */
   async setProjectTaskStatus(id, status) {
     await get().updateProjectTask(id, { status });
+  },
+
+  /* Cocher SUR LA LIGNE, comme le statut : passer par l'éditeur coûterait
+     quatre gestes là où un seul suffit.
+     L'index est celui de la liste affichée, qui EST celle de l'entité — aucune
+     réindexation entre les deux. Une position hors liste ne fait rien plutôt
+     que d'écrire un trou en base. */
+  async toggleProjectSubItem(id, index) {
+    const tache = get().projectTasks.find((x) => x.id === id);
+    if (!tache) return;
+    const items = projectSubItems(tache);
+    if (!items[index]) return;
+    await get().updateProjectTask(id, {
+      subItems: items.map((s, i) => (i === index ? { ...s, done: !s.done } : s)),
+    });
   },
 
   async deleteProjectTask(id) {
