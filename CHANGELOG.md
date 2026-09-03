@@ -1,5 +1,28 @@
 # Journal des modifications
 
+## 2026-09-03 (suite) — La CI ne dépassait plus l'audit, et personne ne le voyait
+
+`npm audit --audit-level=high` rougissait sur `main` **depuis le 31 août, six
+exécutions d'affilée** : deux avis HAUTS sur `browserslist <= 4.28.6`, que
+`@serwist/next` épingle à la version **exacte** `4.28.6` — aucune montée du
+paquet parent ne pouvait donc les corriger, et `npm audit fix --force`
+proposait de redescendre `@serwist/next` en 9.4.1, une rupture pour deux avis
+dont ni l'un ni l'autre ne nous atteint (la croissance mémoire non bornée
+demande des requêtes distinctes répétées ; l'écriture de prototype demande un
+`browserslist-stats.json` non fiable, et nous n'en avons aucun). Un
+`overrides` porte donc le correctif de version — 4.28.8 —, comme le dépôt le
+fait déjà pour postcss, sharp et les autres. Le verrou ne bouge que sur
+browserslist et ses tables de données.
+
+**Ce qui se répare au passage compte davantage que l'audit lui-même.**
+L'étape « Vulnérabilités » précède `e2e` et `visuel` dans le workflow :
+rouge, elle les empêchait de démarrer. La recette de bout en bout et la
+non-régression visuelle n'ont donc pas tourné en intégration continue depuis
+le 31 août — quatre jours pendant lesquels le tableau de bord affichait un
+échec attribué à l'audit, et rien ne disait que deux contrôles de vérité
+étaient à l'arrêt derrière. Un échec qui masque des contrôles non exécutés
+coûte plus que le défaut qu'il signale.
+
 ## 2026-09-03 — Lot B : une étape de projet se détaille sans se fractionner
 
 `ProjectTask` gagne `subItems` — une liste de sous-tâches cochables, nommées
