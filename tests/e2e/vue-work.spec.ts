@@ -1,6 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 import { ouvrirAvecDemo, ouvrirVierge, verifierPaliers } from './helpers/app';
+import { releverDebordements } from './helpers/debordement';
 
 /* Vue « Work » — spec du 2026-08-31.
 
@@ -176,6 +177,32 @@ test.describe('work', () => {
   test('sans débordement horizontal aux quatre paliers', async ({ page }) => {
     await ouvrirAvecDemo(page, ROUTE);
     await verifierPaliers(page, ROUTE);
+  });
+
+  test('le tableau ouvert, sous-tâches dépliées, ne coupe aucun texte', async ({ page }) => {
+    /* `verifierPaliers` ci-dessus ne voit que le défilement du DOCUMENT : un
+       libellé coupé PAR SA BOÎTE n'y paraît jamais. C'est la mesure du lot A
+       qui l'attrape, et le tableau d'un projet lui échappe faute d'être une
+       route — il s'ouvre au clic. */
+    await ouvrirAvecDemo(page, ROUTE);
+    await page.getByRole('button', { name: 'Ouvrir Refonte du site' }).click();
+    await page.getByRole('button', { name: 'Afficher les sous-tâches : Intégration' }).click();
+    await expect(page.getByRole('checkbox', { name: 'Menu mobile' })).toBeVisible();
+
+    for (const largeur of [360, 390, 768, 1060, 1440]) {
+      await page.setViewportSize({ width: largeur, height: 900 });
+      await page.waitForTimeout(50);
+      const { releve, balayes, exclusSwitch } = await releverDebordements(page);
+
+      expect(
+        balayes,
+        `${largeur}px : seulement ${balayes} élément(s) balayé(s) — mesure suspecte`,
+      ).toBeGreaterThan(20);
+      /* Work n'affiche aucun interrupteur : l'exclusion du `Switch` n'a rien à
+         y écarter. Un chiffre non nul dirait qu'elle s'est élargie. */
+      expect(exclusSwitch, `${largeur}px`).toBe(0);
+      expect(releve, `à ${largeur}px`).toEqual([]);
+    }
   });
 
   test('accessible', async ({ page }) => {
