@@ -57,9 +57,12 @@ import type { Page } from '@playwright/test';
      défaut d'affichage ; le mesurer ferait du bruit sans jamais protéger
      contre un vrai débordement, puisque son parent bloc, lui, reste balayé. */
 
-export async function releverDebordements(
-  page: Page,
-): Promise<{ releve: string[]; balayes: number; exclusSwitch: number }> {
+export async function releverDebordements(page: Page): Promise<{
+  releve: string[];
+  balayes: number;
+  exclusSwitch: number;
+  exclusSwitchAttendus: number;
+}> {
   return page.evaluate(() => {
     /* Le rail (`data-switch-rail`, posé par `components/ui/Switch.tsx` sur
        `RadixSwitch.Root`) ne déborde jamais lui-même — sa largeur est fixée.
@@ -93,6 +96,27 @@ export async function releverDebordements(
         releve.push(`${el.tagName.toLowerCase()} « ${texte} » ${el.scrollWidth}>${el.clientWidth}`);
       }
     }
-    return { releve, balayes, exclusSwitch };
+
+    /* CE QUE L'EXCLUSION DEVRAIT ÉCARTER, calculé indépendamment d'elle.
+       Le garde-fou comparait `exclusSwitch` à un nombre écrit en dur par route
+       (« 2 sur /app/profile, 0 ailleurs »). C'était faux dès qu'on changeait
+       d'appareil et non de route : `ProfileView` ne rend l'interrupteur que sur
+       pointeur FIN, et le projet mobile émule un Pixel 7 — zéro rail, donc zéro
+       ancêtre à écarter, et un garde-fou qui réclamait 2. Cinq échecs par
+       exécution, sur le seul projet où personne ne l'avait lancé.
+       L'attente se DÉDUIT donc de la page : les parents directs et grands-parents
+       directs des rails réellement rendus. C'est une seconde écriture de la même
+       règle, pas la même : si l'exclusion se remet à remonter par `closest` ou à
+       fouiller un sous-arbre entier, elle écartera PLUS que cet ensemble et les
+       deux chiffres cesseront de coïncider — ce que le garde-fou existe pour
+       dire. */
+    const attendus = new Set<Element>();
+    for (const rail of Array.from(document.querySelectorAll('main [data-switch-rail]'))) {
+      const p = rail.parentElement;
+      if (p) attendus.add(p);
+      if (p?.parentElement) attendus.add(p.parentElement);
+    }
+
+    return { releve, balayes, exclusSwitch, exclusSwitchAttendus: attendus.size };
   });
 }
