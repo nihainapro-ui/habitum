@@ -25,7 +25,13 @@ export function MonthPicker({ trigger }: { trigger: ReactNode }) {
   const [ouvert, setOuvert] = useState(false);
 
   return (
-    <Dialog open={ouvert} onOpenChange={setOuvert} title={t('pickDay')} trigger={trigger}>
+    <Dialog
+      open={ouvert}
+      onOpenChange={setOuvert}
+      title={t('pickDay')}
+      description={t('pickDayHint')}
+      trigger={trigger}
+    >
       <div />
     </Dialog>
   );
