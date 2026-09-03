@@ -147,6 +147,9 @@ function LigneTache({ tache, aujourdHui }: { tache: ProjectTask; aujourdHui: Dat
   /* Assemblé en JavaScript et non en JSX : « / » entre deux accolades est un
      littéral, que `react/jsx-no-literals` refuse. Même forme que `TaskItem`. */
   const avancement = sous ? `${sous.done}/${sous.total}` : '';
+  /* Dérivé de `tache.id`, pas d'un index de liste : un `id` stable évite que
+     `aria-controls` pointe sur le mauvais nœud après un tri ou un filtrage. */
+  const idSousListe = `ptask-sub-${tache.id}`;
 
   return (
     <li
@@ -169,7 +172,15 @@ function LigneTache({ tache, aujourdHui }: { tache: ProjectTask; aujourdHui: Dat
             type="button"
             onClick={() => setDeplie((x) => !x)}
             aria-expanded={deplie}
-            aria-label={`${t('subA')} : ${tache.name}`}
+            aria-controls={idSousListe}
+            /* Le compteur visible (`avancement`) reste dans le nom accessible,
+               à la suite du libellé : sans lui, qui pilote à la voix prononce
+               « 1/3 » à l'écran mais ne déclenche rien à la commande, faute de
+               le retrouver dans le nom du contrôle (WCAG 2.5.3, Label in
+               Name). Le préfixe `${t('subA')} : ${tache.name}` reste identique
+               à ce qu'il était : les sélecteurs Playwright qui le cherchent en
+               SOUS-CHAÎNE continuent de matcher. */
+            aria-label={`${t('subA')} : ${tache.name} — ${avancement}`}
             className="rounded-btn-sm flex h-7 flex-none cursor-pointer items-center gap-1 border px-1.5"
             style={{ borderColor: 'var(--line)', color: 'var(--txt2)' }}
           >
@@ -227,10 +238,12 @@ function LigneTache({ tache, aujourdHui }: { tache: ProjectTask; aujourdHui: Dat
 
       {sous && deplie ? (
         /* `indent={0}` : la ligne du tableau n'a pas de case à cocher en tête,
-           donc rien sous quoi aligner la sous-liste. */
+           donc rien sous quoi aligner la sous-liste. `id={idSousListe}` est la
+           cible de l'`aria-controls` posé sur le bouton ci-dessus. */
         <SubList
           items={projectSubItems(tache)}
           indent={0}
+          id={idSousListe}
           onToggle={(i) => void toggleProjectSubItem(tache.id, i)}
         />
       ) : null}
