@@ -32,6 +32,19 @@ export function groupProjectTasks(
 export const projectSubItems = (t: ProjectTask): readonly { label: string; done: boolean }[] =>
   t.subItems ?? [];
 
+/** Sous-tâches faites sur le total d'une étape. `null` s'il n'y en a pas :
+ *  « 0/0 » afficherait un avancement là où il n'y a rien à avancer — même
+ *  règle que `subTaskCount` pour les tâches du calendrier.
+ *
+ *  CE COMPTE NE NOURRIT PAS `projectProgress`, et c'est délibéré : les
+ *  sous-tâches DÉTAILLENT une étape, elles ne la fractionnent pas. Les faire
+ *  entrer dans l'avancement du projet ferait bouger deux jauges d'un même
+ *  geste, et plus personne ne saurait ce que mesure celle du projet. */
+export const subItemCount = (t: ProjectTask): { done: number; total: number } | null => {
+  const items = projectSubItems(t);
+  return items.length ? { done: items.filter((s) => s.done).length, total: items.length } : null;
+};
+
 export interface AvancementProjet {
   done: number;
   total: number;

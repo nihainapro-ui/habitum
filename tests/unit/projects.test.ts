@@ -5,6 +5,7 @@ import {
   isOverdue,
   projectProgress,
   projectSubItems,
+  subItemCount,
   PROJECT_STATUSES,
   type ProjectStatus,
   type ProjectTask,
@@ -144,5 +145,64 @@ describe('projectSubItems', () => {
   it('rend la liste telle quelle quand elle existe', () => {
     const items = [{ label: 'Menu mobile', done: false }];
     expect(projectSubItems(tache({ id: 'a', subItems: items }))).toEqual(items);
+  });
+});
+
+describe('subItemCount', () => {
+  it('rend null quand il n’y a rien à avancer', () => {
+    /* « 0/0 » afficherait un avancement là où il n'existe pas — un chiffre
+       fabriqué, ce que la règle 3 du CLAUDE.md interdit. Même doctrine que
+       `subTaskCount` pour les tâches. */
+    expect(subItemCount(tache({ id: 'a' }))).toBeNull();
+    expect(subItemCount(tache({ id: 'b', subItems: [] }))).toBeNull();
+  });
+
+  it('compte les faites sur le total', () => {
+    const t = tache({
+      id: 'a',
+      subItems: [
+        { label: 'un', done: true },
+        { label: 'deux', done: false },
+        { label: 'trois', done: true },
+      ],
+    });
+    expect(subItemCount(t)).toEqual({ done: 2, total: 3 });
+  });
+});
+
+describe('les sous-tâches ne redéfinissent PAS la progression du projet', () => {
+  /* L'invariant le plus facile à casser du lot, et le plus coûteux : si une
+     sous-tâche cochée faisait bouger la jauge du projet, deux jauges
+     bougeraient d'un même geste et plus personne ne saurait ce que mesure
+     celle du projet. La progression reste « étapes faites / étapes totales ». */
+
+  it('une étape non terminée dont TOUTES les sous-tâches sont faites ne compte pas comme faite', () => {
+    const av = projectProgress([
+      tache({
+        id: 'a',
+        status: 'doing',
+        subItems: [
+          { label: 'un', done: true },
+          { label: 'deux', done: true },
+        ],
+      }),
+      tache({ id: 'b', status: 'todo' }),
+    ]);
+    expect(av).toEqual({ done: 0, total: 2, pct: 0 });
+  });
+
+  it('une étape terminée dont AUCUNE sous-tâche n’est faite compte comme faite', () => {
+    const av = projectProgress([
+      tache({
+        id: 'a',
+        status: 'done',
+        subItems: [
+          { label: 'un', done: false },
+          { label: 'deux', done: false },
+        ],
+      }),
+      tache({ id: 'b', status: 'todo' }),
+    ]);
+    expect(av).toEqual({ done: 1, total: 2, pct: 50 });
   });
 });
