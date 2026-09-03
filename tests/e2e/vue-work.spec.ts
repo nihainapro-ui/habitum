@@ -1,7 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 import { ouvrirAvecDemo, ouvrirVierge, verifierPaliers } from './helpers/app';
-import { releverDebordements } from './helpers/debordement';
+import { LARGEURS_MESUREES, releverDebordements } from './helpers/debordement';
 
 /* Vue « Work » — spec du 2026-08-31.
 
@@ -83,7 +83,13 @@ test.describe('work', () => {
     /* Replié par défaut : trois colonnes de listes ouvertes rendraient le
        tableau illisible sur téléphone. */
     await expect(page.getByRole('checkbox', { name: 'Menu mobile' })).toHaveCount(0);
+    /* `aria-expanded` reflète le pli, et pas seulement la présence de la case
+       à l'écran : cette assertion n'avait été écartée que faute d'un
+       `aria-controls` pour lui donner un sens — il existe désormais
+       (`ProjectBoard.tsx`). */
+    await expect(detail).toHaveAttribute('aria-expanded', 'false');
     await detail.click();
+    await expect(detail).toHaveAttribute('aria-expanded', 'true');
 
     const projet = page.getByText('2 sur 5');
     await expect(projet).toBeVisible();
@@ -189,18 +195,23 @@ test.describe('work', () => {
     await page.getByRole('button', { name: 'Afficher les sous-tâches : Intégration' }).click();
     await expect(page.getByRole('checkbox', { name: 'Menu mobile' })).toBeVisible();
 
-    for (const largeur of [360, 390, 768, 1060, 1440]) {
+    for (const largeur of LARGEURS_MESUREES) {
       await page.setViewportSize({ width: largeur, height: 900 });
       await page.waitForTimeout(50);
-      const { releve, balayes, exclusSwitch } = await releverDebordements(page);
+      const { releve, balayes, exclusSwitch, exclusSwitchAttendus } =
+        await releverDebordements(page);
 
       expect(
         balayes,
         `${largeur}px : seulement ${balayes} élément(s) balayé(s) — mesure suspecte`,
       ).toBeGreaterThan(20);
-      /* Work n'affiche aucun interrupteur : l'exclusion du `Switch` n'a rien à
-         y écarter. Un chiffre non nul dirait qu'elle s'est élargie. */
-      expect(exclusSwitch, `${largeur}px`).toBe(0);
+      /* Même garde-fou que `debordements.spec.ts` (tâche 5b) : l'attente ne
+         s'écrit plus en dur, elle se déduit des rails de `Switch` RÉELLEMENT
+         rendus par la page (`exclusSwitchAttendus`). Work n'en affiche aucun
+         aujourd'hui, donc les deux valent 0 — mais ce sera aussi vrai le jour
+         où un `Switch` y apparaîtra, sans qu'il faille revenir corriger ce
+         chiffre. */
+      expect(exclusSwitch, `${largeur}px`).toBe(exclusSwitchAttendus);
       expect(releve, `à ${largeur}px`).toEqual([]);
     }
   });
@@ -208,6 +219,17 @@ test.describe('work', () => {
   test('accessible', async ({ page }) => {
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await ouvrirAvecDemo(page, ROUTE);
+    /* Sans ces trois lignes, le scan porte sur la LISTE DES PROJETS : `ouvert`
+       vaut `null` au premier rendu (`WorkView.tsx`), et le tableau — donc le
+       bouton chevron, sa `SubList` et ses `role="checkbox"` — n'existe pas
+       encore dans le DOM. Même angle mort que celui relevé pour le filet de
+       débordement (~ligne 185 ci-dessus) : le tableau d'un projet ne s'atteint
+       pas par une route, il s'ouvre au clic, et axe ne voit que ce qui est
+       monté au moment où il tourne. */
+    await page.getByRole('button', { name: 'Ouvrir Refonte du site' }).click();
+    await page.getByRole('button', { name: 'Afficher les sous-tâches : Intégration' }).click();
+    await expect(page.getByRole('checkbox', { name: 'Menu mobile' })).toBeVisible();
+
     const { violations } = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).analyze();
     const graves = violations
       .filter((v) => v.impact === 'critical' || v.impact === 'serious')
