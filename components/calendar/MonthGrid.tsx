@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useDroppable } from '@dnd-kit/core';
 import { useTranslations } from 'next-intl';
 import { ENCRE_SUR_TEINTE } from '@/components/ui/encre';
-import { addDays, monthGrid, startOfWeek, today } from '@/lib/domain';
+import { addDays, daysBetween, monthGrid, startOfWeek, today } from '@/lib/domain';
 import { useDayRatios, useSettings, useStore } from '@/lib/store';
 import { useLocaleSwitcher } from '@/components/shell/locale-provider';
 import { EventBlock } from './EventBlock';
@@ -111,7 +111,11 @@ export function MonthGrid({ offset }: { offset: number }) {
   );
 
   const ouvrirJour = (date: Date) => {
-    setDay(Math.round((date.getTime() - today().getTime()) / 86_400_000));
+    /* `daysBetween` plutôt qu'une soustraction de millisecondes recopiée : la
+       version du domaine ramène les deux bornes à minuit, ce que celle-ci ne
+       faisait pas. Deux écritures du même calcul finissent toujours par
+       diverger — celle-ci avait déjà commencé. */
+    setDay(daysBetween(date, today()));
     router.push('/app/today');
   };
 

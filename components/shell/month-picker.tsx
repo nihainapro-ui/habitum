@@ -1,10 +1,11 @@
 'use client';
 
 import { useMemo, useState, type ReactNode } from 'react';
+import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { addDays, monthGrid, startOfWeek, today } from '@/lib/domain';
-import { useSettings } from '@/lib/store';
+import { addDays, daysBetween, monthGrid, startOfWeek, today } from '@/lib/domain';
+import { useSettings, useStore } from '@/lib/store';
 import { useLocaleSwitcher } from '@/components/shell/locale-provider';
 import { Dialog } from '@/components/ui';
 
@@ -36,6 +37,18 @@ export function MonthPicker({ trigger }: { trigger: ReactNode }) {
      code de notre part. */
   const [ouvert, setOuvert] = useState(false);
   const [offset, setOffset] = useState(0);
+  const router = useRouter();
+  const setDay = useStore((s) => s.setDay);
+
+  /* `ui.day` est un DÉCALAGE EN JOURS, pas une date — c'est le choix du
+     prototype (`state.day`), et il garde la vue juste au passage de minuit :
+     une date figée deviendrait « hier » sans que rien ne bouge à l'écran.
+     `daysBetween` vit dans le domaine ; le décalage ne se recalcule pas ici. */
+  const choisir = (date: Date) => {
+    setDay(daysBetween(date, today()));
+    setOuvert(false);
+    router.push('/app/today');
+  };
 
   const cases = useMemo(() => monthGrid(offset, weekStart), [offset, weekStart]);
 
@@ -141,6 +154,7 @@ export function MonthPicker({ trigger }: { trigger: ReactNode }) {
               key={c.key}
               type="button"
               data-jour={c.key}
+              onClick={() => choisir(c.date)}
               /* Le nom accessible est la date LONGUE, pas le seul quantième :
                  « 6 » quarante-deux fois ne désigne rien à l'oreille. */
               aria-label={jourLong.format(c.date)}

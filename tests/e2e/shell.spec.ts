@@ -139,6 +139,42 @@ test('la grille du mois montre 42 cases et navigue de mois en mois', async ({ pa
   await expect(boite.getByText('août 2026')).toBeVisible();
 });
 
+test('choisir un jour mène à Aujourd’hui, réglé sur ce jour', async ({ page }) => {
+  /* L'horloge des tests est figée au mercredi 5 août 2026 : le 12 est donc à
+     sept jours, la dernière position du bandeau (−4 … +7). */
+  await ouvrirAvecDemo(page, '/app');
+  await page.getByRole('button', { name: 'Ouvrir le calendrier' }).click();
+
+  const boite = page.getByRole('dialog', { name: 'Choisir un jour' });
+  await boite.locator('[data-jour="2026-08-12"]').click();
+
+  await expect(page).toHaveURL(/\/app\/today/);
+  await expect(boite).toBeHidden();
+
+  /* Le témoin est le bandeau, pas une variable interne : c'est ce que
+     l'utilisateur voit surligné qui doit être juste. */
+  await expect(page.getByRole('button', { name: 'mercredi 12 août' })).toHaveAttribute(
+    'aria-current',
+    'date',
+  );
+});
+
+test('un jour d’un mois voisin est choisissable, pas un cul-de-sac', async ({ page }) => {
+  /* La grille d'août 2026 commence le 27 juillet. Refuser ces cases obligerait
+     à revenir en arrière pour un jour déjà sous les yeux.
+
+     Le 28 juillet est à −8, donc HORS du bandeau (−4 … +7) : il n'y a pas de
+     bouton à surligner, et c'est précisément l'observable. Si le clic n'avait
+     rien réglé, `ui.day` vaudrait 0 et « mercredi 5 août » serait courant —
+     l'assertion tomberait. */
+  await ouvrirAvecDemo(page, '/app');
+  await page.getByRole('button', { name: 'Ouvrir le calendrier' }).click();
+  await page.getByRole('dialog').locator('[data-jour="2026-07-28"]').click();
+
+  await expect(page).toHaveURL(/\/app\/today/);
+  await expect(page.locator('[aria-current="date"]')).toHaveCount(0);
+});
+
 /* L'EN-TÊTE N'ÉTAIT MESURÉ PAR RIEN. `debordements.spec.ts` balaie `main *` et
    documente l'en-tête parmi ses angles morts assumés ; or `header.tsx` porte
    lui-même la trace d'un piège déjà payé — « un élément à largeur fixe dans
