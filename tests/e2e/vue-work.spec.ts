@@ -127,6 +127,29 @@ test.describe('work', () => {
     ).toContainText('1/4');
   });
 
+  test('renommer une sous-tâche DÉJÀ FAITE ne la décoche pas', async ({ page }) => {
+    /* Le test voisin n'édite que la sous-tâche neuve, dont `done` vaut `false`
+       d'office : la branche `j === i` de l'éditeur n'y est jamais exercée sur
+       un élément coché, et remplacer `{ ...s, label: x }` par
+       `{ label: x, done: false }` y passerait inaperçu. Ici, l'intitulé
+       modifié est celui de la seule sous-tâche faite du jeu de démonstration —
+       la seule position où ce choix se voit. */
+    await ouvrirAvecDemo(page, ROUTE);
+    await page.getByRole('button', { name: 'Ouvrir Refonte du site' }).click();
+    await expect(
+      page.getByRole('button', { name: 'Afficher les sous-tâches : Intégration' }),
+    ).toContainText('1/3');
+
+    await page.getByRole('button', { name: 'Modifier Intégration' }).click();
+    const boite = page.getByRole('dialog');
+    await boite.getByLabel('Sous-tâches 1').fill('Pages statiques et 404');
+    await page.getByRole('button', { name: /enregistrer/i }).click();
+
+    await expect(
+      page.getByRole('button', { name: 'Afficher les sous-tâches : Intégration' }),
+    ).toContainText('1/3');
+  });
+
   test('une étape neuve peut naître avec ses sous-tâches', async ({ page }) => {
     await ouvrirVierge(page, ROUTE);
 
