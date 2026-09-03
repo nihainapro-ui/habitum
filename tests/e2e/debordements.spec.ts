@@ -1,14 +1,14 @@
 import { expect, test } from '@playwright/test';
 import { ouvrirAvecDemo } from './helpers/app';
-import { releverDebordements } from './helpers/debordement';
+import { LARGEURS_MESUREES, releverDebordements } from './helpers/debordement';
 
 /* La mesure vit dans `helpers/debordement.ts` depuis le lot B : le tableau d'un
    projet ne s'atteint pas par une route (l'ouverture est un état local de
    `WorkView`), donc `vue-work.spec.ts` la réemploie plutôt que de la recopier —
    une deuxième copie de la doctrine d'exclusion aurait divergé de celle-ci au
-   premier ajustement. */
-
-const LARGEURS = [360, 390, 768, 1060, 1440] as const;
+   premier ajustement. La liste des largeurs suit le même principe depuis la
+   revue finale du lot B : `LARGEURS_MESUREES` vit désormais dans le même
+   module, pour la même raison. */
 
 /* Les cinq vues de la recette (voir `docs/handoff`), et non les trois de
    l'audit initial : `/app/tasks` et `/app/calendar` sont corrigées par des
@@ -34,7 +34,7 @@ const VUES = [
   '/app/profile',
 ] as const;
 
-for (const largeur of LARGEURS) {
+for (const largeur of LARGEURS_MESUREES) {
   for (const vue of VUES) {
     test(`aucun texte coupé — ${vue} à ${largeur}px`, async ({ page }) => {
       await page.setViewportSize({ width: largeur, height: 900 });

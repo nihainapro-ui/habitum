@@ -57,6 +57,21 @@ import type { Page } from '@playwright/test';
      défaut d'affichage ; le mesurer ferait du bruit sans jamais protéger
      contre un vrai débordement, puisque son parent bloc, lui, reste balayé. */
 
+/** Largeurs de la mesure FINE (`releverDebordements`, coupe par boîte), pas
+ *  celle du défilement de document.
+ *
+ *  DEUX CONSTANTES `LARGEURS` COEXISTENT DANS `tests/e2e/`, et ce n'est pas un
+ *  oubli : `helpers/app.ts` exporte déjà une `LARGEURS` à QUATRE valeurs (390,
+ *  768, 1060, 1440 — les paliers du prototype), consommée par `verifierPaliers`
+ *  pour la mesure GROSSIÈRE (`document.documentElement.scrollWidth`). Celle-ci
+ *  en a CINQ, avec 360 en plus : 360 est le plus étroit des appareils réels
+ *  couverts par la recette, et seule la mesure par boîte (`releverDebordements`)
+ *  y a déjà trouvé une coupe qu'un débordement de document ne voit jamais. Les
+ *  deux constantes ne se recouvrent donc pas par accident — les nommer pareil
+ *  aurait fait choisir la mauvaise par un import mal résolu. Ne renomme pas
+ *  celle de `helpers/app.ts` : elle sert des fichiers hors de ce lot. */
+export const LARGEURS_MESUREES = [360, 390, 768, 1060, 1440] as const;
+
 export async function releverDebordements(page: Page): Promise<{
   releve: string[];
   balayes: number;
