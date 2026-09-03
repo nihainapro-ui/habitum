@@ -603,7 +603,8 @@ Run: `npm run check:messages` — doit rester vert.
 `components/today/SubList.tsx` décale sa liste de 38 px, largeur de la case à cocher des
 lignes d'Aujourd'hui et de Tâches. Le tableau de projet n'a pas de case en tête de ligne :
 le décalage y serait un renfoncement sans cause. Rendre la valeur paramétrable, défaut
-inchangé pour les deux appelants existants :
+inchangé pour les trois appelants existants (`components/today/HabitRow.tsx`,
+`components/today/TaskRow.tsx` et `components/tasks/TaskItem.tsx`) :
 
 ```tsx
 export function SubList({
@@ -700,8 +701,10 @@ montre un projet réel », qui compte toujours 5 étapes, et le contrôle d'acce
 - [ ] **Step 9: Vérifier que le reste du produit n'a pas bougé**
 
 Run: `npx vitest run && npx playwright test tests/e2e/vue-today.spec.ts tests/e2e/vue-tasks.spec.ts --project=desktop`
-Expected: PASS — `SubList` sert aussi Aujourd'hui et Tâches ; son décalage par défaut doit
-y être resté exactement le même (38 px).
+Expected: PASS — `SubList` sert aussi Aujourd'hui et Tâches, par trois appelants
+(`components/today/HabitRow.tsx`, `components/today/TaskRow.tsx` et
+`components/tasks/TaskItem.tsx`) ; son décalage par défaut doit y être resté exactement le
+même (38 px).
 
 - [ ] **Step 10: Commit**
 

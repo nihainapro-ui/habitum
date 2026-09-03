@@ -1,5 +1,60 @@
 # Journal des modifications
 
+## 2026-09-03 — Lot B : une étape de projet se détaille sans se fractionner
+
+`ProjectTask` gagne `subItems` — une liste de sous-tâches cochables, nommées
+dans l'éditeur d'étape et cochées directement sur la ligne du tableau, avec
+un compteur « 1/3 » et un dépliage par chevron.
+
+**Le champ est OPTIONNEL, contrairement à ce que la spec annonçait.** Les
+étapes écrites avant ce lot n'ont pas la clé — ni celles déjà en base, ni
+celles qu'un appareil resté en arrière enverra, la synchronisation écrivant
+la ligne reçue telle quelle, sans validation ni valeur par défaut. Un champ
+déclaré requis aurait menti au compilateur et fait planter le tableau sur
+`.length` dès la première étape existante. L'absence est défaite en UN SEUL
+endroit, `projectSubItems()` dans `lib/domain/projects.ts` : recopié dans
+chaque vue, le `?? []` aurait fini par manquer dans une.
+
+**L'aller-retour de sauvegarde a été écrit AVANT le champ.** `export.ts` et
+`import.ts` énumèrent les champs de `ProjectTask` un par un : un champ ajouté
+au domaine et oublié là ne casse rien, ne dit rien, et se perd à chaque
+sauvegarde restaurée. Le test a été éprouvé par mutation (clé d'export
+retirée → rouge).
+
+**La progression du projet n'a pas changé de définition** : elle reste
+« étapes faites / étapes totales ». Une étape dont les trois sous-tâches sont
+faites mais qui reste « en cours » ne compte toujours pas comme faite, et
+l'inverse est vrai aussi — deux tests le verrouillent. Faire entrer les
+sous-tâches dans l'avancement aurait fait bouger deux jauges d'un même geste,
+et plus personne n'aurait su ce que mesure celle du projet.
+
+**`done` traverse le formulaire d'édition sans être modifié.** L'éditeur
+nomme, il ne coche pas. Un formulaire qui n'aurait transporté que les
+intitulés aurait décoché toutes les sous-tâches faites au premier
+enregistrement de l'étape — perte silencieuse, invisible à la relecture du
+diff, attrapée ici par un test éprouvé par mutation.
+
+**Le filet des coupes de texte suit le tableau.** La mesure du lot A balaie
+des routes ; le tableau d'un projet s'ouvre au clic et lui échappait. Elle
+vit désormais dans `tests/e2e/helpers/debordement.ts`, et `vue-work.spec.ts`
+la réemploie sur le tableau déplié aux cinq largeurs — sans en faire une
+seconde copie qui aurait divergé au premier ajustement.
+
+**Et la recette mobile, rouge depuis la clôture du lot A, repasse au vert.**
+Le garde-fou ajouté alors comptait les éléments que l'exclusion du `Switch`
+écarte et exigeait « 2 sur `/app/profile`, 0 ailleurs » — un nombre écrit en
+dur par ROUTE. Or `ProfileView` ne rend l'interrupteur que sur pointeur fin :
+sur le projet mobile, qui émule un Pixel 7, il n'y a aucun rail à écarter et
+0 est la bonne réponse. Cinq échecs par exécution, sur le seul projet où la
+vague de clôture du lot A n'avait pas été lancée. L'attente se déduit
+désormais de la page — les parents directs et grands-parents directs des
+rails réellement rendus —, ce qui est une SECONDE écriture de la règle et
+non la même réutilisée : élargie par `closest`, l'exclusion écarte 6
+éléments pour 2 attendus et le garde-fou rougit, vérifié par mutation. Le
+lot B n'a pas cassé cette recette, mais il ne pouvait pas se clore
+par-dessus : livrer sur une recette rouge rend indiscernable « c'était déjà
+rouge » de « je viens de le casser ».
+
 ## 2026-09-03 — Le filet du lot A ne se referme plus sur un trou qu'il vient de creuser
 
 En revue finale de clôture du lot A, l'exclusion ajoutée pour la marge
