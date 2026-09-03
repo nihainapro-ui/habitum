@@ -3,10 +3,10 @@
 import { useForm, useWatch, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useTranslations } from 'next-intl';
-import { PROJECT_STATUSES, type ProjectTask } from '@/lib/domain';
+import { PROJECT_STATUSES, projectSubItems, type ProjectTask } from '@/lib/domain';
 import { projectTaskFormSchema, type ProjectTaskForm } from '@/lib/validation/project.schema';
 import { useStore } from '@/lib/store';
-import { Select, TextArea, TextInput } from './fields';
+import { LigneListe, Select, TextArea, TextInput } from './fields';
 import { PiedEditeur } from './PiedEditeur';
 
 /* Éditeur d'une tâche de projet — cinq champs, sans onglets pour la même
@@ -18,6 +18,10 @@ const versFormulaire = (t?: ProjectTask): ProjectTaskForm => ({
   deadline: t?.deadline ?? '',
   status: t?.status ?? 'todo',
   note: t?.note ?? '',
+  /* `projectSubItems`, et non `t?.subItems ?? []` : l'absence du champ se
+     défait à UN SEUL endroit du produit (tâche 1). La copie est nécessaire —
+     le domaine rend une liste en lecture seule, le formulaire la modifie. */
+  subItems: t ? [...projectSubItems(t)] : [],
 });
 
 export function ProjectTaskEditor({
@@ -98,6 +102,35 @@ export function ProjectTaskEditor({
         onChange={(x) => setValue('status', x)}
         options={PROJECT_STATUSES.map((s) => ({ value: s, label: ta(`st_${s}`) }))}
       />
+      <LigneListe
+        legend={t('fSub')}
+        items={v.subItems}
+        addLabel={t('addSub')}
+        onAdd={() => setValue('subItems', [...v.subItems, { label: '', done: false }])}
+        onRemove={(i) =>
+          setValue(
+            'subItems',
+            v.subItems.filter((_, j) => j !== i),
+          )
+        }
+        error={errors.subItems ? messageErreur('labelRequired') : undefined}
+      >
+        {(i) => (
+          <TextInput
+            label={`${t('fSub')} ${i + 1}`}
+            value={v.subItems[i]?.label ?? ''}
+            onChange={(x) =>
+              setValue(
+                'subItems',
+                /* `{ ...s, label: x }` et non `{ label: x }` : le second
+                   perdrait `done` à chaque frappe. */
+                v.subItems.map((s, j) => (j === i ? { ...s, label: x } : s)),
+              )
+            }
+          />
+        )}
+      </LigneListe>
+
       <TextArea label={t('fNote')} value={v.note} onChange={(x) => setValue('note', x)} />
 
       <PiedEditeur

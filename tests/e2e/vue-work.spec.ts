@@ -105,6 +105,51 @@ test.describe('work', () => {
     ).toContainText('2/3');
   });
 
+  test('l’éditeur nomme les sous-tâches, et ne défait pas ce qui est fait', async ({ page }) => {
+    await ouvrirAvecDemo(page, ROUTE);
+    await page.getByRole('button', { name: 'Ouvrir Refonte du site' }).click();
+
+    const detail = page.getByRole('button', { name: 'Afficher les sous-tâches : Intégration' });
+    await expect(detail).toContainText('1/3');
+
+    await page.getByRole('button', { name: 'Modifier Intégration' }).click();
+    const boite = page.getByRole('dialog');
+    await boite.getByRole('button', { name: 'Ajouter une sous-tâche' }).click();
+    await boite.getByLabel('Sous-tâches 4').fill('Pied de page');
+    await page.getByRole('button', { name: /enregistrer/i }).click();
+
+    /* 1/4, PAS 0/4. `done` traverse le formulaire sans être modifié : un
+       éditeur qui ne transporte que les intitulés décocherait toutes les
+       sous-tâches faites au premier enregistrement de l'étape — une perte
+       silencieuse, invisible à la relecture du diff. */
+    await expect(
+      page.getByRole('button', { name: 'Afficher les sous-tâches : Intégration' }),
+    ).toContainText('1/4');
+  });
+
+  test('une étape neuve peut naître avec ses sous-tâches', async ({ page }) => {
+    await ouvrirVierge(page, ROUTE);
+
+    await page.getByRole('button', { name: 'Nouveau projet' }).first().click();
+    await page.getByRole('dialog').getByRole('textbox').first().fill('Déménagement');
+    await page.getByRole('button', { name: /enregistrer/i }).click();
+
+    await page.getByRole('button', { name: 'Ouvrir Déménagement' }).click();
+    await page.getByRole('button', { name: 'Nouvelle tâche' }).first().click();
+
+    const boite = page.getByRole('dialog');
+    await boite.getByRole('textbox').first().fill('Réserver le camion');
+    await boite.getByRole('button', { name: 'Ajouter une sous-tâche' }).click();
+    await boite.getByLabel('Sous-tâches 1').fill('Comparer trois loueurs');
+    await boite.getByRole('button', { name: 'Ajouter une sous-tâche' }).click();
+    await boite.getByLabel('Sous-tâches 2').fill('Réserver');
+    await page.getByRole('button', { name: /enregistrer/i }).click();
+
+    await expect(
+      page.getByRole('button', { name: 'Afficher les sous-tâches : Réserver le camion' }),
+    ).toContainText('0/2');
+  });
+
   test('sans débordement horizontal aux quatre paliers', async ({ page }) => {
     await ouvrirAvecDemo(page, ROUTE);
     await verifierPaliers(page, ROUTE);

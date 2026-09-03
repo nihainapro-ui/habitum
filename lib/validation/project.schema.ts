@@ -24,5 +24,16 @@ export const projectTaskFormSchema = z.object({
   deadline: dateKeyOuVide,
   status: z.enum(PROJECT_STATUSES),
   note: z.string().max(2000).default(''),
+  /* Sous-tâches — lot B. Intitulé non vide, comme les sous-éléments d'habitude
+     (`habit.schema.ts`) : une ligne ajoutée puis laissée vide serait une case à
+     cocher sans nom.
+
+     `done` FAIT PARTIE DU FORMULAIRE et n'y est jamais modifié : l'éditeur
+     nomme, il ne coche pas (le cochage se fait sur la ligne du tableau).
+     L'omettre ici ferait repasser à `false` toute sous-tâche déjà faite au
+     premier enregistrement de l'étape — une perte que rien n'annoncerait. */
+  subItems: z
+    .array(z.object({ label: z.string().trim().min(1, 'labelRequired'), done: z.boolean() }))
+    .default([]),
 });
 export type ProjectTaskForm = z.infer<typeof projectTaskFormSchema>;
