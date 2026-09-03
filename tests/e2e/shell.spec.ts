@@ -113,6 +113,32 @@ test('le calendrier de l’en-tête s’ouvre, se ferme, et rend le focus', asyn
   await expect(bouton).toBeFocused();
 });
 
+test('la grille du mois montre 42 cases et navigue de mois en mois', async ({ page }) => {
+  await ouvrirAvecDemo(page, '/app/today');
+  await page.getByRole('button', { name: 'Ouvrir le calendrier' }).click();
+
+  const boite = page.getByRole('dialog', { name: 'Choisir un jour' });
+  /* 42 CASES TOUJOURS, jamais 28 ni 35 : une grille qui change de hauteur d'un
+     mois à l'autre fait sauter le dialogue sous le curseur. C'est déjà la règle
+     de `monthGrid`, et elle se vérifie ici à l'écran. */
+  await expect(boite.locator('[data-jour]')).toHaveCount(42);
+
+  /* L'horloge des tests est figée au 5 août 2026. */
+  await expect(boite.getByText('août 2026')).toBeVisible();
+
+  await boite.getByRole('button', { name: 'Période précédente' }).click();
+  await expect(boite.getByText('juillet 2026')).toBeVisible();
+  await expect(boite.locator('[data-jour]')).toHaveCount(42);
+
+  await boite.getByRole('button', { name: 'Période suivante' }).click();
+  await boite.getByRole('button', { name: 'Période suivante' }).click();
+  await expect(boite.getByText('septembre 2026')).toBeVisible();
+
+  /* Le retour au mois courant est un geste, pas trois clics arrière. */
+  await boite.getByRole('button', { name: 'Aujourd’hui' }).click();
+  await expect(boite.getByText('août 2026')).toBeVisible();
+});
+
 /* L'EN-TÊTE N'ÉTAIT MESURÉ PAR RIEN. `debordements.spec.ts` balaie `main *` et
    documente l'en-tête parmi ses angles morts assumés ; or `header.tsx` porte
    lui-même la trace d'un piège déjà payé — « un élément à largeur fixe dans
