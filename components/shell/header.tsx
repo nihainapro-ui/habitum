@@ -22,8 +22,8 @@ import { MonthPicker } from './month-picker';
 /* En-tête — porté de `<header data-topbar>` (`Habitum.dc.html`, lignes 208–235).
  *
  * De gauche à droite : pastille d'état, TITRE DE LA VUE, sur-titre et badge de
- * démonstration ; puis pilule de profil, mode zen, indice, filet, recherche,
- * et le bouton « Nouveau ».
+ * démonstration ; puis pilule de profil, mode zen, indice, filet, calendrier,
+ * recherche, et le bouton « Nouveau ».
  *
  * LE TITRE VIT ICI, PAS DANS LA VUE. C'est le prototype qui en décide, et ce
  * n'est pas cosmétique : les onze vues commencent alors directement par leur

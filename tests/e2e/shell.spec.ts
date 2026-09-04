@@ -1,3 +1,4 @@
+import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 import { installer, ouvrirAvecDemo } from './helpers/app';
 import { LARGEURS_MESUREES, releverDebordements } from './helpers/debordement';
@@ -213,4 +214,62 @@ test.describe('en-tête', () => {
       expect(releve).toEqual([]);
     });
   }
+});
+
+test('le dialogue du mois ne coupe rien et ne déborde pas, aux cinq largeurs', async ({ page }) => {
+  /* LE DIALOGUE EST DANS UN PORTAIL : Radix le monte au `body`, donc ni
+     `main *` (filet des vues) ni `header *` (tâche 1) ne l'atteignent. Sans ce
+     contrôle, sept jours de la semaine et six rangées de quantièmes tiendraient
+     sur un écran de 360 px par pure chance. */
+  await ouvrirAvecDemo(page, '/app/today');
+  await page.getByRole('button', { name: 'Ouvrir le calendrier' }).click();
+  await expect(page.getByRole('dialog', { name: 'Choisir un jour' })).toBeVisible();
+
+  for (const largeur of LARGEURS_MESUREES) {
+    await page.setViewportSize({ width: largeur, height: 900 });
+    await page.waitForTimeout(50);
+
+    /* LA MÊME MESURE, une troisième racine. La tâche 1 a rendu
+       `releverDebordements` paramétrable précisément pour cela : en écrire ici
+       une seconde version, avec ses propres exclusions, ferait diverger les
+       trois filets au premier ajustement de doctrine — c'est l'erreur que le
+       lot B a évitée en DÉPLAÇANT cette fonction plutôt qu'en la recopiant. */
+    const { releve, balayes } = await releverDebordements(page, '[role="dialog"]');
+    expect(
+      balayes,
+      `${balayes} élément(s) balayé(s) dans le dialogue à ${largeur}px — mesure suspecte`,
+    ).toBeGreaterThan(20);
+    expect(releve, `dialogue du mois à ${largeur}px`).toEqual([]);
+
+    /* La boîte du dialogue elle-même n'est pas dans `[role="dialog"] *` : on la
+       mesure à part, comme l'en-tête à la tâche 1. */
+    const boite = await page.evaluate(() => {
+      const d = document.querySelector('[role="dialog"]');
+      return d ? { scroll: d.scrollWidth, client: d.clientWidth } : null;
+    });
+    expect(boite, 'aucun dialogue trouvé').not.toBeNull();
+    expect(boite!.scroll, `le dialogue déborde à ${largeur}px`).toBeLessThanOrEqual(
+      boite!.client + 1,
+    );
+
+    /* Et le DOCUMENT ne doit pas s'élargir non plus : un dialogue plus large
+       que l'écran fait défiler la page derrière lui. */
+    const deborde = await page.evaluate(
+      () => document.documentElement.scrollWidth > document.documentElement.clientWidth,
+    );
+    expect(deborde, `la page déborde à ${largeur}px, dialogue ouvert`).toBe(false);
+  }
+});
+
+test('le dialogue du mois est accessible', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await ouvrirAvecDemo(page, '/app/today');
+  await page.getByRole('button', { name: 'Ouvrir le calendrier' }).click();
+  await expect(page.getByRole('dialog', { name: 'Choisir un jour' })).toBeVisible();
+
+  const { violations } = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).analyze();
+  const graves = violations
+    .filter((v) => v.impact === 'critical' || v.impact === 'serious')
+    .map((v) => `${v.id} — ${v.nodes.length} nœud(s)`);
+  expect(graves).toEqual([]);
 });

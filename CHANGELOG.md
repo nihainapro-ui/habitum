@@ -1,5 +1,49 @@
 # Journal des modifications
 
+## 2026-09-03 (suite 2) — Lot C : le mois s'ouvre depuis l'en-tête
+
+Un bouton de calendrier rejoint l'en-tête, à côté de la recherche. Il ouvre la
+grille du mois ; choisir un jour règle `ui.day` et mène à la vue Aujourd'hui.
+C'est le geste que les captures d'usage réclamaient : aller voir un autre jour,
+vite, depuis n'importe quelle vue — sans passer par le Calendrier, le régler,
+puis en ressortir.
+
+**Aucun calcul de grille n'a été écrit.** `monthGrid()` vit dans
+`lib/domain/calendar.ts` depuis le portage, avec ses tests — 42 cases toujours,
+premier jour selon la préférence de début de semaine. Le dialogue dessine ce
+qu'elle rend, et c'est ce qui garantit que sa grille et celle de la vue
+Calendrier ne peuvent pas diverger.
+
+**Le décalage de jour ne se calcule plus qu'à un seul endroit.** La vue
+Calendrier recopiait `Math.round((date - today()) / 86_400_000)` à la main, sans
+le passage à minuit que `daysBetween` applique aux deux bornes — faux d'un jour
+dès qu'une des dates aurait porté une heure. Les deux appellent maintenant la
+même fonction du domaine.
+
+**Pas de pastilles d'activité sur les jours.** Elles demanderaient l'état de
+chaque jour du mois à l'ouverture, alors que ce qu'on vient chercher ici est la
+navigation. À réévaluer sur usage, pas avant.
+
+**Le bouton n'est pas à côté du dialogue, il EST son déclencheur.** La première
+version posait le bouton dans l'en-tête et le dialogue à part, reliés par un
+état. Radix ne rend alors le focus à personne : il le rend à son
+`Dialog.Trigger`, et il n'y en avait pas — après Échap, le focus tombait hors
+du document, ce qu'un test a vu tout de suite. Une refocalisation écrite à la
+main a été refusée : `components/ui/dialog.tsx` dit dans son propre commentaire
+que Radix fournit ce retour de focus, et que le réécrire revient à réécrire les
+bogues d'accessibilité qu'il a déjà corrigés. Le bouton est donc passé en
+`trigger` — mêmes classes, même dessin, zéro ligne de gestion du focus. Le
+dialogue a gagné au passage la description qui lui manquait : sans elle, Radix
+avertit en console et un lecteur d'écran n'annonce que le titre.
+
+**Deux angles morts de la recette se ferment au passage.** Le filet de mesure
+des textes coupés balaie `main *` : l'en-tête et tout contenu porté par un
+portail lui échappaient, et c'est précisément là que ce lot ajoute quelque
+chose. L'en-tête est désormais mesuré aux cinq largeurs — boîte comprise, la
+seule mesure qui attrape un enfant de trop dans un conteneur sans repli — et le
+dialogue a son propre contrôle. L'un et l'autre ont été éprouvés par mutation
+avant d'être tenus pour acquis.
+
 ## 2026-09-03 (suite) — La CI ne dépassait plus l'audit, et personne ne le voyait
 
 `npm audit --audit-level=high` rougissait sur `main` **depuis le 31 août, six
