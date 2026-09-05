@@ -27,6 +27,17 @@ pied de rail affiche « NEURAL » sur les captures des trois thèmes, parce que 
 test pose `data-theme` sur la racine sans passer par les réglages, que
 l'indicateur lit. Il ne décrit pas un défaut du produit.
 
+**Un piège payé au premier essai, et qui méritait de l'être** : la première
+régénération a figé la configuration LOCALE de la machine. `.env.local` y
+définit `NEXT_PUBLIC_SYNC_URL`, ce qui fait rendre la section de
+synchronisation des réglages ; la CI, elle, n'a pas ce fichier. Les trois
+captures de `settings` mesuraient donc 1998 px de haut au lieu des 1537 px que
+la CI produit — 30 captures sur 33 justes, et trois qui décrivaient une
+application que personne d'autre ne voit. Le socle a été régénéré une seconde
+fois, `.env.local` écarté le temps de la construction. **Le socle doit
+reproduire la configuration de la CI, pas celle de son auteur** ; c'est aussi
+vrai du fichier d'environnement que du système d'exploitation.
+
 ## 2026-09-03 (suite 2) — Lot C : le mois s'ouvre depuis l'en-tête
 
 Un bouton de calendrier rejoint l'en-tête, à côté de la recherche. Il ouvre la
