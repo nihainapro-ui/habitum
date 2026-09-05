@@ -1,5 +1,32 @@
 # Journal des modifications
 
+## 2026-09-03 (suite 3) — Le socle de captures rattrape seize jours de refonte
+
+Les 33 références de non-régression visuelle dataient du **18 août**
+(`ecdbb9d`) et comparaient l'application à une interface qui n'existe plus :
+ni logo, ni icônes de navigation, ni carte d'expérience, ni entrée « Work »,
+et un en-tête entièrement différent. Le job `visuel` échouait donc sur 33
+captures sur 33 — **le socle avait vieilli, pas l'application**.
+
+Il n'avait plus tourné du tout entre le 31 août et le 3 septembre : l'étape
+« Vulnérabilités » le précède dans le workflow et échouait, ce qui l'empêchait
+de démarrer. Une fois cette étape réparée, le job a pu s'exécuter et dire ce
+qu'il voyait — soit quatre jours pendant lesquels deux contrôles de vérité
+étaient à l'arrêt derrière un échec attribué à l'audit.
+
+**La régénération est une décision, jamais un réflexe** — `vues.spec.ts` l'écrit
+lui-même. Les captures ont été régénérées dans le conteneur officiel (le socle
+est celui de Linux ; une capture prise sous Windows écraserait silencieusement
+la référence de CI) et regardées avant d'être figées. Ce qu'elles montrent est
+l'état voulu : la coque refondue, la vue Work, et le bouton de calendrier que le
+lot C vient d'ajouter à l'en-tête, présent sur les onze vues et donc sur les
+33 captures.
+
+Un artefact de harnais, constaté et laissé tel quel : l'indicateur de thème en
+pied de rail affiche « NEURAL » sur les captures des trois thèmes, parce que le
+test pose `data-theme` sur la racine sans passer par les réglages, que
+l'indicateur lit. Il ne décrit pas un défaut du produit.
+
 ## 2026-09-03 (suite 2) — Lot C : le mois s'ouvre depuis l'en-tête
 
 Un bouton de calendrier rejoint l'en-tête, à côté de la recherche. Il ouvre la
