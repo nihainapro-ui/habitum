@@ -1,6 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
 import { attendreHydratation, ouvrirAvecDemo, ouvrirVierge } from './helpers/app';
+import { ETIQUETTES } from './helpers/a11y';
 
 /* ============================================================================
    Accessibilité approfondie — tâche 8.3, référence T7.4.
@@ -61,12 +62,6 @@ const poserTheme = async (page: Page, theme: string): Promise<void> => {
     document.documentElement.dataset['theme'] = t;
   }, theme);
 };
-
-/* WCAG 2.2 en plus de 2.1 — et `wcag22aa` n'est pas décoratif : c'est lui qui
-   apporte `target-size` (§ 2.5.8), la règle de taille des cibles. `a11y.spec.ts`
-   s'arrête à `wcag2aa` ; l'étendre ici est l'essentiel de ce que la tâche 8.3
-   ajoute côté outil. */
-const ETIQUETTES = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'] as const;
 
 const violationsGraves = async (page: Page): Promise<string[]> => {
   const { violations } = await new AxeBuilder({ page }).withTags([...ETIQUETTES]).analyze();

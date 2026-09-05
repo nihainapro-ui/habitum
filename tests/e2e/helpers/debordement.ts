@@ -44,13 +44,21 @@ import type { Page } from '@playwright/test';
    réellement coupé, un vrai défaut, sans protéger contre quoi que ce soit.
 
    ANGLES MORTS ASSUMÉS, à ne pas découvrir en production :
-   - Le périmètre est `main *` : l'en-tête, la barre de navigation basse et
-     tout contenu porté par un portail (`Dialog`, tiroir/`Sheet`, palette,
-     menu de `Select`) vivent HORS de `<main>` — React les monte dans un nœud
-     séparé du corps du document — et ne sont donc jamais balayés ici. Un
-     débordement dans un de ces trois emplacements resterait invisible à ce
-     filet ; il demande son propre test, comme `tiroir-mobile.spec.ts` pour le
-     tiroir mobile.
+   - Le périmètre n'est plus une constante depuis la tâche 1 : c'est l'argument
+     `racine`, et rien n'est balayé que ce que chaque appelant lui désigne.
+     `debordements.spec.ts` l'appelle sur `main`, pour les sept vues.
+     `shell.spec.ts` l'appelle une seconde fois sur `'header'` et une troisième
+     sur `'[role="dialog"]'` — l'en-tête et le dialogue du mois vivent tous
+     deux HORS de `<main>` (le second dans un portail Radix, monté par React
+     dans un nœud séparé du corps du document) et seraient restés invisibles à
+     ce filet sans cet appel dédié. Restent hors mesure : la barre de
+     navigation basse, le tiroir mobile, la palette de commandes et les menus
+     de `Select` — eux aussi portés hors de `<main>`, mais qu'aucun appelant ne
+     fait encore passer par cette fonction. Un débordement là-dedans resterait
+     invisible ici ; il demande son propre appel à `releverDebordements`, ou à
+     défaut son propre test — `tiroir-mobile.spec.ts` couvre déjà le tiroir
+     mobile, mais pour la taille des cibles et le retour du focus, jamais pour
+     la coupe de texte.
    - `el.clientWidth === 0` écarte aussi les boîtes EN LIGNE (`span`, `a`
      inline) sans dimension de mise en page propre — un `<span>` qui hérite de
      la largeur de son parent texte a un `clientWidth` nul par nature, pas par
@@ -134,7 +142,7 @@ export async function releverDebordements(
        deux chiffres cesseront de coïncider — ce que le garde-fou existe pour
        dire. */
     const attendus = new Set<Element>();
-    for (const rail of Array.from(document.querySelectorAll('main [data-switch-rail]'))) {
+    for (const rail of Array.from(document.querySelectorAll(`${sel} [data-switch-rail]`))) {
       const p = rail.parentElement;
       if (p) attendus.add(p);
       if (p?.parentElement) attendus.add(p.parentElement);

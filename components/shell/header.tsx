@@ -50,8 +50,13 @@ import { MonthPicker } from './month-picker';
  *   dans le tiroir ; le zen, lui, masque la barre basse — c'est une commande de
  *   bureau, et son raccourci ⌘\ reste intact pour qui a un clavier.
  *
- * Ce qui reste vaut ~137 px de commandes : le titre garde plus de 200 px sur un
- * écran de 360, au lieu des ~130 qu'il aurait eus en gardant tout. */
+ * Ce qui reste vaut ~179 px de commandes (34 menu + 34 calendrier + 34
+ * recherche + 45 « Nouveau », plus 4 × 8 px de fente) : le titre tombe à
+ * ~155 px sur un écran de 360 — pas plus de 200 —, au lieu des ~130 qu'il
+ * aurait eus en gardant tout. Le chiffre a monté de 137 à 179 avec l'arrivée du
+ * bouton de calendrier (lot C) : c'est `tests/e2e/shell.spec.ts` qui mesure
+ * désormais l'en-tête aux cinq largeurs, boîte comprise, plutôt que ce
+ * commentaire. */
 
 export function Header() {
   const t = useTranslations();

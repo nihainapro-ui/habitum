@@ -14,11 +14,16 @@ premier jour selon la préférence de début de semaine. Le dialogue dessine ce
 qu'elle rend, et c'est ce qui garantit que sa grille et celle de la vue
 Calendrier ne peuvent pas diverger.
 
-**Le décalage de jour ne se calcule plus qu'à un seul endroit.** La vue
-Calendrier recopiait `Math.round((date - today()) / 86_400_000)` à la main, sans
-le passage à minuit que `daysBetween` applique aux deux bornes — faux d'un jour
-dès qu'une des dates aurait porté une heure. Les deux appellent maintenant la
-même fonction du domaine.
+**Le décalage de jour ne se calcule plus qu'à un seul endroit, pour les deux
+grilles du mois.** La vue Calendrier recopiait `Math.round((date - today()) /
+86_400_000)` à la main, sans le passage à minuit que `daysBetween` applique aux
+deux bornes — faux d'un jour dès qu'une des dates aurait porté une heure. Le
+dialogue du mois et la vue Calendrier appellent désormais la même fonction du
+domaine. Le reste du produit garde ses propres formules — `components/stats/
+Heatmap.tsx` soustrait toujours deux horodatages en millisecondes pour placer
+sa première colonne, et `lib/domain/recurrence.ts` / `schedule.ts` refont
+chacun le calcul pour leur propre règle de périodicité — hors du périmètre de
+ce lot.
 
 **Pas de pastilles d'activité sur les jours.** Elles demanderaient l'état de
 chaque jour du mois à l'ouverture, alors que ce qu'on vient chercher ici est la
@@ -43,6 +48,35 @@ chose. L'en-tête est désormais mesuré aux cinq largeurs — boîte comprise, 
 seule mesure qui attrape un enfant de trop dans un conteneur sans repli — et le
 dialogue a son propre contrôle. L'un et l'autre ont été éprouvés par mutation
 avant d'être tenus pour acquis.
+
+**Post-scriptum de revue finale.** Le dialogue s'ouvrait TOUJOURS sur le mois
+courant, même quand `ui.day` désignait un autre mois, et son `offset` de
+navigation survivait en plus à la fermeture — Échap en juillet, puis rouvrir,
+montrait encore juillet. Il se replace désormais sur le mois du jour affiché
+à CHAQUE ouverture, et distingue la case du jour sélectionné de celle
+d'aujourd'hui par une bordure propre — en jetons de thème, jamais en dur.
+Un test le prouve : choisir un jour de juillet, rouvrir, voir juillet.
+
+Le titre du mois était un `<span>` inerte : changer de mois à la flèche
+n'annonçait rien, le focus restant sur le bouton. Il porte maintenant
+`aria-live="polite"`.
+
+Le contrôle d'accessibilité du dialogue s'arrêtait à `wcag2a`/`wcag2aa`, en
+retrait de `a11y-approfondie.spec.ts` qui couvre aussi 2.1 et 2.2 — la seule
+étiquette qui compte ici, `wcag22aa`, apporte `target-size` (§ 2.5.8) et ne
+tournait donc jamais sur les 42 cases neuves. Alignée sur la même constante :
+la règle tourne, et passe — les cases font 32 px de haut sur ~38 de large,
+largement au-dessus du minimum de 24 px.
+
+Et deux commentaires de tête, rendus faux par ce lot sans qu'aucune des tâches
+suivantes ne les relise. Le calcul de largeur de l'en-tête (`header.tsx`)
+oubliait le bouton qu'il venait lui-même d'ajouter et son entrefer : ~179 px de
+commandes sous 640 px, pas ~137 ; un titre à ~155 px sur un écran de 360, pas
+plus de 200. Et les « angles morts assumés » de `helpers/debordement.ts`
+disaient encore l'en-tête hors mesure, alors que la tâche 1 l'y avait fait
+entrer par son paramètre `racine` — désormais aussi utilisé pour scoper
+`exclusSwitchAttendus`, calculé jusque-là sur `main` quelle que soit la racine
+demandée.
 
 ## 2026-09-03 (suite) — La CI ne dépassait plus l'audit, et personne ne le voyait
 

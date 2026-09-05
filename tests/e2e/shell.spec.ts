@@ -1,5 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
+import { ETIQUETTES } from './helpers/a11y';
 import { installer, ouvrirAvecDemo } from './helpers/app';
 import { LARGEURS_MESUREES, releverDebordements } from './helpers/debordement';
 
@@ -176,6 +177,40 @@ test('un jour d’un mois voisin est choisissable, pas un cul-de-sac', async ({ 
   await expect(page.locator('[aria-current="date"]')).toHaveCount(0);
 });
 
+test('rouvrir le dialogue montre le mois du jour affiché, pas le mois courant', async ({
+  page,
+}) => {
+  /* Constat 5 de la revue finale : le dialogue s'ouvrait TOUJOURS sur le mois
+     courant, même quand `ui.day` pointait ailleurs — rouvrir après avoir choisi
+     un jour d'un autre mois y ramenait de force, et l'`offset` d'une navigation
+     précédente (← / →) survivait en plus à la fermeture. Ici, choisir le 28
+     juillet règle `ui.day` sur un jour de JUILLET ; rouvrir doit montrer
+     juillet, pas août — le mois courant de l'horloge figée du test. */
+  await ouvrirAvecDemo(page, '/app');
+  await page.getByRole('button', { name: 'Ouvrir le calendrier' }).click();
+  await page.getByRole('dialog').locator('[data-jour="2026-07-28"]').click();
+  await expect(page).toHaveURL(/\/app\/today/);
+
+  await page.getByRole('button', { name: 'Ouvrir le calendrier' }).click();
+  const boite = page.getByRole('dialog', { name: 'Choisir un jour' });
+  await expect(boite.getByText('juillet 2026')).toBeVisible();
+
+  /* Et la grille de juillet montre bien les DEUX jours à distinguer : le 5 août
+     (aujourd'hui, hors du mois affiché mais présent en case voisine) garde son
+     traitement plein ; le 28 juillet (choisi) reçoit une bordure distincte des
+     deux — ni transparente comme une case neutre, ni celle d'aujourd'hui. */
+  const aujourdhui = boite.locator('[aria-current="date"]');
+  const selectionne = boite.locator('[data-jour="2026-07-28"]');
+  const neutre = boite.locator('[data-jour="2026-07-15"]');
+  const [couleurAujourdhui, couleurSelection, couleurNeutre] = await Promise.all([
+    aujourdhui.evaluate((el) => getComputedStyle(el).borderColor),
+    selectionne.evaluate((el) => getComputedStyle(el).borderColor),
+    neutre.evaluate((el) => getComputedStyle(el).borderColor),
+  ]);
+  expect(couleurSelection).not.toBe(couleurAujourdhui);
+  expect(couleurSelection).not.toBe(couleurNeutre);
+});
+
 /* L'EN-TÊTE N'ÉTAIT MESURÉ PAR RIEN. `debordements.spec.ts` balaie `main *` et
    documente l'en-tête parmi ses angles morts assumés ; or `header.tsx` porte
    lui-même la trace d'un piège déjà payé — « un élément à largeur fixe dans
@@ -267,9 +302,25 @@ test('le dialogue du mois est accessible', async ({ page }) => {
   await page.getByRole('button', { name: 'Ouvrir le calendrier' }).click();
   await expect(page.getByRole('dialog', { name: 'Choisir un jour' })).toBeVisible();
 
-  const { violations } = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).analyze();
+  /* Les mêmes étiquettes qu'`a11y-approfondie.spec.ts` — toutes deux les
+     importent de `helpers/a11y.ts`, Playwright refusant qu'un fichier de test
+     en importe un autre — WCAG 2.1 et 2.2 comprises, pas seulement 2.0. S'arrêter à
+     `wcag2a`/`wcag2aa` faisait tourner `target-size` (§ 2.5.8, apportée par
+     `wcag22aa`) sur les onze vues mais jamais sur les 42 cases neuves de ce
+     dialogue — la seule grille assez dense pour que la règle vaille la peine
+     d'y tourner. */
+  const { violations } = await new AxeBuilder({ page }).withTags([...ETIQUETTES]).analyze();
   const graves = violations
     .filter((v) => v.impact === 'critical' || v.impact === 'serious')
     .map((v) => `${v.id} — ${v.nodes.length} nœud(s)`);
   expect(graves).toEqual([]);
+
+  /* Signalé, jamais bloquant : `moderate` et `minor` n'ont pas de seuil produit,
+     mais les taire reviendrait à perdre une information que deux revues de
+     suite ont réclamée. Voir le rapport de revue finale pour le compte daté. */
+  const mineures = violations
+    .filter((v) => v.impact === 'moderate' || v.impact === 'minor')
+    .map((v) => `${v.id} (${v.impact}) — ${v.nodes.length} nœud(s)`);
+  console.log(`dialogue du mois — violations non bloquantes (moderate/minor) : ${mineures.length}`);
+  for (const m of mineures) console.log(`  · ${m}`);
 });
