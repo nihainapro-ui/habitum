@@ -17,7 +17,11 @@ import { SYNC_KINDS, type SyncKind } from './types';
  *   `errors`        journal LOCAL (décision E) ; il décrit CET appareil
  *   `seeded`        drapeau d'amorçage, propre à l'installation
  *   `activeProfile` quel profil on REGARDE ; chacun son écran
- *   `lastExport` / `nagDismissed`  le rappel de sauvegarde est par appareil */
+ *   `lastExport` / `nagDismissed`  le rappel de sauvegarde est par appareil
+ *   `bioLock`      le verrou biométrique (lot D) : un credential WebAuthn de
+ *                  plateforme n'existe que sur l'appareil qui l'a enregistré ;
+ *                  le transporter poserait ailleurs un verrou que personne ne
+ *                  peut ouvrir */
 
 /** Les deux seules clés de `meta` qui voyagent. */
 export const CLES_META_SYNCHRONISEES = ['settings', 'occ'] as const;

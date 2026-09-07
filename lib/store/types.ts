@@ -64,6 +64,13 @@ export interface UiState {
    *  tiroir, sept des onze vues n'ont aucun chemin d'accès au doigt — la
    *  palette ⌘K suppose un clavier, que l'APK n'a pas. */
   menuOpen: boolean;
+  /** Le rideau du verrou biométrique est-il levé pour CETTE ouverture ?
+   *
+   *  Volontairement dans l'état d'interface et non dans `meta` : un verrou qui
+   *  se souvient d'avoir été ouvert n'est plus un verrou. Il retombe à chaque
+   *  rechargement, ce qui est exactement le comportement attendu — et ce qui
+   *  fait qu'aucune écriture n'est nécessaire pour le refermer. */
+  unlocked: boolean;
   loading: boolean;
   error: string | null;
 }
@@ -103,6 +110,10 @@ export interface DataState {
   /** Dernier export, et refus du rappel de sauvegarde (D8). */
   lastExport: DateKey | null;
   nagDismissed: boolean;
+  /** Identifiant du credential WebAuthn qui pose le verrou biométrique, `null`
+   *  si aucun verrou (lot D). Vient de `meta.bioLock`, clé LOCALE : elle ne
+   *  quitte jamais l'appareil (`lib/sync/entites.ts`). */
+  lockCredentialId: string | null;
   /** Horodatage de la copie de secours automatique, `null` s'il n'y en a pas.
    *  Prise avant un import et avant une réinitialisation (tâche 5.8). */
   backupAt: string | null;
@@ -237,6 +248,16 @@ export interface AccountActions {
   loadDemo(): Promise<void>;
   /** Restaure la copie de secours automatique. `null` s'il n'y en a aucune. */
   restoreBackup(): Promise<ImportReport | null>;
+  /** Pose le verrou biométrique. L'enregistrement WebAuthn a déjà eu lieu :
+   *  la tranche n'appelle pas la plateforme, elle range son résultat. */
+  enableLock(credentialId: string): Promise<void>;
+  /** Retire le verrou. Le credential reste dans l'authentificateur de
+   *  l'appareil — nous n'avons aucun moyen de l'en effacer, et le prétendre
+   *  serait faux. Nous oublions son identifiant, ce qui suffit : sans lui,
+   *  plus rien ne le demande. */
+  disableLock(): Promise<void>;
+  /** Lève le rideau pour cette ouverture. La vérification a déjà réussi. */
+  unlockApp(): void;
 }
 
 export interface LifecycleActions {

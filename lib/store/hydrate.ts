@@ -65,6 +65,7 @@ export async function chargerTout(): Promise<DataState & { watermark: string; aJ
     accueilFranchi,
     occurrences,
     copie,
+    verrou,
   ] = await Promise.all([
     habitsRepo.list(),
     tasksRepo.list(),
@@ -84,6 +85,7 @@ export async function chargerTout(): Promise<DataState & { watermark: string; aJ
     metaRepo.get<boolean>(META_KEYS.onboarded),
     metaRepo.get<Record<string, number>>(META_KEYS.occ),
     metaRepo.get<{ at: string }>(META_KEYS.backup),
+    metaRepo.get<{ credentialId: string; at: string }>(META_KEYS.bioLock),
   ]);
 
   /* Les réglages enregistrés priment, mais un réglage ajouté après coup ne doit
@@ -122,5 +124,8 @@ export async function chargerTout(): Promise<DataState & { watermark: string; aJ
     nagDismissed: refuse === true,
     onboarded: accueilFranchi === true,
     backupAt: copie?.at ?? null,
+    /* Un `bioLock` sans identifiant est un verrou qui ne peut pas s'ouvrir :
+       on le tient pour absent plutôt que d'enfermer l'utilisateur dehors. */
+    lockCredentialId: verrou?.credentialId || null,
   };
 }

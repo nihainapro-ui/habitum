@@ -1,5 +1,90 @@
 # Journal des modifications
 
+## 2026-09-07 — Lot D : le profil devient local, et l'écran peut se fermer
+
+Le profil porte désormais une **photo**, une **adresse électronique** et un
+**poste**, et l'application peut se protéger d'un **verrou biométrique**. Rien
+de tout cela ne crée de compte : il n'y a ni inscription, ni mot de passe, ni
+serveur d'authentification. C'était la condition de cadrage, et elle tient.
+
+**La photo est réduite sur l'appareil.** Recadrage carré centré, 256 px de côté
+au plus, JPEG, 64 Ko au plus — la boucle descend en qualité puis en taille
+jusqu'à passer sous la limite, et ne dégrade jamais plus que nécessaire. Aucune
+requête ne part : un `<canvas>` suffit, et un service de redimensionnement
+aurait fait sortir une photo de l'appareil pour la renvoyer plus petite. Ce que
+la boucle décide est testé sans navigateur ; ce que le navigateur encode est
+mesuré en bout de chaîne par un test d'intégration — carré, ≤ 256 px, ≤ 64 Ko,
+sur une image de 900 × 600 engendrée par le test lui-même.
+
+**Les trois champs sont facultatifs, et la spec disait « requis ».** C'est une
+correction, pas un oubli : les profils déjà écrits ne les ont pas, et une ligne
+reçue d'un appareil resté en arrière ne les aura pas davantage — la
+synchronisation transporte l'entité telle quelle, sans valeur par défaut. Les
+déclarer requis aurait menti au compilateur. C'est exactement le piège du lot B
+sous un autre nom, et il a le même remède : l'absence est défaite en un seul
+endroit, `profilChamps()`, jamais dans une vue. La photo y est aussi *validée* —
+une valeur qui ne vient pas de notre réducteur n'est pas affichée du tout, et
+l'avatar génératif reprend la main. Sans cela, une base bricolée aurait pu
+afficher une URL distante en guise d'avatar, c'est-à-dire faire sortir une
+requête de l'appareil depuis la vue qui promet le contraire.
+
+**Le verrou est un rideau, et l'écran le dit.** WebAuthn, authentificateur de
+plateforme, `userVerification: 'required'` : l'empreinte ou le visage, avec
+repli natif sur le code de l'appareil — c'est ce repli, géré par le système,
+qui règle le capteur cassé sans qu'on écrive la moindre porte dérobée. Rien
+n'est chiffré pour autant : les données restent lisibles dans IndexedDB pour
+qui tient l'appareil et sait où regarder. Le réglage l'écrit en toutes lettres,
+et dit aussi ce qui arrive si l'authentificateur disparaît. Un verrou qui
+laisserait croire qu'il chiffre serait pire qu'aucun verrou.
+
+**Le rideau REMPLACE la coque, il ne la recouvre pas.** Un voile posé par-dessus
+aurait laissé le contenu dans le DOM : lisible au lecteur d'écran, lisible dans
+l'inspecteur, copiable en trois gestes. Un rideau peint sur une vitre. Le test
+d'intégration ne vérifie donc pas que le rideau est visible — il vérifie que
+`<main>` n'existe pas.
+
+**Le verrou ne se synchronise pas, et un test le verrouille.** Un credential de
+plateforme n'existe que sur l'appareil qui l'a enregistré : le transporter
+poserait ailleurs un rideau que personne ne pourrait lever. `meta` ne
+synchronise que deux clés nommées ; `bioLock` n'en est pas, et le jour où
+quelqu'un l'y ajoutera, c'est le test qui l'apprendra. Un `bioLock` écrit à
+moitié — identifiant vide — est tenu pour absent : un rideau qu'aucune
+vérification ne peut lever n'est pas un verrou, c'est une perte de données.
+
+**Aucune demande automatique au montage du rideau.** Plusieurs navigateurs
+refusent `credentials.get()` sans geste de l'utilisateur ; la demande serait
+partie pour échouer, et le rideau se serait ouvert sur un message d'erreur que
+personne n'a provoqué. Le bouton prend le focus : une frappe suffit.
+
+**La politique de confidentialité disait deux choses qui viennent de devenir
+fausses, et elle est corrigée dans la même livraison.** Elle affirmait
+qu'« aucune adresse électronique n'est saisie » et qu'aucun profil n'est
+transmis « parce qu'il n'en existe aucun dans le produit ». Il en existe un
+désormais. Les deux passages sont réécrits dans les deux langues : rien ne vous
+est réclamé, les champs sont facultatifs, ils n'identifient personne, ils
+restent sur l'appareil — et s'ils voyagent, ils voyagent chiffrés comme le
+reste, vers un relais qui ne peut pas les lire. La liste « où vivent vos
+données » nomme maintenant le profil et la photo, et dit que le verrou
+biométrique ne chiffre rien. Date de mise à jour avancée en conséquence.
+
+**Six captures de référence régénérées, et six seulement** : `profile` et
+`settings` dans les trois thèmes. Les vingt-sept autres sont sorties
+identiques — c'est la meilleure preuve que ce lot n'a rien déplacé ailleurs.
+Régénération dans le conteneur officiel, `.env.local` écarté le temps de la
+construction, captures regardées avant d'être figées.
+
+**Un test de curseur mesurait une hauteur de page, sans le savoir.** Le contrôle
+« au-dessus d'un champ de texte, le noyau devient une barre » allume le réglage
+en cliquant un interrupteur situé bas dans la vue Profil, ce qui fait défiler la
+page ; le champ « Nom » repassait alors au-dessus de la fenêtre dès que la vue
+s'allongeait, et la souris se posait sur une ordonnée négative. Le champ est
+désormais ramené dans la vue avant d'être mesuré. Le défaut était dans la
+mesure, pas dans le réticule.
+
+Rien n'a changé pour qui n'y touche pas : aucun verrou n'est posé par défaut,
+aucun champ n'est obligatoire, et l'avatar génératif reste ce qu'un profil
+affiche tant qu'aucune photo n'est choisie.
+
 ## 2026-09-03 (suite 3) — Le socle de captures rattrape seize jours de refonte
 
 Les 33 références de non-régression visuelle dataient du **18 août**

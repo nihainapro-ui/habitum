@@ -9,6 +9,7 @@ import { clearErrorLog, readErrorLog, type ErreurJournalisee } from '@/lib/logge
 import { FeedbackSettings } from './FeedbackSettings';
 import { NotificationSetting } from './NotificationSetting';
 import { DataSection } from './DataSection';
+import { LockSetting } from './LockSetting';
 import { SyncSection } from './SyncSection';
 import { LocaleSwitcher } from './LocaleSwitcher';
 import { ThemeSwitcher } from './ThemeSwitcher';
@@ -128,6 +129,14 @@ export function SettingsView() {
             )}
           </div>
         </div>
+      </Panel>
+
+      {/* Panneau à part, et pas une ligne du panneau « Données » : le verrou ne
+          protège pas les données, il masque l'écran. Les ranger ensemble
+          laisserait croire qu'il chiffre — exactement ce que son texte passe
+          trois lignes à démentir. */}
+      <Panel title={ts('lockT')}>
+        <LockSetting />
       </Panel>
 
       {/* Panneau distinct de « Données », et c'est délibéré : l'export protège

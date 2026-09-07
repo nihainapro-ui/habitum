@@ -2,13 +2,20 @@
 
 import { useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { Upload } from 'lucide-react';
+import { Image as ImageIcon, Trash2, Upload } from 'lucide-react';
 import { champStyle, Panel, Switch } from '@/components/ui';
 /* Importé directement plutôt que par le tonneau `@/components/ui` : le
    périmètre de cette correction n'autorise pas `components/ui/index.ts`. */
 import { Select } from '@/components/ui/select';
 import { useCurseurPossible } from '@/components/shell/reticle-cursor';
-import { activeHabits, bestStreakOverall, perfectDays, splitHeuresMinutes } from '@/lib/domain';
+import {
+  activeHabits,
+  bestStreakOverall,
+  perfectDays,
+  profilChamps,
+  splitHeuresMinutes,
+} from '@/lib/domain';
+import { ErreurPhoto, reduirePhoto, TYPES_PHOTO_ACCEPTES } from '@/lib/features/profil/photo';
 import { useFocusMinutes, useSettings, useStore } from '@/lib/store';
 import { Avatar } from './Avatar';
 
@@ -44,17 +51,49 @@ export function ProfileView() {
   const focus = useFocusMinutes(365);
   const curseurPossible = useCurseurPossible();
   const fichier = useRef<HTMLInputElement>(null);
+  const fichierPhoto = useRef<HTMLInputElement>(null);
   const [nouveau, setNouveau] = useState('');
   const [aSupprimer, setASupprimer] = useState<string | null>(null);
   const [rapport, setRapport] = useState<string | null>(null);
   const [erreur, setErreur] = useState<string | null>(null);
+  const [erreurPhoto, setErreurPhoto] = useState<string | null>(null);
 
   const actif = profiles.find((p) => p.id === activeProfileId) ?? profiles[0];
+  /* Les trois champs du lot D passent TOUS par là — leur absence n'est défaite
+     nulle part ailleurs, pas même « juste pour cet affichage ». */
+  const champs = profilChamps(actif);
   const { h, m } = splitHeuresMinutes(focus);
   /* Les six fonctions viennent du catalogue de libellés — un tableau, comme
      dans le prototype : les traduire, ce n’est pas les recopier. */
   const fonctions = tp.raw('roles') as string[];
   const membreDepuis = `${tp('since')} ${actif?.since ?? ''}`;
+
+  /* La réduction est locale et peut échouer de deux façons qui ne se corrigent
+     pas pareil : un fichier qui n'est pas une image (l'utilisateur en choisit un
+     autre) et un navigateur qui ne sait pas encoder (il n'y peut rien). Le
+     message le dit. */
+  const choisirPhoto = async (f: File) => {
+    setErreurPhoto(null);
+    if (!actif) return;
+    try {
+      await updateProfile(actif.id, { photo: await reduirePhoto(f) });
+    } catch (e) {
+      setErreurPhoto(
+        e instanceof ErreurPhoto && e.genre === 'impossible'
+          ? tp('photoErrHeavy')
+          : tp('photoErrRead'),
+      );
+    }
+  };
+
+  /* Retirer, c'est écrire une chaîne vide — pas effacer le champ. La
+     synchronisation transporte l'entité telle quelle : un champ effacé ne se
+     distinguerait pas d'un champ jamais écrit, et l'autre appareil garderait
+     la photo. Voir `profilChamps()`. */
+  const retirerPhoto = () => {
+    setErreurPhoto(null);
+    if (actif) void updateProfile(actif.id, { photo: '' });
+  };
 
   const importer = async (f: File) => {
     setRapport(null);
@@ -87,12 +126,54 @@ export function ProfileView() {
     <div className="flex max-w-[860px] flex-col gap-4">
       <Panel title={tp('identity')}>
         <div className="flex flex-wrap items-center gap-4">
-          <Avatar
-            glyph={actif?.glyph ?? '◉'}
-            hue={actif?.hue ?? 188}
-            label={tp('avatar')}
-            size={64}
-          />
+          {/* Photo ou avatar génératif — lot D. L'avatar reste le DÉFAUT : il
+              se dessine, il ne se télécharge pas, et il ne demande rien à
+              personne. La photo est un choix, jamais une case à remplir. */}
+          <div className="flex flex-none flex-col items-center gap-2">
+            <Avatar
+              glyph={actif?.glyph ?? '◉'}
+              hue={actif?.hue ?? 188}
+              label={tp('avatar')}
+              size={64}
+              photo={champs.photo}
+            />
+            <input
+              ref={fichierPhoto}
+              type="file"
+              accept={TYPES_PHOTO_ACCEPTES}
+              className="hidden"
+              aria-label={tp('photo')}
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) void choisirPhoto(f);
+                /* Remis à zéro : sans cela, rechoisir LE MÊME fichier après
+                   l'avoir retiré ne déclencherait aucun événement. */
+                e.target.value = '';
+              }}
+            />
+            <div className="flex flex-wrap justify-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => fichierPhoto.current?.click()}
+                className="rounded-btn flex cursor-pointer items-center gap-1.5 border px-2.5 py-1.5 text-[11.5px]"
+                style={{ borderColor: 'var(--line)', color: 'var(--txt2)' }}
+              >
+                <ImageIcon size={12} aria-hidden="true" />
+                {champs.photo ? tp('photoReplace') : tp('photoChange')}
+              </button>
+              {champs.photo ? (
+                <button
+                  type="button"
+                  onClick={retirerPhoto}
+                  aria-label={tp('photoRemove')}
+                  className="rounded-btn flex cursor-pointer items-center border px-2.5 py-1.5 text-[11.5px]"
+                  style={{ borderColor: 'var(--line)', color: 'var(--bad)' }}
+                >
+                  <Trash2 size={12} aria-hidden="true" />
+                </button>
+              ) : null}
+            </div>
+          </div>
           {/* 05-SPEC-VUES.md § 11 : nom, IDENTIFIANT, FONCTION, membre depuis.
               Les deux du milieu manquaient — `handle` et `role` existent dans le
               modèle depuis la phase 1, et rien ne les exposait. */}
@@ -137,6 +218,53 @@ export function ProfileView() {
               />
             </label>
 
+            {/* Adresse et poste — lot D. Champs LIBRES : rien n'est vérifié,
+                rien n'est envoyé, rien n'identifie. La phrase qui suit le dit,
+                parce qu'un champ « adresse électronique » dans un produit sans
+                compte demande une explication, pas une supposition. */}
+            <div className="flex flex-wrap gap-3">
+              <label className="flex min-w-[180px] flex-1 flex-col gap-1.5">
+                <span className="text-[12px]" style={{ color: 'var(--txt2)' }}>
+                  {tp('email')}
+                </span>
+                <input
+                  type="email"
+                  autoComplete="email"
+                  value={champs.email}
+                  onChange={(e) => actif && void updateProfile(actif.id, { email: e.target.value })}
+                  className="rounded-field w-full border outline-none"
+                  style={champStyle}
+                />
+              </label>
+
+              <label className="flex min-w-[180px] flex-1 flex-col gap-1.5">
+                <span className="text-[12px]" style={{ color: 'var(--txt2)' }}>
+                  {tp('metier')}
+                </span>
+                <input
+                  value={champs.metier}
+                  onChange={(e) =>
+                    actif && void updateProfile(actif.id, { metier: e.target.value })
+                  }
+                  className="rounded-field w-full border outline-none"
+                  style={champStyle}
+                />
+              </label>
+            </div>
+
+            <span className="text-[11px]" style={{ color: 'var(--mut)' }}>
+              {tp('localOnly')}
+            </span>
+            <span className="text-[11px]" style={{ color: 'var(--mut)' }}>
+              {tp('photoHint')}
+            </span>
+
+            {erreurPhoto ? (
+              <p role="alert" className="m-0 text-[12px]" style={{ color: 'var(--bad)' }}>
+                {erreurPhoto}
+              </p>
+            ) : null}
+
             <span className="font-mono text-[11px]" style={{ color: 'var(--mut)' }}>
               {membreDepuis}
             </span>
@@ -174,7 +302,13 @@ export function ProfileView() {
           <ul data-profiles className="m-0 flex list-none flex-col gap-2 p-0">
             {profiles.map((p) => (
               <li key={p.id} className="flex flex-wrap items-center gap-3">
-                <Avatar glyph={p.glyph} hue={p.hue} label={tp('avatar')} size={32} />
+                <Avatar
+                  glyph={p.glyph}
+                  hue={p.hue}
+                  label={tp('avatar')}
+                  size={32}
+                  photo={profilChamps(p).photo}
+                />
                 <span className="min-w-0 flex-1 truncate text-[13px]">
                   {p.name || tp('newName')}
                 </span>

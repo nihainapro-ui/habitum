@@ -11,6 +11,9 @@ export const uiInitial: UiState = {
   toast: null,
   commandOpen: false,
   menuOpen: false,
+  /* Fermé par défaut, et rouvert à chaque ouverture : le rideau ne se souvient
+     pas. Sans verrou posé, personne ne regarde ce drapeau. */
+  unlocked: false,
   loading: false,
   error: null,
 };

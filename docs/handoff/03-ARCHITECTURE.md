@@ -261,6 +261,7 @@ autres sont propres à l'application portée et documentées ici plutôt que dev
 | `lastExport` / `nagDismissed` | date du dernier export et refus du rappel de sauvegarde (D8) | export / rappel |
 | `backup` | copie de secours `{at, payload}` prise avant import et avant réinitialisation (5.8) | `construireCopie()` |
 | `errors` | vingt dernières erreurs attrapées, **local uniquement**, lisibles dans les réglages (5.1) | `lib/logger.ts` |
+| `bioLock` | verrou biométrique : `{credentialId, at}` — identifiant du credential WebAuthn de plateforme. **Local uniquement** : un credential n'existe que sur l'appareil qui l'a enregistré, le transporter poserait ailleurs un rideau que personne ne peut lever (lot D) | réglages |
 | `syncCode` | code d'appairage, 20 caractères. **Le seul secret** : il dérive l'espace ET la clé de chiffrement, et ne quitte jamais l'appareil. Absent = synchronisation inactive, et alors aucune requête ne sort | `activerSync()` |
 | `syncCursor` | dernier `seq` reçu du relais. Un **nombre**, pas une date : les horloges de deux appareils ne sont pas comparables | moteur de synchronisation |
 | `syncWatermark` | filigrane de lecture locale — borné à l'instant de fin de la passe, jamais au plus grand `updatedAt` envoyé (une écriture faite pendant l'aller-retour serait sinon sautée pour toujours) | moteur de synchronisation |

@@ -56,6 +56,13 @@ export const META_KEYS = {
   /** Copie de secours prise avant import et avant réinitialisation.
    *  Équivalent de `habitum.state.bak` du prototype, dans la table `meta`. */
   backup: 'backup',
+  /** Verrou biométrique — lot D. `{ credentialId, at }`, ou absente si aucun
+   *  verrou n'est posé. STRICTEMENT LOCALE : un credential WebAuthn de
+   *  plateforme n'existe que sur l'appareil qui l'a enregistré, et l'envoyer
+   *  ailleurs y planterait un verrou que personne ne peut ouvrir. `meta` ne
+   *  synchronise que `settings` et `occ` (`lib/sync/entites.ts`) — cette clé
+   *  n'en est pas, et un test le vérifie. */
+  bioLock: 'bioLock',
   /** Onboarding franchi. Tant qu'elle est absente, la première ouverture mène
    *  au parcours d'accueil et non au tableau de bord. */
   onboarded: 'onboarded',

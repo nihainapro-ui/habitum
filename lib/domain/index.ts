@@ -19,3 +19,4 @@ export * from './cache';
 export * from './catalog';
 export * from './progression';
 export * from './projects';
+export * from './profil';

@@ -72,6 +72,10 @@ export function capturer(s: AppState): Snapshot {
     lastExport: s.lastExport,
     nagDismissed: s.nagDismissed,
     backupAt: s.backupAt,
+    /* Le verrou entre dans l'instantané parce que `Snapshot` vaut `DataState`,
+       et le typage l'a exigé comme il avait exigé Work. Aucune action annulable
+       ne le touche : le restaurer revient à le réécrire à l'identique. */
+    lockCredentialId: s.lockCredentialId,
     onboarded: s.onboarded,
   };
 }

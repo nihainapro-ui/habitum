@@ -167,15 +167,26 @@ Tout est local ; rien ne crée de compte ; la politique de confidentialité rest
   JPEG, ≤ 64 Ko) stockée en dataURL dans `Profile.photo?: string`. Le choix d'un
   glyphe et d'une teinte (existant) reste le défaut. La photo voyage chiffrée avec le
   reste si la synchronisation est active, comme toute donnée.
-- **E-mail et fonction** : `Profile.email: string` et `Profile.metier: string`
-  (défauts `''`). Champs libres, affichés sur la vue Profil, jamais transmis à
-  quiconque — l'interface le dit. Le champ existant `role: number` n'est PAS renommé
-  (clé persistée) ; `metier` s'ajoute à côté.
+- **E-mail et fonction** : `Profile.email` et `Profile.metier`. Champs libres, affichés
+  sur la vue Profil, jamais transmis à quiconque — l'interface le dit. Le champ existant
+  `role: number` n'est PAS renommé (clé persistée) ; `metier` s'ajoute à côté.
+  **Corrigé à l'implémentation (2026-09-07) : les trois champs sont FACULTATIFS**, et non
+  requis comme annoncé ici. Les profils déjà écrits ne les ont pas, et une ligne reçue d'un
+  appareil resté en arrière ne les aura pas davantage — la synchronisation transporte
+  l'entité telle quelle, sans valeur par défaut. Les déclarer requis mentirait au
+  compilateur. Même piège, même remède qu'au lot B : l'absence est défaite en un seul
+  endroit, `profilChamps()` dans `lib/domain/profil.ts`, jamais dans une vue.
 - **Verrou biométrique** : WebAuthn, authentificateur de plateforme
   (`userVerification: 'required'`) — l'empreinte sur téléphone, avec repli natif sur
   le code de l'appareil géré par le système, ce qui règle le cas du capteur cassé
   sans écrire de porte dérobée. Identifiant de credential stocké dans `meta`,
   **local, jamais synchronisé** (ajouté à la liste commentée de `entites.ts`).
+  **Précisé à l'implémentation (2026-09-07)** : le rideau REMPLACE la coque au lieu de la
+  recouvrir — un contenu rendu derrière un voile reste dans le DOM, donc lisible au lecteur
+  d'écran comme à l'inspecteur. Et il ne demande PAS la vérification tout seul au montage :
+  plusieurs navigateurs refusent `credentials.get()` sans geste de l'utilisateur, la demande
+  partirait pour échouer et ouvrirait le rideau sur une erreur que personne n'a provoquée.
+  Le bouton prend le focus ; une frappe suffit.
 - **Honnêteté obligatoire dans l'interface** : ce verrou est un rideau, pas un
   chiffrement. Les données restent lisibles dans IndexedDB pour qui a l'appareil et
   s'y connaît — la politique de confidentialité le dit déjà des données locales. Le

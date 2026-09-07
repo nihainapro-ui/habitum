@@ -123,6 +123,28 @@ export const createAccountSlice: StateCreator<AppState, [], [], AccountActions> 
     set({ onboarded: true });
   },
 
+  /* Verrou biométrique (lot D). La tranche ne parle PAS à la plateforme :
+     `enregistrerVerrou()` a déjà rendu son identifiant quand on arrive ici. Une
+     tranche qui ouvrirait elle-même la boîte de dialogue WebAuthn mêlerait un
+     geste d'interface à une écriture de base — et l'échec de l'un ferait
+     douter de l'autre. */
+  async enableLock(credentialId: string): Promise<void> {
+    await metaRepo.set(META_KEYS.bioLock, { credentialId, at: new Date().toISOString() });
+    /* Posé ET ouvert : celui qui vient d'enregistrer son empreinte est déjà
+       vérifié. Retomber derrière le rideau à l'instant même où on le pose
+       serait absurde. */
+    set((s) => ({ lockCredentialId: credentialId, ui: { ...s.ui, unlocked: true } }));
+  },
+
+  async disableLock(): Promise<void> {
+    await metaRepo.remove(META_KEYS.bioLock);
+    set({ lockCredentialId: null });
+  },
+
+  unlockApp(): void {
+    set((s) => ({ ui: { ...s.ui, unlocked: true } }));
+  },
+
   /* B4 — la démonstration ne s'obtient QUE par ce geste. Elle marque `meta.demo`,
      que l'en-tête affiche en permanence : un historique fabriqué doit se
      reconnaître au premier coup d'œil, sinon plus aucun chiffre n'est croyable. */

@@ -14,6 +14,7 @@ import { EditorSheet } from '@/components/editor/EditorSheet';
 import { BottomBar } from './bottom-bar';
 import { Header } from './header';
 import { LiveRegion } from './live-region';
+import { LockCurtain } from './lock-curtain';
 import { NavDrawer } from './nav-drawer';
 import { Rail } from './rail';
 import { ReticleCursor } from './reticle-cursor';
@@ -30,6 +31,10 @@ import { UpdateBanner } from './update-banner';
 export function AppShell({ children }: { children: ReactNode }) {
   const zen = useStore((s) => s.ui.zen);
   const onboarded = useStore((s) => s.onboarded);
+  /* Verrou biométrique (lot D). Les deux valeurs sont lues ici et nulle part
+     ailleurs : le rideau tombe devant TOUTE l'application, pas devant une vue. */
+  const verrou = useStore((s) => s.lockCredentialId);
+  const ouvert = useStore((s) => s.ui.unlocked);
   const journalComplet = useStore((s) => s.logIndexComplete);
   const router = useRouter();
   const chemin = usePathname() ?? '';
@@ -94,6 +99,23 @@ export function AppShell({ children }: { children: ReactNode }) {
     window.addEventListener('keydown', surFrappe);
     return () => window.removeEventListener('keydown', surFrappe);
   }, []);
+
+  /* Rideau du verrou. Il vient AVANT tout le reste — accueil compris : un
+     appareil verrouillé ne montre pas davantage son parcours d'accueil que son
+     tableau de bord. Et il attend `pret` : tant que `meta` n'a pas été lu,
+     `lockCredentialId` vaut `null` pour tout le monde, y compris pour ceux qui
+     ont posé un verrou — afficher quoi que ce soit avant serait tirer à pile ou
+     face entre montrer les données de quelqu'un et verrouiller un appareil qui
+     ne l'est pas.
+
+     Le contenu n'est PAS rendu derrière : voir l'en-tête de `lock-curtain.tsx`. */
+  if (pret && verrou && !ouvert) {
+    return (
+      <div data-hydrated="true" data-verrouille="true">
+        <LockCurtain />
+      </div>
+    );
+  }
 
   /* Cadre NU du parcours d'accueil. Le marqueur d'hydratation reste posé : la
      recette a besoin de savoir que la base est prête, ici comme ailleurs. */

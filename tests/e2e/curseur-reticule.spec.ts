@@ -109,6 +109,14 @@ test.describe('curseur réticule — pointeur fin', () => {
 
     const noyau = reticule(page).locator('div').nth(1);
     const champ = page.getByLabel('Nom', { exact: true });
+    /* RAMENÉ DANS LA VUE avant d'être mesuré. Allumer le réglage clique un
+       interrupteur situé bas dans la page, ce qui la fait défiler ; le champ
+       « Nom » repasse alors AU-DESSUS de la fenêtre dès que la vue Profil
+       s'allonge un peu — ce qu'elle vient de faire avec la photo et les deux
+       champs du lot D. La souris se posait sur une ordonnée négative, donc sur
+       rien, et le noyau restait rond. Le défaut était dans la mesure, pas dans
+       le réticule. */
+    await champ.scrollIntoViewIfNeeded();
     const boite = (await champ.boundingBox())!;
     await page.mouse.move(boite.x + boite.width / 2, boite.y + boite.height / 2);
 

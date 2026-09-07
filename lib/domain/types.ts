@@ -224,7 +224,15 @@ export interface Note {
 }
 
 /** Profil utilisateur. Le prototype en gère plusieurs (`profiles` / `pid`).
- *  `hue` et `glyph` alimentent l'avatar génératif OKLCH (04-DESIGN-TOKENS.md). */
+ *  `hue` et `glyph` alimentent l'avatar génératif OKLCH (04-DESIGN-TOKENS.md).
+ *
+ *  LES TROIS CHAMPS DU LOT D SONT FACULTATIFS, et la spec disait « requis ».
+ *  C'est une correction, pas un oubli : les profils déjà écrits ne les ont pas,
+ *  et une ligne reçue d'un appareil resté en arrière ne les aura pas davantage —
+ *  la synchronisation transporte l'entité telle quelle, sans valeur par défaut.
+ *  Les déclarer requis mentirait au compilateur. L'absence est défaite en un
+ *  seul endroit, `profilChamps()` dans `lib/domain/profil.ts`, jamais dans une
+ *  vue. Même piège, même remède qu'au lot B (`ProjectTask.subItems`). */
 export interface Profile {
   id: string;
   name: string;
@@ -233,6 +241,18 @@ export interface Profile {
   /** teinte OKLCH, 0–360 ; le prototype pioche dans 188, 214, 266, 318, 158, 32 */
   hue: number;
   role: number;
+  /** Fonction LIBRE, saisie par l'utilisateur — lot D. `role: number` reste :
+   *  c'est une clé persistée, et le CLAUDE.md § 1 interdit de la renommer.
+   *  Les deux coexistent donc : l'un choisit dans un catalogue traduit, l'autre
+   *  écrit ce qu'il veut. */
+  metier?: string;
+  /** Adresse électronique — lot D. Champ LIBRE et LOCAL : jamais transmis à
+   *  quiconque, jamais utilisé pour identifier, jamais vérifié. */
+  email?: string;
+  /** Photo, dataURL JPEG ≤ 256 px de côté et ≤ 64 Ko, réduite sur l'appareil.
+   *  Voir `lib/domain/profil.ts` pour la limite et `lib/features/profil/photo.ts`
+   *  pour la réduction. */
+  photo?: string;
   since: DateKey;
   createdAt: string;
   updatedAt: string;

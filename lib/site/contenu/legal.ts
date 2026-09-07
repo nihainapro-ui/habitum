@@ -30,7 +30,7 @@ import type { Bloc, ParLangue } from './types';
  * opposable qui nomme le mauvais hébergeur est un problème, pas une coquille.
  */
 
-const DATE_MAJ = '2026-08-15';
+const DATE_MAJ = '2026-09-07';
 
 /** Date affichée, dans la langue de la page. */
 export const dateLongue = (iso: string, langue: LangueSite): string => {
@@ -94,7 +94,7 @@ const SYNC_FR: readonly Bloc[] = [
     x: [
       'Le relais ne voit ni vos habitudes, ni vos notes, ni vos horaires : il ne voit que du chiffré, un identifiant d’espace dérivé de votre code, et une date de modification.',
       'Cet identifiant d’espace n’est rattaché à aucun compte ni à aucune identité. Il est dérivé du code par une fonction à sens unique : il ne permet pas de remonter au code, ni à vous.',
-      'Aucune adresse électronique, aucun nom, aucun profil n’est transmis, parce qu’il n’en existe aucun dans le produit.',
+      'Le relais ne reçoit ni nom, ni adresse électronique, ni profil en clair. Depuis septembre 2026, le profil local peut porter une adresse électronique, un intitulé de poste et une photo : ils voyagent chiffrés avec le reste, comme vos habitudes, et le relais ne peut pas plus les lire. Il n’existe aucun compte auquel les rattacher, et rien de tout cela n’est demandé pour appairer deux appareils.',
       'Vous pouvez désappairer un appareil à tout moment depuis les réglages. Il cesse alors d’envoyer et de recevoir, et les données déjà présentes sur lui restent : désappairer n’efface rien.',
       'Synchroniser n’est pas sauvegarder. Ce que vous supprimez sur un appareil est supprimé sur tous : l’export reste votre seule copie de secours.',
     ],
@@ -116,7 +116,7 @@ const SYNC_EN: readonly Bloc[] = [
     x: [
       'The relay sees neither your habits, nor your notes, nor your schedule: it sees ciphertext, a space identifier derived from your code, and a modification date.',
       'That space identifier is tied to no account and no identity. It is derived from the code by a one-way function: it leads back neither to the code nor to you.',
-      'No email address, no name and no profile is transmitted, because none exists in the product.',
+      'The relay receives no name, no email address and no profile in the clear. Since September 2026 the local profile may carry an email address, a job title and a photo: they travel encrypted with everything else, just like your habits, and the relay can read them no better. There is no account to attach them to, and none of it is required to pair two devices.',
       'You can unpair a device at any time from the settings. It then stops sending and receiving, and the data already on it stays: unpairing erases nothing.',
       'Sync is not backup. Whatever you delete on one device is deleted on all of them: export remains your only safety copy.',
     ],
@@ -131,12 +131,12 @@ const confidentialiteFr: readonly Bloc[] = [
   { t: 'h2', x: 'Ce qui est collecté' },
   {
     t: 'p',
-    x: 'Rien. Aucune inscription n’est demandée, aucune adresse électronique n’est saisie, aucun identifiant n’est attribué. Tant que la synchronisation n’est pas activée, l’application ne transmet vos données à aucun destinataire : les pages sont statiques et le traitement se fait entièrement dans votre navigateur. Si vous appairez deux appareils, ce qui transite est chiffré sur l’appareil avant de partir — la section consacrée à la synchronisation le détaille.',
+    x: 'Rien. Aucune inscription n’est demandée, aucune adresse électronique ne vous est réclamée, aucun identifiant n’est attribué. Le profil comporte depuis septembre 2026 des champs facultatifs — adresse électronique, poste, photo : ils s’affichent sur votre écran, ils n’identifient personne, et ils restent sur votre appareil comme le reste. Tant que la synchronisation n’est pas activée, l’application ne transmet vos données à aucun destinataire : les pages sont statiques et le traitement se fait entièrement dans votre navigateur. Si vous appairez deux appareils, ce qui transite est chiffré sur l’appareil avant de partir — la section consacrée à la synchronisation le détaille.',
   },
   { t: 'h2', x: 'Où vivent vos données' },
   {
     t: 'p',
-    x: 'Vos habitudes, tâches, objectifs, notes, sessions de minuteur et préférences sont écrites dans le stockage local de votre navigateur — la base IndexedDB de l’appareil que vous utilisez. Elles ne sont pas chiffrées : quiconque a accès à votre session sur cet appareil y a accès. Sur un poste partagé, un profil de navigateur distinct est la seule protection réellement efficace.',
+    x: 'Vos habitudes, tâches, objectifs, notes, sessions de minuteur, votre profil — photo comprise — et vos préférences sont écrits dans le stockage local de votre navigateur — la base IndexedDB de l’appareil que vous utilisez. Elles ne sont pas chiffrées : quiconque a accès à votre session sur cet appareil y a accès. Sur un poste partagé, un profil de navigateur distinct est la seule protection réellement efficace.',
   },
   {
     t: 'ul',
@@ -145,6 +145,7 @@ const confidentialiteFr: readonly Bloc[] = [
       'Vous pouvez tout supprimer depuis les réglages, en un geste, sans délai et sans confirmation par courriel.',
       'Vider les données de site de votre navigateur efface également tout, définitivement. C’est la contrepartie du stockage local, et elle est réelle.',
       'Une copie de secours est prise automatiquement avant chaque import et avant chaque réinitialisation. Elle reste elle aussi sur votre appareil.',
+      'Le verrou biométrique facultatif masque l’écran à l’ouverture ; il ne chiffre rien. Les données restent lisibles dans le stockage du navigateur pour qui a cet appareil et sait où regarder — l’application le dit là où le verrou s’active.',
     ],
   },
   ...(syncDisponible() ? SYNC_FR : []),
@@ -195,12 +196,12 @@ const confidentialiteEn: readonly Bloc[] = [
   { t: 'h2', x: 'What is collected' },
   {
     t: 'p',
-    x: 'Nothing. No sign-up is required, no email address is entered, no identifier is assigned. As long as sync is off, the app transmits your data to no recipient: the pages are static and all processing happens inside your browser. If you pair two devices, whatever travels is encrypted on the device before it leaves — the section on sync spells this out.',
+    x: 'Nothing. No sign-up is required, no email address is ever asked of you, no identifier is assigned. Since September 2026 the profile has optional fields — email address, job title, photo: they show on your screen, they identify nobody, and they stay on your device like everything else. As long as sync is off, the app transmits your data to no recipient: the pages are static and all processing happens inside your browser. If you pair two devices, whatever travels is encrypted on the device before it leaves — the section on sync spells this out.',
   },
   { t: 'h2', x: 'Where your data lives' },
   {
     t: 'p',
-    x: 'Your habits, tasks, goals, notes, timer sessions and preferences are written to your browser’s local storage — the IndexedDB database of the device you are using. They are not encrypted: anyone with access to your session on that device has access to them. On a shared machine, a separate browser profile is the only genuinely effective protection.',
+    x: 'Your habits, tasks, goals, notes, timer sessions, your profile — photo included — and your preferences are written to your browser’s local storage — the IndexedDB database of the device you are using. They are not encrypted: anyone with access to your session on that device has access to them. On a shared machine, a separate browser profile is the only genuinely effective protection.',
   },
   {
     t: 'ul',
@@ -209,6 +210,7 @@ const confidentialiteEn: readonly Bloc[] = [
       'You can delete everything from the settings, in one gesture, with no delay and no email confirmation.',
       'Clearing your browser’s site data also erases everything, permanently. That is the price of local storage, and it is real.',
       'A backup is taken automatically before every import and every reset. It too stays on your device.',
+      'The optional biometric lock hides the screen when the app opens; it encrypts nothing. The data stays readable in the browser’s storage for anyone holding this device who knows where to look — the app says so where the lock is turned on.',
     ],
   },
   ...(syncDisponible() ? SYNC_EN : []),

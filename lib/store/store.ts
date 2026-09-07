@@ -39,6 +39,11 @@ const donneesInitiales: DataState = {
   lastExport: null,
   nagDismissed: false,
   backupAt: null,
+  /* `null` tant que la base n'a pas parlé — donc AUCUN rideau avant lecture.
+     Le rideau ne s'affiche qu'une fois `meta` lu (`data-hydrated`), sinon la
+     première peinture de chaque ouverture montrerait un verrou à des gens qui
+     n'en ont pas posé. */
+  lockCredentialId: null,
   /* `true` tant que la base n'a pas parlé : on ne renvoie personne vers
      l'accueil sur la foi d'un état non lu. La lecture, elle, dit la vérité. */
   onboarded: true,
