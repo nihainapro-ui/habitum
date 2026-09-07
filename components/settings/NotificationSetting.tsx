@@ -6,9 +6,11 @@ import { Switch } from '@/components/ui';
 import { useSettings, useStore } from '@/lib/store';
 import {
   demanderNotifications,
-  etatNotifications,
+  estNatif,
+  etatNotificationsAsync,
   type EtatNotifications,
 } from '@/lib/features/reminders';
+import { NotificationDetails } from './NotificationDetails';
 
 /* Interrupteur des notifications — tâche 5.2.
 
@@ -38,9 +40,19 @@ export function NotificationSetting() {
      d'hydratation, aucune demande au passage). */
   const [etat, setEtat] = useState<EtatNotifications>('default');
   const [refuse, setRefuse] = useState(false);
+  /* Dans l'APK, la permission est celle d'Android et les rappels sont
+     programmés par le système : la phrase « tant qu'Habitum est ouvert »
+     y serait FAUSSE. Elle devient donc conditionnelle — la taire sur PC
+     serait promettre ce que le produit ne tient pas, l'afficher dans l'APK
+     ferait douter d'un rappel qui, lui, va bien arriver. */
+  const [natif, setNatif] = useState(false);
 
   useEffect(() => {
-    setEtat(etatNotifications());
+    void etatNotificationsAsync().then(setEtat);
+    /* Posé après le montage, comme l'état de permission : le rendu statique
+       est celui du navigateur, et le corriger à l'hydratation évite toute
+       divergence. */
+    setNatif(estNatif());
   }, []);
 
   const basculer = async (voulu: boolean) => {
@@ -71,7 +83,9 @@ export function NotificationSetting() {
     ? ts('notifUnsupported')
     : etat === 'denied'
       ? ts('notifDenied')
-      : ts('notifOnlyOpen');
+      : natif
+        ? ts('notifNative')
+        : ts('notifOnlyOpen');
 
   return (
     <div className="flex flex-col">
@@ -87,6 +101,9 @@ export function NotificationSetting() {
           {ts('notifDenied')}
         </p>
       ) : null}
+
+      {/* Les réglages fins n'apparaissent QUE si quelque chose peut sonner. */}
+      {settings.notifications && etat === 'granted' ? <NotificationDetails /> : null}
     </div>
   );
 }

@@ -1,5 +1,96 @@
 # Journal des modifications
 
+## 2026-09-07 (suite) — Les rappels sortent des habitudes, et du navigateur
+
+Jusqu'ici, seules les **habitudes** savaient rappeler, et seulement tant
+qu'Habitum était ouvert. Les tâches portaient une heure, les étapes de projet
+et les objectifs une échéance : personne ne les annonçait. Ils sonnent
+désormais — et sur Android, **application fermée**.
+
+**Cinq sources, un seul calcul.** `lib/domain/notifications.ts` rend les
+rappels à venir, habitudes, tâches, étapes Work, objectifs et récapitulatif du
+jour confondus. Il ne connaît ni le navigateur, ni Android, **ni aucune
+langue** : il rend une clé de libellé et ses paramètres, la couche d'envoi
+traduit. Un texte français écrit dans le domaine aurait été un texte qu'aucune
+traduction ne rattrape.
+
+**Les trois règles des rappels d'habitude s'étendent aux quatre autres
+sources** : ce qui n'est pas prévu ce jour-là ne sonne pas, ce qui est fait ne
+sonne pas, le passé ne se rattrape pas. Une tâche récurrente cochée aujourd'hui
+ne sonne plus aujourd'hui, mais sonnera demain — c'est l'occurrence qui fait
+foi, jamais le `done` de l'entité, et les confondre aurait coupé tous les
+rappels d'une série cochée une fois.
+
+**Le récapitulatif ne sonne pas les jours vides.** « Rien à faire aujourd'hui »
+envoyé chaque matin est le plus sûr moyen de faire couper les notifications.
+
+**Une seule couture entre le calcul et l'envoi**, et deux canaux derrière :
+les minuteries pour le navigateur, `@capacitor/local-notifications` (MIT,
+gratuit, aucun serveur) pour l'APK. Le canal natif annule tout et reprogramme
+sept jours à chaque changement : **aucun état à réconcilier**. Un planificateur
+qui tiendrait son propre journal finirait par diverger de la base, et un rappel
+fantôme — pour une tâche supprimée hier — fait douter de tous les autres.
+L'identifiant numérique qu'Android réclame est dérivé de la clé du rappel, pas
+tiré au hasard : sans cela, les annulations rateraient leur cible.
+
+**Web Push a été écarté, et pas pour son prix.** C'est le seul moyen de sonner
+sur PC application fermée, et il suppose un serveur qui sache ce que vous avez
+à faire aujourd'hui. Le relais de synchronisation, lui, ne lit rien ; celui-là
+devrait lire. `TimestampTrigger` a été écarté aussi : gratuit, sans serveur,
+mais non standard, cinq ans d'essai d'origine chez Chrome seul, spécification à
+l'arrêt — le genre de branche qu'on retrouve morte deux ans plus tard sans que
+personne s'en aperçoive, puisqu'elle échoue en silence. La couture rend ce
+renoncement gratuit : le jour où il se standardise, c'est une troisième
+implémentation de trois membres.
+
+**Sur PC, on ne ment toujours pas** : « les rappels arrivent tant qu'Habitum
+est ouvert » reste affiché — mais seulement là où c'est vrai. Dans l'APK, la
+phrase devient « le système les programme, ils arrivent même Habitum fermé ».
+
+**Onze réglages neufs**, tous dans la clé `settings` existante et donc
+synchronisés entre appareils : un interrupteur par source, un préavis pour les
+tâches, l'heure des échéances (Work et objectifs portent un jour, pas une
+heure), le récapitulatif et son heure, les heures silencieuses — **à cheval sur
+minuit**, parce que 22 h → 7 h est le réglage qu'on pose neuf fois sur dix et
+celui qu'une comparaison naïve rate entièrement. Ils n'apparaissent que si
+l'interrupteur maître est allumé : douze lignes au-dessus d'une permission
+jamais demandée donneraient à croire que quelque chose est armé.
+
+**Le filet de mesure ne voyait pas ce bloc, et il s'y est repris.** Ces
+réglages n'existent que permission accordée ET interrupteur allumé — donc hors
+de portée du balayage des vues. Un `Segmented` de quatre libellés en toutes
+lettres (« 30 minutes avant ») débordait à 390 px, jusqu'à rendre le réglage
+inatteignable au doigt ; il est devenu un menu déroulant. Et les 3 px du
+bouton-interrupteur, que le rembourrage du panneau absorbe partout ailleurs,
+remontaient ici d'un niveau de trop. Les cinq paliers sont désormais mesurés
+sur ce bloc, tout déplié.
+
+**Ce que les tests NE couvrent pas, écrit noir sur blanc** : le canal natif est
+éprouvé par un double — on vérifie ce qui est demandé au plugin, faute de
+pouvoir vérifier ce qu'Android en fait. Aucun navigateur d'intégration n'a de
+capteur ni d'`AlarmManager`. Ce qui sonne réellement se vérifie à la main, sur
+l'APK.
+
+`scheduler.ts` devient `canal-minuteries.ts` : le planificateur d'habitudes
+porte les mêmes garanties — dédoublonnage, borne de 24 minuteries — sur les
+cinq sources au lieu d'une.
+
+**Un interrupteur mort, hérité du lot D, corrigé au passage.** Tant que la
+plateforme n'avait pas répondu sur la disponibilité du verrou biométrique, son
+interrupteur restait actionnable : le clic partait vers une plateforme dont on
+ignorait encore les capacités, échouait, et n'affichait qu'un message d'erreur.
+Deux dixièmes de seconde d'interrupteur mort restent un interrupteur mort (G3).
+Le contrôle générique de la tâche 5.4 l'attrapait par intermittence — c'est lui
+qui l'a levé.
+
+**Ce même contrôle générique a dû changer de méthode.** Il balayait les
+interrupteurs par indice ; or la page des réglages en fait désormais apparaître
+d'autres quand on allume le maître, si bien qu'un `nth(i)` lu avant le clic ne
+désignait plus le même bouton après. Il marque maintenant chaque interrupteur
+traité dans le DOM et prend toujours le premier non marqué : déterministe, et
+il couvre en prime les interrupteurs qui n'existent qu'une fois un autre
+allumé — ce qu'un balayage à indices ne pouvait pas faire.
+
 ## 2026-09-07 — Lot D : le profil devient local, et l'écran peut se fermer
 
 Le profil porte désormais une **photo**, une **adresse électronique** et un

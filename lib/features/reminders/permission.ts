@@ -1,3 +1,5 @@
+import { estNatif } from './canal-natif';
+
 /* Permission de notifier — tâche 5.2.
 
    UNE RÈGLE : la permission se demande AU CLIC SUR L'INTERRUPTEUR, jamais au
@@ -12,10 +14,53 @@
 
 export type EtatNotifications = 'unsupported' | 'default' | 'granted' | 'denied';
 
-/** État courant, sans rien demander. */
+/* DEUX PLATEFORMES, UNE SEULE QUESTION. Dans l'APK, la permission n'est pas
+   celle du navigateur mais celle d'Android (`POST_NOTIFICATIONS`, API 33+), et
+   c'est le plugin qui la porte. La règle, elle, ne change pas d'un pouce : on
+   demande AU CLIC, jamais au chargement.
+
+   Le plugin est chargé paresseusement — le paquet web n'a rien à faire de code
+   Android, et `estNatif()` répond faux partout ailleurs, PWA installée
+   comprise : celle-ci a l'apparence d'une application, pas le pont natif. */
+
+async function pluginPermissions(): Promise<{
+  checkPermissions(): Promise<{ display: string }>;
+  requestPermissions(): Promise<{ display: string }>;
+} | null> {
+  try {
+    const { LocalNotifications } = await import('@capacitor/local-notifications');
+    return LocalNotifications as unknown as {
+      checkPermissions(): Promise<{ display: string }>;
+      requestPermissions(): Promise<{ display: string }>;
+    };
+  } catch {
+    return null;
+  }
+}
+
+/** Traduit la réponse du plugin dans notre vocabulaire à quatre états. */
+const versEtat = (display: string): EtatNotifications =>
+  display === 'granted' ? 'granted' : display === 'denied' ? 'denied' : 'default';
+
+/** État courant, sans rien demander. Chemin NAVIGATEUR uniquement — le natif
+ *  répond par promesse, d'où `etatNotificationsAsync()`. */
 export function etatNotifications(): EtatNotifications {
   if (typeof window === 'undefined' || !('Notification' in window)) return 'unsupported';
   return Notification.permission;
+}
+
+/** État courant, quelle que soit la plateforme. */
+export async function etatNotificationsAsync(): Promise<EtatNotifications> {
+  if (estNatif()) {
+    const plugin = await pluginPermissions();
+    if (!plugin) return 'unsupported';
+    try {
+      return versEtat((await plugin.checkPermissions()).display);
+    } catch {
+      return 'unsupported';
+    }
+  }
+  return etatNotifications();
 }
 
 /** Demande la permission. À n'appeler que depuis un geste explicite.
@@ -23,6 +68,16 @@ export function etatNotifications(): EtatNotifications {
  *  Les vieux Safari rendent la réponse par rappel plutôt que par promesse :
  *  `await` couvre les deux, une promesse déjà résolue restant une promesse. */
 export async function demanderNotifications(): Promise<EtatNotifications> {
+  if (estNatif()) {
+    const plugin = await pluginPermissions();
+    if (!plugin) return 'unsupported';
+    try {
+      return versEtat((await plugin.requestPermissions()).display);
+    } catch {
+      return 'denied';
+    }
+  }
+
   if (etatNotifications() === 'unsupported') return 'unsupported';
   try {
     return await Notification.requestPermission();

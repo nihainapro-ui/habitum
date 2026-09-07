@@ -61,8 +61,16 @@ export function LockSetting() {
   /* Indisponible : l'interrupteur est désactivé et explique. On ne le cache pas
      comme le curseur réticule sur écran tactile — celui-là n'a aucun sens sur
      l'appareil, celui-ci en aurait un si l'appareil savait faire. Le taire
-     laisserait chercher un réglage annoncé ailleurs. */
-  const indisponible = possible === false && !actif;
+     laisserait chercher un réglage annoncé ailleurs.
+
+     `possible === null` — la plateforme n'a pas encore répondu — compte comme
+     indisponible, et c'est une CORRECTION. Le laisser actionnable pendant
+     l'attente donnait un interrupteur qui se clique et ne fait rien : la
+     demande partait vers une plateforme dont on ignorait encore les capacités,
+     échouait, et n'affichait qu'un message d'erreur. Un interrupteur mort
+     pendant deux dixièmes de seconde reste un interrupteur mort (G3), et le
+     contrôle générique de la tâche 5.4 l'attrapait par intermittence. */
+  const indisponible = !actif && possible !== true;
 
   return (
     <div className="flex flex-col gap-2">

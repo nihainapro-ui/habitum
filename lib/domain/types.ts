@@ -270,15 +270,46 @@ export interface ShoppingItem {
   deletedAt?: string;
 }
 
+/** Préavis d'une tâche, en minutes. Déclaré UNE FOIS : un menu qui recopierait
+ *  la liste finirait par proposer une valeur que le calcul ne connaît pas. */
+export const PREAVIS_NOTIF = [0, 5, 10, 30] as const;
+export type PreavisNotif = (typeof PREAVIS_NOTIF)[number];
+
 export interface Settings {
   lang: 'fr' | 'en';
   theme: 'neural' | 'plasma' | 'clinical';
   weekStart: WeekStart;
+  /** Interrupteur MAÎTRE des rappels. Rien ne sonne sans lui, quelles que
+   *  soient les sources allumées en dessous. */
   notifications: boolean;
   sound: boolean;
   vibrate: boolean;
   confetti: boolean;
   customCursor: boolean;
+
+  /* --- Rappels, spec du 2026-09-07 ---------------------------------------
+     AJOUT NON DESTRUCTIF : la clé persistée `settings` ne change pas de nom,
+     et `DEFAULT_SETTINGS` comble ces champs à l'hydratation pour toute base
+     écrite avant ce lot. Ils suivent donc la synchronisation, comme le thème :
+     un rappel réglé sur le téléphone vaut aussi sur l'ordinateur. */
+
+  /** Une source, un interrupteur. */
+  notifHabits: boolean;
+  notifTasks: boolean;
+  notifWork: boolean;
+  notifGoals: boolean;
+  /** Préavis des tâches, en minutes avant l'heure dite. */
+  notifLead: PreavisNotif;
+  /** Heure des échéances Work et objectifs — elles n'en portent pas. */
+  notifDayHour: string;
+  /** Récapitulatif du jour, et son heure. */
+  notifDigest: boolean;
+  notifDigestHour: string;
+  /** Heures silencieuses. La fenêtre peut chevaucher minuit (22:00 → 07:00) :
+   *  c'est le réglage le plus courant, et celui qu'une comparaison naïve rate. */
+  notifQuiet: boolean;
+  notifQuietFrom: string;
+  notifQuietTo: string;
 }
 
 /** Journal indexé en mémoire : Map('habitId|YYYY-MM-DD' -> valeur). */

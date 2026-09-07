@@ -29,30 +29,72 @@ for (const route of ROUTES_AVEC_INTERRUPTEURS) {
   }) => {
     await ouvrirVierge(page, route);
 
-    const interrupteurs = page.getByRole('switch');
-    const total = await interrupteurs.count();
-    expect(total, `aucun interrupteur trouvé sur ${route}`).toBeGreaterThan(0);
+    /* ITÉRATION PAR NOM, ET NON PAR INDICE — et ce n'est pas une coquetterie.
+       Depuis les rappels (spec du 2026-09-07), la liste des interrupteurs de
+       cette page CHANGE quand on la manœuvre : allumer l'interrupteur maître
+       des notifications fait apparaître les réglages par source. Un
+       `nth(i)` lu avant le clic et réévalué après ne désignait alors plus le
+       même bouton, et le contrôle échouait sur un interrupteur qu'il n'avait
+       jamais touché.
 
-    for (let i = 0; i < total; i++) {
-      const inter = interrupteurs.nth(i);
-      const nom =
-        (await inter.textContent()) ?? (await inter.getAttribute('aria-label')) ?? `#${i}`;
+       On relit donc la liste à chaque tour et on traite le premier nom encore
+       inconnu. Deux effets, tous deux voulus : le contrôle redevient
+       déterministe, et il COUVRE les interrupteurs qui n'apparaissent qu'une
+       fois un autre allumé — ce qu'un balayage à indices ne pouvait pas faire.
 
-      if (await inter.isDisabled()) {
-        const raison = await inter.getAttribute('aria-describedby');
+       Corollaire assumé : on ne remet plus les interrupteurs comme on les a
+       trouvés. Rien n'en dépend — la page est neuve à chaque test — et les
+       remettre refermerait justement ce qu'on veut visiter. */
+    /* Chaque interrupteur traité est MARQUÉ dans le DOM, et on prend toujours
+       le premier qui ne l'est pas. Ni indice — la liste bouge —, ni nom :
+       le nom accessible d'un interrupteur est composé par le navigateur à
+       partir de son libellé ET de sa raison, avec une espace que
+       `textContent` ne met pas. Un marqueur ne se compose pas et ne se
+       normalise pas ; il désigne exactement l'élément qu'on vient de voir.
+
+       On travaille sur une POIGNÉE (`elementHandle`) et non sur un localisateur :
+       cliquer peut faire apparaître d'autres interrupteurs, et un localisateur
+       réévalué après coup ne désignerait plus le même bouton — c'est
+       exactement ce qui faisait échouer ce contrôle sur un interrupteur qu'il
+       n'avait jamais touché. */
+    const MARQUE = 'data-vu-par-le-test';
+    let manoeuvres = 0;
+
+    /* Borne de sûreté : si un jour un interrupteur en faisait apparaître un
+       autre indéfiniment, le test doit échouer, pas tourner sans fin. */
+    for (let garde = 0; garde < 40; garde++) {
+      /* `count()` d'abord, et c'est ce qui manquait : `elementHandle()` ATTEND
+         puis LÈVE quand plus rien ne correspond — il ne rend pas `null`. La
+         fin normale de la boucle, c'est-à-dire « tous les interrupteurs ont
+         été vus », se signalait donc par un échec du test. */
+      const restants = page.locator(`[role="switch"]:not([${MARQUE}])`);
+      if ((await restants.count()) === 0) break;
+
+      const poignee = await restants.first().elementHandle();
+      if (!poignee) break;
+
+      const nom = await poignee.evaluate(
+        (el) => (el.closest('label') as HTMLElement | null)?.innerText?.trim() ?? '?',
+      );
+
+      if (await poignee.isDisabled()) {
+        const raison = await poignee.getAttribute('aria-describedby');
         expect(raison, `interrupteur désactivé sans raison annoncée : ${nom}`).toBeTruthy();
         await expect(page.locator(`[id="${raison}"]`)).toBeVisible();
         await expect(page.locator(`[id="${raison}"]`)).not.toBeEmpty();
-        continue;
+      } else {
+        const avant = await poignee.getAttribute('aria-checked');
+        await poignee.click();
+        await expect
+          .poll(() => poignee.getAttribute('aria-checked'), { message: `sans effet : ${nom}` })
+          .not.toBe(avant);
+        manoeuvres++;
       }
 
-      const avant = await inter.getAttribute('aria-checked');
-      await inter.click();
-      await expect(inter, `sans effet : ${nom}`).not.toHaveAttribute('aria-checked', avant ?? '');
-
-      /* Remis comme on l'a trouvé : le test suivant part du même état. */
-      await inter.click();
+      await poignee.evaluate((el, m) => el.setAttribute(m, 'true'), MARQUE);
     }
+
+    expect(manoeuvres, 'aucun interrupteur manœuvré').toBeGreaterThan(0);
   });
 }
 

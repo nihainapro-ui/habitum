@@ -94,6 +94,20 @@ export const DEFAULT_SETTINGS: Settings = {
   vibrate: false,
   confetti: true,
   customCursor: false,
+  /* Les sources sont allumées, mais l'interrupteur maître est éteint : rien ne
+     sonne tant que la permission n'a pas été demandée AU CLIC. Régler chaque
+     source avant d'avoir dit oui une première fois n'aurait aucun sens. */
+  notifHabits: true,
+  notifTasks: true,
+  notifWork: true,
+  notifGoals: true,
+  notifLead: 0,
+  notifDayHour: '09:00',
+  notifDigest: false,
+  notifDigestHour: '08:00',
+  notifQuiet: false,
+  notifQuietFrom: '22:00',
+  notifQuietTo: '07:00',
 };
 
 export async function isDemo(): Promise<boolean> {
