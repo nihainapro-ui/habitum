@@ -79,10 +79,19 @@ export function NotificationSetting() {
   };
 
   const indisponible = etat === 'unsupported';
+  /* CHAQUE MESSAGE DIT QUI A REFUSÉ, et dans l'APK ce n'est pas le navigateur.
+     « Votre navigateur a refusé » envoyait chercher un réglage de navigateur
+     sur un téléphone qui n'en montre aucun — le message était faux, et il
+     cachait la seule action qui débloque : les réglages système de
+     l'application. */
   const raison = indisponible
-    ? ts('notifUnsupported')
+    ? natif
+      ? ts('notifUnsupportedNative')
+      : ts('notifUnsupported')
     : etat === 'denied'
-      ? ts('notifDenied')
+      ? natif
+        ? ts('notifDeniedNative')
+        : ts('notifDenied')
       : natif
         ? ts('notifNative')
         : ts('notifOnlyOpen');
@@ -98,7 +107,7 @@ export function NotificationSetting() {
       />
       {refuse ? (
         <p role="alert" className="m-0 pb-1.5 text-[11.5px]" style={{ color: 'var(--bad)' }}>
-          {ts('notifDenied')}
+          {natif ? ts('notifDeniedNative') : ts('notifDenied')}
         </p>
       ) : null}
 

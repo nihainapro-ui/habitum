@@ -1,3 +1,4 @@
+import { logError } from '@/lib/logger';
 import { estNatif } from './canal-natif';
 
 /* Permission de notifier — tâche 5.2.
@@ -23,17 +24,23 @@ export type EtatNotifications = 'unsupported' | 'default' | 'granted' | 'denied'
    Android, et `estNatif()` répond faux partout ailleurs, PWA installée
    comprise : celle-ci a l'apparence d'une application, pas le pont natif. */
 
-async function pluginPermissions(): Promise<{
+interface PluginPermissions {
   checkPermissions(): Promise<{ display: string }>;
   requestPermissions(): Promise<{ display: string }>;
-} | null> {
+}
+
+async function pluginPermissions(): Promise<PluginPermissions | null> {
   try {
     const { LocalNotifications } = await import('@capacitor/local-notifications');
-    return LocalNotifications as unknown as {
-      checkPermissions(): Promise<{ display: string }>;
-      requestPermissions(): Promise<{ display: string }>;
-    };
-  } catch {
+    return LocalNotifications as unknown as PluginPermissions;
+  } catch (e) {
+    /* JOURNALISÉ, PLUS AVALÉ. Un import de plugin qui échoue dans l'APK rendait
+       « ce navigateur ne sait pas afficher de notification » — un message faux,
+       qui plus est contredit par la ligne du dessus. La cause réelle part
+       désormais dans le journal d'erreurs LOCAL, que l'écran des réglages
+       affiche : c'est le seul moyen de diagnostiquer un téléphone qu'on n'a pas
+       en main, et il ne fait sortir aucune donnée. */
+    void logError('notifications', e);
     return null;
   }
 }
@@ -72,8 +79,16 @@ export async function demanderNotifications(): Promise<EtatNotifications> {
     const plugin = await pluginPermissions();
     if (!plugin) return 'unsupported';
     try {
-      return versEtat((await plugin.requestPermissions()).display);
-    } catch {
+      const demande = versEtat((await plugin.requestPermissions()).display);
+      if (demande === 'granted') return demande;
+      /* SECONDE LECTURE, et elle n'est pas superflue : plusieurs surcouches
+         Android répondent `prompt` à la demande alors que la permission vient
+         d'être accordée — la boîte de dialogue est fermée par le système, pas
+         par l'utilisateur. Sans cette relecture, l'interrupteur retombait à
+         l'arrêt juste après qu'on ait dit oui. */
+      return versEtat((await plugin.checkPermissions()).display);
+    } catch (e) {
+      void logError('notifications', e);
       return 'denied';
     }
   }

@@ -1,5 +1,28 @@
 # Journal des modifications
 
+## 2026-09-07 (suite 2) — Le refus d'Android ne se déguisait plus en refus du navigateur
+
+Sur l'APK, l'interrupteur des notifications ne s'allumait pas, et l'écran
+n'aidait pas : en cas d'échec il affichait « **votre navigateur** a refusé les
+notifications, elles se réautorisent dans ses réglages de site » — une phrase
+écrite pour un navigateur, servie sur un téléphone qui n'en montre aucun. Elle
+envoyait chercher un réglage qui n'existe pas, et cachait le seul geste qui
+débloque : les réglages système de l'application. Chaque message dit désormais
+QUI a refusé, et où cela se défait.
+
+**Une seconde lecture de la permission, et elle n'est pas superflue.** Plusieurs
+surcouches Android répondent `prompt` à la demande alors que la permission vient
+d'être accordée — la boîte de dialogue ayant été fermée par le système, pas par
+l'utilisateur. L'interrupteur retombait alors à l'arrêt juste après qu'on ait dit
+oui. On relit l'état après la demande plutôt que de croire ce qu'elle rend.
+
+**Ce qui échoue est désormais JOURNALISÉ**, dans le journal d'erreurs local que
+les réglages affichent déjà. Un import de plugin qui échouait rendait
+silencieusement « ce navigateur ne sait pas afficher de notification » — faux, et
+contredit par la ligne juste au-dessus. Diagnostiquer un téléphone qu'on n'a pas
+en main n'était possible par aucun moyen ; ça l'est maintenant, sans qu'une seule
+donnée sorte de l'appareil.
+
 ## 2026-09-07 (suite) — Les rappels sortent des habitudes, et du navigateur
 
 Jusqu'ici, seules les **habitudes** savaient rappeler, et seulement tant
