@@ -1,5 +1,32 @@
 # Journal des modifications
 
+## 2026-09-07 (suite 3) — L'interrupteur porte l'intention, pas la permission
+
+Sur un vrai téléphone, l'interrupteur des notifications ne s'allumait pas — et
+rien à l'écran ne disait pourquoi. La cause tient en une ligne de code :
+l'interrupteur valait `settings.notifications && etat === 'granted'`. Il ne
+pouvait donc s'allumer que si le système avait déjà dit oui. Or **Android
+mémorise un refus** : passé deux refus, il répond « non » sans plus jamais
+afficher de boîte de dialogue. Le réglage devenait définitivement
+inactionnable, et taper dessus ne produisait rien du tout.
+
+**L'interrupteur dit maintenant ce que l'utilisateur VEUT ; une ligne dit ce que
+le système FAIT**, et où cela se défait — les réglages système de l'application
+sur Android, les réglages de site dans un navigateur. Un bouton « redemander la
+permission » permet de la relire après l'avoir accordée ailleurs, sans
+rechargement et sans réinstallation.
+
+Ce n'est pas un interrupteur qui ment (G3) : rien ne sonne sans permission —
+`useReminders` la vérifie avant d'armer quoi que ce soit — et l'écran l'écrit.
+Le contrôle e2e qui exigeait le retour à l'arrêt en cas de refus a changé avec
+la doctrine, et dit pourquoi.
+
+**La demande part désormais DANS le geste**, l'écriture du réglage vient après.
+Plusieurs navigateurs exigent que `requestPermission()` soit appelé pendant
+l'activation de l'utilisateur : l'écriture en base intercalée — quelques
+millisecondes — suffisait à la perdre, et la demande était refusée sans qu'aucune
+boîte de dialogue n'apparaisse.
+
 ## 2026-09-07 (suite 2) — Le refus d'Android ne se déguisait plus en refus du navigateur
 
 Sur l'APK, l'interrupteur des notifications ne s'allumait pas, et l'écran

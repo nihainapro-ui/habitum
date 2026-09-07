@@ -72,7 +72,7 @@ test('elle est demandée au clic sur l’interrupteur, et une fois accordée il 
   await expect(interrupteur(page)).toHaveAttribute('aria-checked', 'true');
 });
 
-test('un refus ramène l’interrupteur à l’arrêt, et dit que c’est le navigateur', async ({
+test('un refus LAISSE l’interrupteur allumé, et dit que c’est le système qui bloque', async ({
   page,
 }) => {
   await poserNotification(page, 'denied');
@@ -80,10 +80,45 @@ test('un refus ramène l’interrupteur à l’arrêt, et dit que c’est le nav
 
   await interrupteur(page).click();
 
-  await expect(interrupteur(page)).toHaveAttribute('aria-checked', 'false');
+  /* CHANGEMENT DE DOCTRINE, payé sur un vrai téléphone. L'interrupteur
+     revenait à l'arrêt en cas de refus ; or Android mémorise un refus et
+     répond « non » sans plus jamais afficher de dialogue — le réglage
+     devenait définitivement inactionnable, et l'écran n'en disait rien.
+
+     L'interrupteur porte donc l'INTENTION, et une ligne dit ce que le système
+     fait. Ce n'est pas un interrupteur mort (G3) : rien ne sonne sans
+     permission (`useReminders` la vérifie), et l'écran écrit où cela se
+     défait. */
+  await expect(interrupteur(page)).toHaveAttribute('aria-checked', 'true');
   /* `p[role=alert]` et non `getByRole('alert')` : Next pose son propre
      annonceur de route, lui aussi `role="alert"`. */
-  await expect(page.locator('p[role="alert"]')).toContainText(/navigateur/i);
+  await expect(page.locator('p[role="alert"]')).toContainText(/permission/i);
+  await expect(page.getByRole('button', { name: 'Redemander la permission' })).toBeVisible();
+});
+
+test('la permission accordée après coup se relit sans rien réinstaller', async ({ page }) => {
+  /* Le cas du téléphone : refus mémorisé, permission accordée dans les
+     réglages système, puis retour dans l'application. Sans ce bouton, il
+     fallait deviner qu'un rechargement suffisait. */
+  await poserNotification(page, 'denied');
+  await ouvrirVierge(page, '/app/settings');
+  await interrupteur(page).click();
+
+  /* La permission change SUR LA PAGE COURANTE : `addInitScript` ne vaut que
+     pour la navigation suivante, or tout l'intérêt est de ne pas recharger. */
+  await page.evaluate(() => {
+    Object.defineProperty(window.Notification, 'permission', {
+      configurable: true,
+      get: () => 'granted',
+    });
+    Object.defineProperty(window.Notification, 'requestPermission', {
+      configurable: true,
+      value: async () => 'granted' as NotificationPermission,
+    });
+  });
+  await page.getByRole('button', { name: 'Redemander la permission' }).click();
+
+  await expect(page.locator('p[role="alert"]')).toHaveCount(0);
 });
 
 test('un navigateur sans API n’affiche pas un interrupteur inopérant', async ({ page }) => {
@@ -107,12 +142,12 @@ test('un navigateur sans API n’affiche pas un interrupteur inopérant', async 
 
 const details = (page: Page) => page.locator('[data-notif-details]');
 
-test('les réglages fins n’apparaissent pas tant que rien ne peut sonner', async ({ page }) => {
+test('les réglages fins n’apparaissent pas tant que rien n’est demandé', async ({ page }) => {
   await poserNotification(page, 'granted');
   await ouvrirVierge(page, '/app/settings');
 
-  /* Douze lignes de réglage au-dessus d'une permission jamais demandée
-     donneraient à croire que quelque chose est armé. */
+  /* Douze lignes de réglage au-dessus d'un interrupteur éteint donneraient à
+     croire que quelque chose est armé. */
   await expect(details(page)).toHaveCount(0);
 
   await interrupteur(page).click();
