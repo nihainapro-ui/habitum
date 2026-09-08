@@ -1,5 +1,40 @@
 # Journal des modifications
 
+## 2026-09-08 (suite 3) — Mon minuteur coupait la parole à Android
+
+Le journal d'écran, ajouté la veille pour cette raison exacte, a livré le fait
+en quatre lignes : « Réglages système : ouverts », puis « Essai : programmation
+demandée… », puis cinq secondes plus tard « Échec : aucune réponse du système ».
+
+Le code Kotlin du plugin explique tout :
+
+```kotlin
+fun schedule(call: PluginCall) {
+    if (shouldRequestNotificationPermission()) {
+        requestPermissionForAlias(LOCAL_NOTIFICATIONS, call, "scheduleAfterPermission")
+```
+
+Sans permission accordée, `schedule()` **ne programme pas** : il met l'appel en
+attente et demande la permission. L'appel ne répond donc qu'une fois
+l'utilisateur ayant répondu — et je l'avais borné à cinq secondes. **L'écran
+affichait « aucune réponse du système » pendant que le système attendait la
+sienne**, accusant la plateforme d'un silence dont nous étions seuls
+responsables. Pire : le message d'échec s'affichait probablement PAR-DESSUS la
+boîte de dialogue qu'il fallait justement lire.
+
+**Deux délais désormais, et non un.** Cinq secondes pour ce qui ne fait que lire
+l'état du système ; **une minute** pour ce qui peut poser une question à
+l'utilisateur — c'est lui qui décide du temps qu'il y passe.
+
+**L'essai demande la permission LUI-MÊME, avant de programmer**, et l'annonce.
+Laisser `schedule()` la demander en sous-main donnait un bouton qui semblait ne
+pas répondre alors qu'une boîte de dialogue attendait derrière.
+
+**Le bouton dit ce qu'il attend** : « Répondez à Android… » sur l'appareil,
+« En cours… » dans un navigateur, où il n'y a rien à quoi répondre. Et son
+libellé dit l'action, pas la répétition : « Autoriser les notifications » tant
+que rien n'est accordé.
+
 ## 2026-09-08 (suite 2) — Des boutons qui répondent, et un journal qui dit pourquoi
 
 « On ne peut pas cliquer sur les lignes grises. » Les boutons répondaient — ils

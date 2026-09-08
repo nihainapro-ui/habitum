@@ -8,6 +8,7 @@ import {
   alarmesExactes,
   avecDelai,
   creerCanalNatif,
+  DELAI_DIALOGUE,
   demanderAlarmesExactes,
   demanderNotifications,
   estNatif,
@@ -147,6 +148,12 @@ export function NotificationSetting() {
   };
 
   /** Le message d'une erreur, tel quel — c'est lui qui vaut quelque chose. */
+  /* Ce que dit un bouton pendant qu'il travaille. Sur l'APK, l'attente est
+     celle d'une question posée à l'utilisateur par Android — le dire évite de
+     chercher la réponse dans l'application. Dans un navigateur, il n'y a rien
+     à quoi répondre : l'appel est simplement en cours. */
+  const libelleAttente = () => (natif ? ts('notifWaiting') : ts('notifBusy'));
+
   const raisonDe = (e: unknown): string =>
     e instanceof Error && e.name === 'DelaiDepasse'
       ? ts('notifDiagTimeout')
@@ -178,10 +185,27 @@ export function NotificationSetting() {
     setEnCours('essai');
     tracer(ts('notifDiagTest'));
     try {
+      /* LA PERMISSION D'ABORD, EXPLICITEMENT. Sans elle, `schedule()` ne
+         programme rien : le plugin met l'appel en attente et demande la
+         permission lui-même (son code Kotlin le dit). L'essai semblait alors
+         « ne pas répondre » alors qu'une boîte de dialogue attendait. On la
+         demande donc nous-mêmes, on l'annonce, et on ne programme qu'après. */
+      if (natif && etat !== 'granted') {
+        tracer(ts('notifDiagAsk'));
+        const accord = await avecDelai(demanderNotifications(), DELAI_DIALOGUE);
+        setEtat(accord);
+        tracer(ts('notifDiagAnswer', { v: accord }));
+        if (accord !== 'granted') {
+          setEssai('echec');
+          return;
+        }
+      }
+
       await avecDelai(
         natif
           ? programmerEssai(ts('notifTestTitle'), ts('notifTestBody'))
           : notifier(ts('notifTestTitle'), ts('notifTestBody'), 'essai').then(() => undefined),
+        DELAI_DIALOGUE,
       );
       setEssai('ok');
       tracer(ts('notifDiagTestOk'));
@@ -207,7 +231,9 @@ export function NotificationSetting() {
     setEnCours('perm');
     tracer(ts('notifDiagAsk'));
     try {
-      const reponse = await avecDelai(demanderNotifications());
+      /* Délai LONG : cet appel ouvre une boîte de dialogue Android, et c'est
+         l'utilisateur qui décide du temps qu'il y passe. */
+      const reponse = await avecDelai(demanderNotifications(), DELAI_DIALOGUE);
       setEtat(reponse);
       tracer(ts('notifDiagAnswer', { v: reponse }));
       setExactes(await alarmesExactes());
@@ -275,7 +301,7 @@ export function NotificationSetting() {
                 className="rounded-btn cursor-pointer border px-3 py-1.5 text-[11.5px] font-semibold"
                 style={{ borderColor: 'var(--acc2)', color: 'var(--acc2)' }}
               >
-                {enCours === 'reglages' ? ts('notifBusy') : ts('notifOpenSettings')}
+                {enCours === 'reglages' ? libelleAttente() : ts('notifOpenSettings')}
               </button>
             ) : null}
             <button
@@ -288,7 +314,10 @@ export function NotificationSetting() {
               className="rounded-btn cursor-pointer border px-3 py-1.5 text-[11.5px] font-semibold"
               style={{ borderColor: 'var(--acc)', color: 'var(--acc)' }}
             >
-              {enCours === 'perm' ? ts('notifBusy') : ts('notifRetry')}
+              {/* « Autoriser » et non « redemander » : ce bloc ne s'affiche que
+                  si la permission MANQUE, et le mot juste est celui de l'action
+                  qu'Android va proposer. */}
+              {enCours === 'perm' ? libelleAttente() : ts('notifAllow')}
             </button>
           </div>
 
@@ -342,7 +371,7 @@ export function NotificationSetting() {
             className="rounded-btn cursor-pointer border px-3 py-1.5 text-[11.5px] font-semibold"
             style={{ borderColor: 'var(--acc)', color: 'var(--acc)' }}
           >
-            {enCours === 'essai' ? ts('notifBusy') : ts('notifTest')}
+            {enCours === 'essai' ? libelleAttente() : ts('notifTest')}
           </button>
           {essai === 'ok' ? (
             <p role="status" className="m-0 text-[11.5px]" style={{ color: 'var(--acc2)' }}>

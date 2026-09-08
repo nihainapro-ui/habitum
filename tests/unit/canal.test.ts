@@ -5,7 +5,11 @@ import {
   oublierRappelsEnvoyes,
 } from '@/lib/features/reminders/canal-minuteries';
 import {
+  avecDelai,
   CANAL_RAPPELS,
+  DELAI_DIALOGUE,
+  DELAI_LECTURE,
+  DelaiDepasse,
   ESSAI_ID,
   HORIZON_NATIF_JOURS,
   creerCanalNatif,
@@ -365,5 +369,35 @@ describe('canal des minuteries — le comptage', () => {
 
     await canal.arreter();
     expect(await canal.compterProgrammes()).toBe(0);
+  });
+});
+
+describe('avecDelai — deux délais, et pas un', () => {
+  it('laisse une MINUTE à ce qui pose une question à l’utilisateur', () => {
+    /* LE DÉFAUT PAYÉ SUR UN VRAI TÉLÉPHONE. Le code Kotlin du plugin est
+       explicite : sans permission accordée, `schedule()` ne programme pas — il
+       met l'appel en attente et demande la permission. L'appel ne répond donc
+       qu'après la réponse de l'utilisateur. Borné à cinq secondes, l'écran
+       affichait « aucune réponse du système » PENDANT que le système attendait
+       la sienne : le message accusait la plateforme d'un silence dont nous
+       étions seuls responsables. */
+    expect(DELAI_DIALOGUE).toBeGreaterThanOrEqual(60_000);
+    expect(DELAI_LECTURE).toBeLessThan(DELAI_DIALOGUE);
+  });
+
+  it('rend la valeur quand la promesse répond à temps', async () => {
+    vi.useRealTimers();
+    await expect(avecDelai(Promise.resolve('ok'), 1000)).resolves.toBe('ok');
+  });
+
+  it('lève `DelaiDepasse` — et pas une autre erreur — quand rien ne vient', async () => {
+    vi.useRealTimers();
+    const jamais = new Promise<void>(() => {});
+    await expect(avecDelai(jamais, 20)).rejects.toBeInstanceOf(DelaiDepasse);
+  });
+
+  it('laisse passer l’erreur d’origine plutôt que de la déguiser en délai', async () => {
+    vi.useRealTimers();
+    await expect(avecDelai(Promise.reject(new Error('refus')), 1000)).rejects.toThrow('refus');
   });
 });

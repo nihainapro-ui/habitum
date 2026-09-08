@@ -93,7 +93,7 @@ test('un refus LAISSE l’interrupteur allumé, et dit que c’est le système q
   /* `p[role=alert]` et non `getByRole('alert')` : Next pose son propre
      annonceur de route, lui aussi `role="alert"`. */
   await expect(page.locator('p[role="alert"]')).toContainText(/permission/i);
-  await expect(page.getByRole('button', { name: 'Redemander la permission' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Autoriser les notifications' })).toBeVisible();
 });
 
 test('la permission accordée après coup se relit sans rien réinstaller', async ({ page }) => {
@@ -116,7 +116,7 @@ test('la permission accordée après coup se relit sans rien réinstaller', asyn
       value: async () => 'granted' as NotificationPermission,
     });
   });
-  await page.getByRole('button', { name: 'Redemander la permission' }).click();
+  await page.getByRole('button', { name: 'Autoriser les notifications' }).click();
 
   await expect(page.locator('p[role="alert"]')).toHaveCount(0);
 });
@@ -282,7 +282,7 @@ test('chaque geste laisse une trace lisible à l’écran', async ({ page }) => 
 
   await expect(page.locator('[data-journal-notif]')).toHaveCount(0);
 
-  await page.getByRole('button', { name: 'Redemander la permission' }).click();
+  await page.getByRole('button', { name: 'Autoriser les notifications' }).click();
 
   const lignes = page.locator('[data-journal-notif] li');
   await expect(lignes.first()).toContainText('denied');

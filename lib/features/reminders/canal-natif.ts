@@ -81,13 +81,30 @@ export class DelaiDepasse extends Error {
   }
 }
 
+/** Délai d'un appel qui ne fait que LIRE l'état du système. Personne n'est
+ *  consulté : cinq secondes sont déjà généreuses. */
+export const DELAI_LECTURE = 5000;
+
+/** Délai d'un appel qui peut OUVRIR UNE BOÎTE DE DIALOGUE.
+ *
+ *  UNE MINUTE, ET CE CHIFFRE EST UNE CORRECTION PAYÉE SUR UN VRAI TÉLÉPHONE.
+ *  Le code Kotlin du plugin est explicite : quand la permission n'est pas
+ *  accordée, `schedule()` ne programme pas — il MET L'APPEL EN ATTENTE et
+ *  demande la permission (`requestPermissionForAlias`). L'appel ne répond donc
+ *  qu'une fois l'utilisateur ayant répondu au système. Le borner à cinq
+ *  secondes affichait « aucune réponse du système » PENDANT que le système
+ *  attendait la sienne — le message accusait la plateforme d'un silence dont
+ *  nous étions seuls responsables. */
+export const DELAI_DIALOGUE = 60_000;
+
 /** Borne un appel natif dans le temps.
  *
  *  POURQUOI : un appel au pont Capacitor qui ne répond jamais est
  *  indiscernable, à l'écran, d'un bouton qui ne fonctionne pas — on tape, rien
- *  ne se passe, et rien ne dira jamais pourquoi. Cinq secondes plus tard, on
- *  préfère une erreur affichée à une attente muette. */
-export function avecDelai<T>(promesse: Promise<T>, ms = 5000): Promise<T> {
+ *  ne se passe, et rien ne dira jamais pourquoi. Mieux vaut une erreur affichée
+ *  qu'une attente muette — mais pas au prix d'interrompre une question posée à
+ *  l'utilisateur : d'où DEUX délais, et non un seul. */
+export function avecDelai<T>(promesse: Promise<T>, ms: number = DELAI_LECTURE): Promise<T> {
   return new Promise<T>((resoudre, rejeter) => {
     const minuterie = setTimeout(() => rejeter(new DelaiDepasse()), ms);
     promesse.then(
