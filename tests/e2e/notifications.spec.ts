@@ -243,3 +243,29 @@ test.describe('les réglages fins ne débordent nulle part', () => {
     });
   }
 });
+
+test('le bouton d’essai envoie vraiment une notification', async ({ page }) => {
+  /* LE SEUL CONTRÔLE QUI DIT « LA CHAÎNE MARCHE ». Sur un navigateur, l'essai
+     passe par `notifier()` — le même chemin que les vrais rappels. Sur l'APK il
+     passe par le canal natif, et là aucun test d'intégration ne peut le suivre :
+     c'est justement pour cela que ce bouton existe dans le produit. */
+  await poserNotification(page, 'granted');
+  await ouvrirVierge(page, '/app/settings');
+  await interrupteur(page).click();
+
+  await page.getByRole('button', { name: 'Tester dans 10 secondes' }).click();
+
+  await expect(page.getByText('Rappel d’essai programmé.', { exact: false })).toBeVisible();
+  await expect
+    .poll(() => page.evaluate(() => (window as unknown as { __notifs?: number }).__notifs ?? 0))
+    .toBeGreaterThan(0);
+});
+
+test('la permission manquante affiche l’état brut du système', async ({ page }) => {
+  /* « Ça ne marche pas » ne se corrige pas ; « denied » se corrige. */
+  await poserNotification(page, 'denied');
+  await ouvrirVierge(page, '/app/settings');
+  await interrupteur(page).click();
+
+  await expect(page.getByText('État rapporté par le système : denied.')).toBeVisible();
+});

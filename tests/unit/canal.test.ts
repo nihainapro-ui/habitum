@@ -5,8 +5,11 @@ import {
   oublierRappelsEnvoyes,
 } from '@/lib/features/reminders/canal-minuteries';
 import {
+  CANAL_RAPPELS,
+  ESSAI_ID,
   HORIZON_NATIF_JOURS,
   creerCanalNatif,
+  programmerEssai,
   type PluginNotifications,
 } from '@/lib/features/reminders/canal-natif';
 import { identifiantNotification } from '@/lib/domain';
@@ -110,14 +113,30 @@ describe('canal des minuteries', () => {
    nous. Ce qu'Android en fait se vérifie à la main, sur l'APK. */
 
 const doublePlugin = () => {
-  const programmees: { id: number; title: string; body: string; at: Date }[] = [];
+  const programmees: {
+    id: number;
+    title: string;
+    body: string;
+    at: Date;
+    channelId?: string | undefined;
+  }[] = [];
   const annulees: number[] = [];
   let enAttente: { id: number }[] = [];
 
   const plugin: PluginNotifications = {
     async schedule({ notifications }) {
       for (const n of notifications) {
-        programmees.push({ id: n.id, title: n.title, body: n.body, at: n.schedule.at });
+        /* `channelId` est RECOPIÉ ici, et ce n'est pas un détail de double :
+           l'oublier faisait passer le test « range chaque rappel dans ce
+           canal » pour un défaut du code alors que c'était le double qui
+           jetait l'information. */
+        programmees.push({
+          id: n.id,
+          title: n.title,
+          body: n.body,
+          at: n.schedule.at,
+          channelId: n.channelId,
+        });
       }
       enAttente = [...enAttente, ...notifications.map((n) => ({ id: n.id }))];
     },
@@ -204,5 +223,69 @@ describe('canal natif', () => {
 
     expect(d.annulees).toHaveLength(1);
     expect(d.programmees).toHaveLength(1);
+  });
+});
+
+/* --- Ce que l'APK ajoute autour du canal --------------------------------- */
+
+const doubleComplet = () => {
+  const base = doublePlugin();
+  const canaux: { id: string; importance: number }[] = [];
+  const plugin: PluginNotifications = {
+    ...base.plugin,
+    async createChannel(c) {
+      canaux.push({ id: c.id, importance: c.importance });
+    },
+  };
+  return { ...base, plugin, canaux };
+};
+
+describe('canal Android et rappel d’essai', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(MERCREDI);
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('déclare un canal d’importance MAXIMALE avant de programmer', async () => {
+    /* Sans canal déclaré, le plugin en crée un d'importance moyenne : la
+       notification arrive sans bandeau ni son. Un rappel muet qui attend le
+       déverrouillage n'est pas un rappel. */
+    const d = doubleComplet();
+    await creerCanalNatif(async () => d.plugin).programmer([rappel('13:30')]);
+
+    expect(d.canaux).toHaveLength(1);
+    expect(d.canaux[0]!.id).toBe(CANAL_RAPPELS);
+    expect(d.canaux[0]!.importance).toBe(5);
+  });
+
+  it('range chaque rappel DANS ce canal — le déclarer sans l’employer ne sert à rien', async () => {
+    const d = doubleComplet();
+    await creerCanalNatif(async () => d.plugin).programmer([rappel('13:30')]);
+    expect(d.programmees[0]!.channelId).toBe(CANAL_RAPPELS);
+  });
+
+  it('programme l’essai dans dix secondes', async () => {
+    const d = doubleComplet();
+    await programmerEssai('Habitum', 'ça marche', 10, async () => d.plugin);
+
+    expect(d.programmees).toHaveLength(1);
+    expect(d.programmees[0]!.id).toBe(ESSAI_ID);
+    expect(d.programmees[0]!.at.getTime()).toBe(MERCREDI.getTime() + 10_000);
+  });
+
+  it('N’ANNULE PAS l’essai en reprogrammant', async () => {
+    /* Le cas vécu : on lance l'essai, on coche une tâche pendant les dix
+       secondes d'attente, la reprogrammation emporte l'essai — et on en conclut
+       que rien ne marche. */
+    const d = doubleComplet();
+    await programmerEssai('Habitum', 'ça marche', 10, async () => d.plugin);
+    await creerCanalNatif(async () => d.plugin).programmer([rappel('13:30')]);
+
+    expect(d.annulees).not.toContain(ESSAI_ID);
+    expect(d.programmees.some((p) => p.id === ESSAI_ID)).toBe(true);
   });
 });

@@ -1,5 +1,43 @@
 # Journal des modifications
 
+## 2026-09-08 — Emmener plutôt que renvoyer, et se tester
+
+Le rappel de 10 h 25 n'a pas sonné, et l'écran disait déjà pourquoi : « Android
+n'a pas encore accordé la permission ». Rien n'était armé, et c'est le
+comportement voulu — un rappel qu'on promet sans permission serait un mensonge.
+Restait le vrai problème : **l'utilisateur ne pouvait rien y faire depuis
+l'application**.
+
+**Un bouton ouvre désormais l'écran de notifications d'Habitum dans les réglages
+d'Android.** Trente lignes de Java dans `packaging/android` — le plugin officiel
+sait ouvrir l'écran des alarmes exactes, pas celui-là. Dire « allez dans les
+réglages d'Android » sans y emmener, c'est envoyer chercher dans une
+arborescence qui change à chaque surcouche constructeur. Repli sur la fiche de
+l'application là où cet écran n'existe pas ; et si rien ne s'ouvre, l'écran le
+dit plutôt que de laisser attendre.
+
+**Un rappel d'essai part dans dix secondes.** C'est la seule preuve que la
+chaîne complète fonctionne sur CET appareil — permission, canal, alarme exacte,
+veille — et aucune suite de tests ne peut la donner : aucun navigateur
+d'intégration n'a d'`AlarmManager`. L'essai emprunte le MÊME chemin que les
+vrais rappels ; un test qui aurait sa propre voie ne prouverait que lui-même. Il
+est aussi épargné par les reprogrammations : cocher une tâche pendant les dix
+secondes d'attente l'aurait annulé, et on en aurait conclu que rien ne marche.
+
+**L'état brut du système est affiché**, mot pour mot. « Ça ne marche pas » ne se
+corrige pas ; « denied » se corrige.
+
+**Les alarmes exactes sont vérifiées et réclamables.** Refusées — c'est le
+défaut sur Android 12+ pour beaucoup d'applications — le système regroupe les
+rappels avec d'autres réveils : le vôtre peut arriver une demi-heure plus tard,
+ce qui pour un rappel revient à ne pas arriver. L'écran le dit et ouvre le
+réglage.
+
+**Un canal Android d'importance maximale** est déclaré pour les rappels. Sans
+canal à nous, le plugin en crée un d'importance moyenne : la notification arrive
+sans bandeau ni son, et attend qu'on déverrouille l'écran. Un rappel muet n'est
+pas un rappel.
+
 ## 2026-09-07 (suite 4) — Un rappel par tâche, par habitude, par étape, par sous-tâche
 
 Les réglages généraux disaient QUAND sonner ; ils ne disaient pas quoi taire.

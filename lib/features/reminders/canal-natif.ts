@@ -33,18 +33,45 @@ export const HORIZON_NATIF_JOURS = 7;
 /** Le strict nécessaire du plugin — trois méthodes sur les quinze qu'il
  *  expose. Déclarer ce qu'on utilise plutôt qu'importer son type entier rend
  *  le double de test trivial, et dit au lecteur l'étendue exacte du couplage. */
+export interface NotificationNative {
+  id: number;
+  title: string;
+  body: string;
+  schedule: { at: Date; allowWhileIdle: boolean };
+  channelId?: string;
+}
+
 export interface PluginNotifications {
-  schedule(options: {
-    notifications: {
-      id: number;
-      title: string;
-      body: string;
-      schedule: { at: Date; allowWhileIdle: boolean };
-    }[];
-  }): Promise<unknown>;
+  schedule(options: { notifications: NotificationNative[] }): Promise<unknown>;
   getPending(): Promise<{ notifications: { id: number }[] }>;
   cancel(options: { notifications: { id: number }[] }): Promise<unknown>;
+  /** Canal Android. Facultatif dans ce type : un double de test n'a pas à le
+   *  simuler pour éprouver la programmation. */
+  createChannel?(channel: {
+    id: string;
+    name: string;
+    description?: string;
+    importance: 1 | 2 | 3 | 4 | 5;
+  }): Promise<unknown>;
+  /** Alarmes EXACTES (Android 12+). Sans elles, le système est libre de
+   *  regrouper le rappel avec d'autres réveils — il peut arriver avec une
+   *  demi-heure de retard, ce qui, pour un rappel, revient à ne pas arriver. */
+  checkExactNotificationSetting?(): Promise<{ exact_alarm: string }>;
+  changeExactNotificationSetting?(): Promise<{ exact_alarm: string }>;
 }
+
+/** Canal de notification Android.
+ *
+ *  POURQUOI UN CANAL À NOUS : depuis Android 8, tout se range dans un canal, et
+ *  c'est le canal — pas l'application — qui porte l'importance, le son et la
+ *  vibration. Sans canal déclaré, le plugin en crée un par défaut d'importance
+ *  MOYENNE : la notification arrive, mais sans bandeau ni son. Un rappel muet
+ *  qui attend qu'on déverrouille l'écran n'est pas un rappel.
+ *
+ *  L'identifiant est FIGÉ : Android ne laisse pas modifier un canal existant
+ *  (l'utilisateur seul le peut). Le renommer en créerait un second, et les
+ *  réglages faits sur le premier seraient perdus sans un mot. */
+export const CANAL_RAPPELS = 'habitum-rappels';
 
 /** Charge le vrai plugin. Séparé pour que le canal reste testable sans lui. */
 async function pluginReel(): Promise<PluginNotifications> {
@@ -68,6 +95,86 @@ export function estNatif(): boolean {
   return pont?.isNativePlatform?.() === true;
 }
 
+/** État des alarmes exactes : `granted`, `denied`, ou `inconnu` quand la
+ *  plateforme ne connaît pas la question (Android 11 et avant, où elles sont
+ *  acquises d'office). */
+export type EtatAlarmes = 'granted' | 'denied' | 'inconnu';
+
+export async function alarmesExactes(
+  charger: () => Promise<PluginNotifications> = pluginReel,
+): Promise<EtatAlarmes> {
+  if (!estNatif()) return 'inconnu';
+  try {
+    const plugin = await charger();
+    if (!plugin.checkExactNotificationSetting) return 'inconnu';
+    const { exact_alarm } = await plugin.checkExactNotificationSetting();
+    return exact_alarm === 'granted' ? 'granted' : exact_alarm === 'denied' ? 'denied' : 'inconnu';
+  } catch {
+    return 'inconnu';
+  }
+}
+
+/** Ouvre l'écran système des alarmes exactes. C'est le plugin officiel qui le
+ *  fait — nous n'avons pas à le réécrire. */
+export async function demanderAlarmesExactes(
+  charger: () => Promise<PluginNotifications> = pluginReel,
+): Promise<EtatAlarmes> {
+  if (!estNatif()) return 'inconnu';
+  try {
+    const plugin = await charger();
+    if (!plugin.changeExactNotificationSetting) return 'inconnu';
+    const { exact_alarm } = await plugin.changeExactNotificationSetting();
+    return exact_alarm === 'granted' ? 'granted' : exact_alarm === 'denied' ? 'denied' : 'inconnu';
+  } catch {
+    return 'inconnu';
+  }
+}
+
+/** Déclare le canal. Idempotent côté Android : le redéclarer ne réécrit rien
+ *  si l'identifiant existe déjà. */
+async function declarerCanal(plugin: PluginNotifications, nom: string): Promise<void> {
+  try {
+    await plugin.createChannel?.({ id: CANAL_RAPPELS, name: nom, importance: 5 });
+  } catch {
+    /* Un canal qui ne se crée pas ne doit pas empêcher de programmer : la
+       notification retombera sur le canal par défaut du plugin. */
+  }
+}
+
+/** Programme UN rappel d'essai, dans quelques secondes.
+ *
+ *  Ce n'est pas un gadget : c'est le seul moyen, pour l'utilisateur comme pour
+ *  nous, de savoir si la chaîne complète fonctionne sur SON téléphone —
+ *  permission, canal, alarme exacte, veille. Un test qui part dans dix secondes
+ *  et qu'on attend écran éteint prouve ce qu'aucune suite de tests ne peut
+ *  prouver ici. */
+export async function programmerEssai(
+  titre: string,
+  corps: string,
+  dansSecondes = 10,
+  charger: () => Promise<PluginNotifications> = pluginReel,
+): Promise<void> {
+  const plugin = await charger();
+  await declarerCanal(plugin, titre);
+  await plugin.schedule({
+    notifications: [
+      {
+        id: ESSAI_ID,
+        title: titre,
+        body: corps,
+        schedule: { at: new Date(Date.now() + dansSecondes * 1000), allowWhileIdle: true },
+        channelId: CANAL_RAPPELS,
+      },
+    ],
+  });
+}
+
+/** Identifiant du rappel d'essai. FIXE et hors de portée de
+ *  `identifiantNotification` (qui rend un entier de 31 bits) : un essai ne doit
+ *  jamais entrer en collision avec un vrai rappel, ni être annulé par la
+ *  reprogrammation qui suit. */
+export const ESSAI_ID = 1;
+
 export function creerCanalNatif(charger: () => Promise<PluginNotifications> = pluginReel): Canal {
   /* Tout annuler, y compris ce qu'une VERSION PRÉCÉDENTE de l'application
      aurait posé : on demande au système ce qui est en attente plutôt que de se
@@ -75,7 +182,12 @@ export function creerCanalNatif(charger: () => Promise<PluginNotifications> = pl
   const arreter = async (): Promise<void> => {
     const plugin = await charger();
     const { notifications } = await plugin.getPending();
-    if (notifications.length > 0) await plugin.cancel({ notifications });
+    /* L'ESSAI EST ÉPARGNÉ. Il part dans dix secondes, et la moindre écriture
+       dans l'application déclenche une reprogrammation : sans cette exception,
+       cocher une tâche pendant l'attente annulerait le test qu'on est en train
+       de faire, et l'utilisateur en conclurait que rien ne marche. */
+    const aAnnuler = notifications.filter((n) => n.id !== ESSAI_ID);
+    if (aAnnuler.length > 0) await plugin.cancel({ notifications: aAnnuler });
   };
 
   return {
@@ -87,6 +199,7 @@ export function creerCanalNatif(charger: () => Promise<PluginNotifications> = pl
       if (rappels.length === 0) return;
 
       const plugin = await charger();
+      await declarerCanal(plugin, rappels[0]?.titre ?? CANAL_RAPPELS);
       const maintenant = Date.now();
       await plugin.schedule({
         notifications: rappels
@@ -103,6 +216,7 @@ export function creerCanalNatif(charger: () => Promise<PluginNotifications> = pl
                prochain réveil du téléphone — c'est-à-dire précisément dans le
                cas où il sert le plus, la nuit et l'appareil posé. */
             schedule: { at: new Date(r.at), allowWhileIdle: true },
+            channelId: CANAL_RAPPELS,
           })),
       });
     },
