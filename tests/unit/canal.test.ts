@@ -289,3 +289,81 @@ describe('canal Android et rappel d’essai', () => {
     expect(d.programmees.some((p) => p.id === ESSAI_ID)).toBe(true);
   });
 });
+
+describe('le canal natif NE DÉSARME PAS ce que le système détient', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(MERCREDI);
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('`arreter()` n’annule rien — LE DÉFAUT QUI EMPÊCHAIT TOUT RAPPEL', () => {
+    /* L'armement appelle `arreter()` au démontage et à chaque changement de
+       données. Sur les minuteries c'est juste — elles meurent avec la page. Sur
+       le canal natif, c'était effacer, en fermant Habitum, exactement ce qu'on
+       venait de programmer POUR quand Habitum serait fermé.
+
+       Ce test est la mémoire de ce défaut : si `arreter()` se remet un jour à
+       annuler, il tombe ici plutôt que sur le téléphone de quelqu'un. */
+    return (async () => {
+      const d = doubleComplet();
+      const canal = creerCanalNatif(async () => d.plugin);
+
+      await canal.programmer([rappel('13:30'), rappel('15:00')]);
+      const avant = d.programmees.length;
+
+      await canal.arreter();
+
+      expect(d.annulees).toEqual([]);
+      expect(await canal.compterProgrammes()).toBe(avant);
+    })();
+  });
+
+  it('mais la REPROGRAMMATION annule bien, elle', async () => {
+    /* L'annulation n'a pas disparu : elle a changé d'endroit. Elle a lieu là où
+       elle sert — juste avant de reposer la liste à jour. */
+    const d = doubleComplet();
+    const canal = creerCanalNatif(async () => d.plugin);
+
+    await canal.programmer([rappel('13:30'), rappel('15:00')]);
+    await canal.programmer([rappel('13:30')]);
+
+    expect(d.annulees.length).toBe(2);
+  });
+
+  it('compte ce que le système détient, l’essai mis à part', async () => {
+    const d = doubleComplet();
+    const canal = creerCanalNatif(async () => d.plugin);
+
+    await canal.programmer([rappel('13:30'), rappel('15:00')]);
+    await programmerEssai('Habitum', 'essai', 10, async () => d.plugin);
+
+    /* Deux vrais rappels : l'essai ne gonfle pas le compte, sinon la ligne
+       affichée dirait « 3 » là où l'utilisateur n'en a que deux. */
+    expect(await canal.compterProgrammes()).toBe(2);
+  });
+});
+
+describe('canal des minuteries — le comptage', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(MERCREDI);
+    oublierRappelsEnvoyes();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('compte les minuteries armées, et retombe à zéro à l’arrêt', async () => {
+    const canal = creerCanalMinuteries(() => {});
+    await canal.programmer([rappel('13:30'), rappel('15:00')]);
+    expect(await canal.compterProgrammes()).toBe(2);
+
+    await canal.arreter();
+    expect(await canal.compterProgrammes()).toBe(0);
+  });
+});

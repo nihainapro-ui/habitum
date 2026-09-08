@@ -621,6 +621,7 @@
     "notifQuietToT": "Until",
     "notifRemB": "It’s time.",
     "notifRetry": "Ask for permission again",
+    "notifScheduled": "Reminders held by the system: {n}.",
     "notifSrcGoals": "Goals",
     "notifSrcHabits": "Habits",
     "notifSrcT": "What may remind you",

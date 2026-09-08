@@ -1,5 +1,30 @@
 # Journal des modifications
 
+## 2026-09-08 (suite) — Fermer Habitum effaçait les rappels qu'il venait de poser
+
+**Le défaut qui empêchait TOUT rappel d'arriver, trouvé.** L'armement appelle
+`arreter()` sur son canal au démontage et à chaque changement de données. Sur le
+canal des minuteries, c'est juste : un `setTimeout` meurt avec la page de toute
+façon. Sur le canal natif, c'était désastreux — `arreter()` annulait toutes les
+alarmes détenues par Android. Autrement dit : **fermer Habitum effaçait
+précisément ce qu'on venait de programmer pour quand Habitum serait fermé.**
+
+L'annulation n'a pas disparu, elle a changé d'endroit : elle a lieu là où elle
+sert, juste avant de reposer la liste à jour, à l'intérieur de `programmer()`.
+Le canal natif n'annule plus rien au démontage, et un test le verrouille —
+éprouvé par mutation : remettre l'ancien comportement le fait tomber.
+
+**L'écran se relit tout seul au retour dans l'application.** Revenir des réglages
+d'Android, où l'on vient d'accorder la permission, laissait l'écran sur son état
+d'avant — message rouge compris. Il fallait taper « redemander la permission »
+pour voir la vérité, et rien ne le disait. La page se relit désormais dès qu'elle
+redevient visible : c'est exactement l'instant du retour.
+
+**Le nombre de rappels réellement détenus par le système est affiché.** C'est la
+ligne qui distingue « rien n'a sonné parce que rien n'était programmé » de « rien
+n'a sonné alors que trois rappels attendaient ». Deux pannes qui ne se corrigent
+pas au même endroit, et qu'on ne pouvait pas distinguer jusqu'ici.
+
 ## 2026-09-08 — Emmener plutôt que renvoyer, et se tester
 
 Le rappel de 10 h 25 n'a pas sonné, et l'écran disait déjà pourquoi : « Android

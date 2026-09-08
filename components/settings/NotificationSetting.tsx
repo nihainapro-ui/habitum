@@ -6,6 +6,7 @@ import { Switch } from '@/components/ui';
 import { useSettings, useStore } from '@/lib/store';
 import {
   alarmesExactes,
+  creerCanalNatif,
   demanderAlarmesExactes,
   demanderNotifications,
   estNatif,
@@ -62,6 +63,10 @@ export function NotificationSetting() {
   /* Ce que l'essai a donné. `null` = pas encore tenté. */
   const [essai, setEssai] = useState<'ok' | 'echec' | null>(null);
   const [ouvertureRatee, setOuvertureRatee] = useState(false);
+  /* Combien de rappels le SYSTÈME détient réellement. `null` = pas encore
+     demandé, ou navigateur (où la question n'a pas de sens : les minuteries
+     meurent avec la page). */
+  const [programmes, setProgrammes] = useState<number | null>(null);
 
   useEffect(() => {
     void etatNotificationsAsync().then(setEtat);
@@ -70,6 +75,24 @@ export function NotificationSetting() {
        divergence. */
     setNatif(estNatif());
     void alarmesExactes().then(setExactes);
+    if (estNatif()) void creerCanalNatif().compterProgrammes().then(setProgrammes);
+  }, []);
+
+  /* RELECTURE AU RETOUR DANS L'APPLICATION.
+     Sans elle, revenir des réglages d'Android — où l'on vient d'accorder la
+     permission — laissait l'écran sur son état d'avant, message rouge compris.
+     Il fallait alors taper « redemander la permission » pour voir la vérité,
+     et rien ne le disait. La page se relit désormais toute seule dès qu'elle
+     redevient visible : c'est exactement l'instant du retour. */
+  useEffect(() => {
+    const relire = () => {
+      if (document.visibilityState !== 'visible') return;
+      void etatNotificationsAsync().then(setEtat);
+      void alarmesExactes().then(setExactes);
+      if (estNatif()) void creerCanalNatif().compterProgrammes().then(setProgrammes);
+    };
+    document.addEventListener('visibilitychange', relire);
+    return () => document.removeEventListener('visibilitychange', relire);
   }, []);
 
   /* L'INTERRUPTEUR PORTE L'INTENTION, PAS LA PERMISSION — et c'est une
@@ -130,6 +153,8 @@ export function NotificationSetting() {
      réinstaller. */
   const redemander = async () => {
     setEtat(await demanderNotifications());
+    setExactes(await alarmesExactes());
+    if (estNatif()) setProgrammes(await creerCanalNatif().compterProgrammes());
   };
 
   /* Désactivé UNIQUEMENT là où rien ne pourra jamais marcher : un navigateur
@@ -249,6 +274,17 @@ export function NotificationSetting() {
           {essai === 'echec' ? (
             <p role="alert" className="m-0 text-[11.5px]" style={{ color: 'var(--bad)' }}>
               {ts('notifTestFailed')}
+            </p>
+          ) : null}
+
+          {/* CE QUE LE SYSTÈME DÉTIENT VRAIMENT. C'est la ligne qui distingue
+              « rien n'a sonné parce que rien n'était programmé » de « rien n'a
+              sonné alors que trois rappels attendaient » — deux pannes qui ne
+              se corrigent pas au même endroit, et qu'on ne pouvait pas
+              distinguer jusqu'ici. */}
+          {natif && programmes !== null ? (
+            <p className="m-0 font-mono text-[10.5px]" style={{ color: 'var(--mut)' }}>
+              {ts('notifScheduled', { n: programmes })}
             </p>
           ) : null}
         </div>

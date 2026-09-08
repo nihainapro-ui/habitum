@@ -621,6 +621,7 @@
     "notifQuietToT": "Jusqu’à",
     "notifRemB": "C’est l’heure.",
     "notifRetry": "Redemander la permission",
+    "notifScheduled": "Rappels détenus par le système : {n}.",
     "notifSrcGoals": "Objectifs",
     "notifSrcHabits": "Habitudes",
     "notifSrcT": "Ce qui peut vous rappeler",

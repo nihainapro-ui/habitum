@@ -176,10 +176,13 @@ export async function programmerEssai(
 export const ESSAI_ID = 1;
 
 export function creerCanalNatif(charger: () => Promise<PluginNotifications> = pluginReel): Canal {
-  /* Tout annuler, y compris ce qu'une VERSION PRÉCÉDENTE de l'application
-     aurait posé : on demande au système ce qui est en attente plutôt que de se
-     fier à ce qu'on croit avoir programmé. */
-  const arreter = async (): Promise<void> => {
+  /* Annule ce qui est en attente, y compris ce qu'une VERSION PRÉCÉDENTE de
+     l'application aurait posé : on demande au système ce qu'il détient plutôt
+     que de se fier à ce qu'on croit avoir programmé.
+
+     APPELÉ UNIQUEMENT DEPUIS `programmer()`, juste avant de reposer la liste à
+     jour. Surtout pas au démontage : voir `arreter` ci-dessous. */
+  const annulerTout = async (): Promise<void> => {
     const plugin = await charger();
     const { notifications } = await plugin.getPending();
     /* L'ESSAI EST ÉPARGNÉ. Il part dans dix secondes, et la moindre écriture
@@ -192,10 +195,26 @@ export function creerCanalNatif(charger: () => Promise<PluginNotifications> = pl
 
   return {
     horizonJours: HORIZON_NATIF_JOURS,
-    arreter,
+
+    /* NE FAIT RIEN, ET C'EST LA CORRECTION. Les alarmes appartiennent au
+       système : elles survivent à l'application, et c'est toute leur raison
+       d'être. Les annuler au démontage — ce que faisait la version précédente —
+       revenait à effacer, en fermant Habitum, précisément ce qu'on venait de
+       programmer pour quand Habitum serait fermé. */
+    async arreter() {},
+
+    async compterProgrammes() {
+      try {
+        const plugin = await charger();
+        const { notifications } = await plugin.getPending();
+        return notifications.filter((n) => n.id !== ESSAI_ID).length;
+      } catch {
+        return 0;
+      }
+    },
 
     async programmer(rappels) {
-      await arreter();
+      await annulerTout();
       if (rappels.length === 0) return;
 
       const plugin = await charger();

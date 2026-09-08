@@ -48,7 +48,15 @@ export function creerCanalMinuteries(envoyer: (r: RappelPret) => void): Canal {
 
   return {
     horizonJours: 1,
+
+    /* Ici, arrêter EST juste : un `setTimeout` meurt avec la page de toute
+       façon, et le laisser courir après un démontage ferait notifier depuis un
+       écran qui n'existe plus. */
     arreter,
+
+    async compterProgrammes() {
+      return minuteries.length;
+    },
 
     async programmer(rappels) {
       await arreter();

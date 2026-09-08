@@ -33,6 +33,25 @@ export interface Canal {
    *  rappel fantôme d'une tâche supprimée est pire que pas de rappel. */
   programmer(rappels: readonly RappelPret[]): Promise<void>;
 
-  /** Tout annuler. Appelé au démontage et avant toute reprogrammation. */
+  /** Relâche ce que CE PROCESSUS tient — et rien de plus.
+   *
+   *  LA NUANCE A COÛTÉ UN RAPPEL QUI N'EST JAMAIS ARRIVÉ. Cette méthode était
+   *  documentée « tout annuler », et le démontage l'appelait : sur le canal des
+   *  minuteries, c'est juste — un `setTimeout` meurt avec la page. Sur le canal
+   *  natif, c'était désastreux — les alarmes appartiennent au SYSTÈME, elles
+   *  survivent à l'application, et c'est même toute leur raison d'être. Les
+   *  annuler au démontage revenait à effacer, en fermant Habitum, exactement ce
+   *  qu'on venait de programmer pour quand Habitum serait fermé.
+   *
+   *  Le canal natif n'annule donc plus rien ici : il annule là où il faut, à
+   *  l'intérieur de `programmer()`, juste avant de reposer la liste à jour. */
   arreter(): Promise<void>;
+
+  /** Combien de rappels sont réellement programmés, vus du système.
+   *
+   *  Ce n'est pas un compteur de confort : c'est la seule chose qui distingue
+   *  « rien n'a sonné parce que rien n'était programmé » de « rien n'a sonné
+   *  alors que trois rappels attendaient ». Sans elle, l'utilisateur et le
+   *  développeur devinent chacun de leur côté. */
+  compterProgrammes(): Promise<number>;
 }
