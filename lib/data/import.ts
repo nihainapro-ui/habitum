@@ -17,12 +17,15 @@ import {
 } from './import.schema';
 import { addDays, dateKey, today } from '@/lib/domain';
 import type {
+  DateKey,
   Goal,
   Habit,
   LogEntry,
   Note,
+  RappelEntite,
   Session,
   ShoppingItem,
+  SousTache,
   Task,
   Project,
   ProjectTask,
@@ -109,6 +112,31 @@ const texte = (fr?: string, en?: string): string => (fr ?? '').trim() || (en ?? 
 
 const libelle = (b: Bilingue): string => (typeof b === 'string' ? b : texte(b.fr, b.en));
 
+/** Relit un sous-élément, RAPPEL COMPRIS. Miroir exact de `sousElement()` dans
+ *  `export.ts` — et c'est le couple qu'il faut regarder ensemble : un champ
+ *  écrit d'un côté sans être relu de l'autre disparaît à chaque aller-retour,
+ *  en silence. */
+const sousElement = (s: {
+  fr?: string | undefined;
+  en?: string | undefined;
+  done: boolean;
+  d?: string | undefined;
+  time?: string | undefined;
+  nt?: boolean | undefined;
+}): SousTache => ({
+  label: texte(s.fr, s.en),
+  done: s.done,
+  ...(s.d ? { date: s.d as DateKey } : {}),
+  ...(s.time ? { time: s.time } : {}),
+  ...(s.nt === false ? { notify: false } : {}),
+});
+
+/** Le rappel propre d'une entité. L'absence reste l'absence. */
+const rappelEntite = (e: { nt?: boolean | undefined; ra?: string | undefined }): RappelEntite => ({
+  ...(e.nt === false ? { notify: false } : {}),
+  ...(e.ra ? { remindAt: e.ra } : {}),
+});
+
 /** Valide un tableau d'entités, une par une. Chaque refus est reporté avec son
  *  identifiant : c'est ce qui rend la perte visible plutôt que silencieuse. */
 function parseAll<S extends z.ZodTypeAny>(
@@ -190,6 +218,7 @@ export async function importFromJson(input: unknown): Promise<ImportReport> {
     days: h.days,
     ...(h.n === undefined ? {} : { interval: h.n }),
     subItems: h.sub.map((s) => ({ label: libelle(s) })),
+    ...rappelEntite(h),
     reminders: h.rem,
     ...(h.start ? { start: h.start } : {}),
     ...(h.end ? { end: h.end } : {}),
@@ -213,7 +242,8 @@ export async function importFromJson(input: unknown): Promise<ImportReport> {
     duration: t.dur,
     priority: t.prio,
     done: t.done,
-    subTasks: t.sub.map((s) => ({ label: texte(s.fr, s.en), done: s.done })),
+    subTasks: t.sub.map(sousElement),
+    ...rappelEntite(t),
     note: t.note,
     ...(t.rep
       ? {
@@ -247,6 +277,7 @@ export async function importFromJson(input: unknown): Promise<ImportReport> {
     ...(o.start ? { start: o.start } : {}),
     ...(o.due ? { deadline: o.due } : {}),
     ...(o.cur === undefined ? {} : { current: o.cur }),
+    ...rappelEntite(o),
     createdAt: at,
     updatedAt: at,
   }));
@@ -307,7 +338,8 @@ export async function importFromJson(input: unknown): Promise<ImportReport> {
       deadline: t.deadline,
       status: t.status,
       note: t.note,
-      subItems: t.sub.map((s) => ({ label: texte(s.fr, s.en), done: s.done })),
+      subItems: t.sub.map(sousElement),
+      ...rappelEntite(t),
       createdAt: at,
       updatedAt: at,
     }));

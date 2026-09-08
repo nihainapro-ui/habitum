@@ -40,6 +40,21 @@ export const legacyHabit = z.object({
   pause: z.object({ from: dateKey, to: dateKey }).optional(),
   arch: z.boolean().default(false),
   note: z.string().default(''),
+  nt: z.boolean().optional(),
+});
+
+/* Sous-élément relu, RAPPEL COMPRIS (spec du 2026-09-07). Un seul schéma pour
+   les sous-tâches et les sous-éléments d'étape : deux schémas jumelles
+   auraient divergé au premier champ ajouté, et un champ relu d'un seul côté
+   est un champ perdu de l'autre. Tout y est optionnel — une sauvegarde
+   antérieure à ces champs doit se relire sans une erreur. */
+const legacySubItem = z.object({
+  fr: z.string().optional(),
+  en: z.string().optional(),
+  done: z.boolean().default(false),
+  d: dateKey.optional(),
+  time: z.string().optional(),
+  nt: z.boolean().optional(),
 });
 
 export const legacyTask = z.object({
@@ -53,15 +68,7 @@ export const legacyTask = z.object({
   dur: z.number().positive().default(60),
   prio: z.union([z.literal(1), z.literal(2), z.literal(3)]).catch(2),
   done: z.boolean().default(false),
-  sub: z
-    .array(
-      z.object({
-        fr: z.string().optional(),
-        en: z.string().optional(),
-        done: z.boolean().default(false),
-      }),
-    )
-    .default([]),
+  sub: z.array(legacySubItem).default([]),
   note: z.string().default(''),
   /* Liste blanche IMPORTÉE (G8). `weekly` est arrivé avec la tâche 5.6 ; un
      export antérieur n'en contient pas, et un export récent ne doit pas voir
@@ -72,6 +79,9 @@ export const legacyTask = z.object({
   /* `weekly` : jours retenus ; `monthly` : quantième. */
   repD: z.array(z.number().int().min(0).max(6)).optional(),
   repDom: z.number().int().min(1).max(31).optional(),
+  /* Rappel propre à la tâche (spec du 2026-09-07). */
+  nt: z.boolean().optional(),
+  ra: z.string().optional(),
 });
 
 export const legacyGoal = z.object({
@@ -95,6 +105,8 @@ export const legacyGoal = z.object({
   cat: category.catch('work'),
   start: z.string().optional(),
   due: z.string().optional(),
+  nt: z.boolean().optional(),
+  ra: z.string().optional(),
   cur: z.number().optional(),
 });
 
@@ -138,18 +150,12 @@ export const legacyProjectTask = z.object({
   deadline: z.string().default(''),
   status: z.enum(['todo', 'doing', 'done']).catch('todo'),
   note: z.string().default(''),
+  nt: z.boolean().optional(),
+  ra: z.string().optional(),
   /* Sous-tâches — lot B. `.default([])` n'est pas de la complaisance : une
      sauvegarde produite avant ce lot n'a pas la clé, et l'absence ne doit
      écarter aucune étape. Même forme que `sub` sur `legacyTask`. */
-  sub: z
-    .array(
-      z.object({
-        fr: z.string().optional(),
-        en: z.string().optional(),
-        done: z.boolean().default(false),
-      }),
-    )
-    .default([]),
+  sub: z.array(legacySubItem).default([]),
 });
 
 export const habitumExport = z.object({

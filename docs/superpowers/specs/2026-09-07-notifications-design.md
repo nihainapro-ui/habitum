@@ -117,3 +117,44 @@ identifiant d'une reprogrammation à l'autre.
 Celle du CLAUDE.md, sans retranchement : `npm run verify` vert, e2e desktop et mobile, aucun
 débordement aux paliers, CHANGELOG à jour, documents corrigés si une affirmation devient
 fausse. Chaque invariant nouveau est éprouvé par mutation avant d'être tenu pour acquis.
+
+
+---
+
+## Ajout du 2026-09-07 (soir) — un rappel par entité
+
+Demandé après la première livraison : « le paramètre de notification dans chaque
+tâche, habitude, tâche de projet ou sous-tâche, intégré à leurs paramètres de
+modification ».
+
+| Entité | Ce qu'elle gagne |
+|---|---|
+| Tâche | `notify` (me rappeler) et `remindAt` (heure propre) |
+| Étape Work | idem — `remindAt` y compte double : une échéance ne porte AUCUNE heure |
+| Objectif | idem |
+| Habitude | `notify` seulement : ses heures existent déjà (`reminders[]`) |
+| Sous-tâche et sous-élément d'étape | `date`, `time`, `notify` — elles sonnent SEULES |
+
+**Deux règles de préséance**, et elles se lisent dans cet ordre :
+
+1. **Le réglage le plus proche de l'objet gagne.** Une tâche muette le reste,
+   même si sa source est allumée. Couper une source, à l'inverse, tait tout ce
+   qu'elle contient — y compris les entités réglées sur « me rappeler ».
+2. **Une heure propre n'est pas décalée du préavis.** Quand on écrit « me
+   rappeler à 8 h », on veut 8 h, pas 7 h 30. Le préavis est une règle par
+   défaut appliquée à l'heure de la tâche ; une heure choisie à la main est déjà
+   la réponse.
+
+**Les sous-tâches sonnent seules**, à leur propre jour et à leur propre heure —
+« prendre la carte vitale la veille » n'a de sens que détaché de la tâche mère.
+Les deux ou rien : sans jour, une heure ne désigne aucun instant, et on
+n'invente pas d'échéance pour pouvoir sonner. Taire le parent les tait aussi.
+
+**L'absence reste l'absence.** `notify: true` n'est jamais écrit : un défaut
+recopié en base deviendrait indiscernable d'un choix, et la synchronisation, qui
+compare champ à champ, en ferait un conflit.
+
+**Le piège de l'export a été traité EN PREMIER**, avant même les champs : le
+test d'aller-retour (`tests/unit/data/rappels-aller-retour.test.ts`) a été écrit
+avant eux, et il couvre aussi la relecture d'une sauvegarde antérieure. C'est le
+piège n°1 du CLAUDE.md, payé une fois au lot B.

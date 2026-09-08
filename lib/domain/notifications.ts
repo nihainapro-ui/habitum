@@ -3,7 +3,7 @@ import { isDone } from './metrics';
 import { isScheduled } from './schedule';
 import { parseHeure, rappelsRestants } from './reminders';
 import { estOccurrence, occurrenceKey } from './recurrence';
-import type { Goal, Habit, LogIndex, ProjectTask, Settings, Task } from './types';
+import type { Goal, Habit, LogIndex, ProjectTask, Settings, SousTache, Task } from './types';
 
 /* ============================================================================
    Rappels — QUOI rappeler, et QUAND. Cinq sources, un seul calcul.
@@ -125,6 +125,53 @@ const objectifsDuJour = (goals: readonly Goal[], k: string): Goal[] =>
 const habitudesDuJour = (habits: readonly Habit[], log: LogIndex, jour: Date, now: Date): Habit[] =>
   habits.filter((h) => !h.archived && isScheduled(h, jour, now) && !isDone(log, h, jour, now));
 
+/** Rappels des SOUS-ÉLÉMENTS d'une entité, pour un jour donné.
+ *
+ *  Une seule implémentation pour les sous-tâches d'une tâche et les
+ *  sous-éléments d'une étape : ils portent le même type (`SousTache`) et
+ *  obéissent aux mêmes règles. Deux fonctions jumelles auraient divergé au
+ *  premier ajustement, et personne n'aurait su laquelle avait raison.
+ *
+ *  Quatre refus, tous délibérés : pas de date ou pas d'heure — on n'invente pas
+ *  d'échéance pour pouvoir sonner ; déjà fait ; explicitement muet ; parent
+ *  muet — taire une tâche doit taire ce qui la compose, sans quoi la couper ne
+ *  servirait à rien. */
+function rappelsSousElements<T>(
+  entites: readonly T[],
+  k: string,
+  jour: Date,
+  source: SourceRappel,
+  lire: (e: T) => { id: string; parent: string; sous: readonly SousTache[]; muet: boolean },
+): Rappel[] {
+  const rappels: Rappel[] = [];
+
+  for (const entite of entites) {
+    const { id, parent, sous, muet } = lire(entite);
+    if (muet) continue;
+
+    sous.forEach((element, index) => {
+      if (element.done || element.notify === false) return;
+      if (element.date !== k || !element.time) return;
+      const minutes = parseHeure(element.time);
+      if (minutes === null) return;
+
+      rappels.push({
+        cle: `${source}sub|${id}#${index}|${k}|${element.time}`,
+        source,
+        id,
+        at: jour.getTime() + minutes * 60_000,
+        /* Le titre est le libellé du sous-élément, le corps nomme son parent :
+           « Prendre la carte vitale » ne dit rien sans « Dentiste ». */
+        titre: element.label,
+        corpsKey: 'notifBodySub',
+        corpsParams: { parent },
+      });
+    });
+  }
+
+  return rappels;
+}
+
 /** Tous les rappels à venir, toutes sources, triés par heure.
  *
  *  `horizonJours` vaut 1 (aujourd'hui) par défaut ; le canal natif demande 7.
@@ -148,7 +195,10 @@ export function prochainsRappels(
     if (s.notifHabits) {
       /* Aujourd'hui, on passe l'heure RÉELLE — ce qui est passé ne se rattrape
          pas. Les jours suivants, minuit : leurs rappels sont tous à venir. */
-      for (const r of rappelsRestants(etat.habits, etat.log, i === 0 ? now : jour)) {
+      /* Les habitudes MUETTES sont écartées avant le calcul, pas après : leur
+         heure reste enregistrée, elle ne sonne simplement plus. */
+      const parlantes = etat.habits.filter((h) => h.notify !== false);
+      for (const r of rappelsRestants(parlantes, etat.log, i === 0 ? now : jour)) {
         rappels.push({
           cle: `habit|${r.habitId}|${k}|${r.time}`,
           source: 'habit',
@@ -162,44 +212,85 @@ export function prochainsRappels(
 
     if (s.notifTasks) {
       for (const t of tachesDuJour(etat.tasks, etat.occurrences, jour)) {
-        const minutes = t.time ? parseHeure(t.time) : null;
+        /* LE RÉGLAGE DE L'ENTITÉ D'ABORD. Une tâche muette le reste, même si sa
+           source est allumée : le réglage le plus proche de l'objet gagne, et
+           c'est le seul ordre qui ne surprend personne. */
+        if (t.notify === false) continue;
+
+        /* L'HEURE PROPRE N'EST PAS DÉCALÉE DU PRÉAVIS. Quand on écrit « me
+           rappeler à 8 h », on veut 8 h — pas 7 h 30. Le préavis est une règle
+           par défaut appliquée à l'heure de la tâche ; une heure choisie à la
+           main est déjà la réponse. */
+        const propre = t.remindAt ? parseHeure(t.remindAt) : null;
+        const minutes = propre ?? (t.time ? parseHeure(t.time) : null);
         /* Sans heure, pas de rappel : une tâche « un jour dans la journée » ne
            peut pas sonner sans qu'on invente son heure, et un chiffre inventé
            n'a pas sa place ici (règle 3 du CLAUDE.md). */
         if (minutes === null) continue;
-        const at = jour.getTime() + (minutes - s.notifLead) * 60_000;
+
+        const preavis = propre === null ? s.notifLead : 0;
         rappels.push({
-          cle: `task|${t.id}|${k}|${t.time ?? ''}`,
+          cle: `task|${t.id}|${k}|${t.remindAt ?? t.time ?? ''}`,
           source: 'task',
           id: t.id,
-          at,
+          at: jour.getTime() + (minutes - preavis) * 60_000,
           titre: t.name,
-          corpsKey: s.notifLead > 0 ? 'notifBodyTaskLead' : 'notifBodyTask',
-          corpsParams: { heure: t.time ?? '', minutes: s.notifLead },
+          corpsKey: preavis > 0 ? 'notifBodyTaskLead' : 'notifBodyTask',
+          corpsParams: { heure: t.time ?? '', minutes: preavis },
         });
+      }
+
+      /* SOUS-TÂCHES — elles sonnent SEULES, à leur propre date et à leur propre
+         heure : « prendre la carte vitale la veille » n'a de sens que détaché de
+         la tâche mère. Sans date ni heure, rien. Elles restent gouvernées par la
+         source « tâches », dont elles font partie. */
+      for (const r of rappelsSousElements(etat.tasks, k, jour, 'task', (t) => ({
+        id: t.id,
+        parent: t.name,
+        sous: t.subTasks,
+        muet: t.notify === false,
+      }))) {
+        rappels.push(r);
       }
     }
 
     if (s.notifWork) {
       for (const t of workDuJour(etat.projectTasks, k)) {
+        if (t.notify === false) continue;
+        /* L'heure propre compte ici plus qu'ailleurs : une échéance ne porte
+           AUCUNE heure, et sans ce champ toutes les étapes sonneraient à la
+           même minute. */
+        const heure = t.remindAt || s.notifDayHour;
         rappels.push({
-          cle: `work|${t.id}|${k}|${s.notifDayHour}`,
+          cle: `work|${t.id}|${k}|${heure}`,
           source: 'work',
           id: t.id,
-          at: heureVersMs(jour, s.notifDayHour, 9 * 60),
+          at: heureVersMs(jour, heure, 9 * 60),
           titre: t.name,
           corpsKey: 'notifBodyWork',
         });
+      }
+
+      /* Sous-éléments d'étape — mêmes règles que les sous-tâches. */
+      for (const r of rappelsSousElements(etat.projectTasks, k, jour, 'work', (t) => ({
+        id: t.id,
+        parent: t.name,
+        sous: t.subItems ?? [],
+        muet: t.notify === false || t.status === 'done',
+      }))) {
+        rappels.push(r);
       }
     }
 
     if (s.notifGoals) {
       for (const g of objectifsDuJour(etat.goals, k)) {
+        if (g.notify === false) continue;
+        const heure = g.remindAt || s.notifDayHour;
         rappels.push({
-          cle: `goal|${g.id}|${k}|${s.notifDayHour}`,
+          cle: `goal|${g.id}|${k}|${heure}`,
           source: 'goal',
           id: g.id,
-          at: heureVersMs(jour, s.notifDayHour, 9 * 60),
+          at: heureVersMs(jour, heure, 9 * 60),
           titre: g.name,
           corpsKey: 'notifBodyGoal',
         });

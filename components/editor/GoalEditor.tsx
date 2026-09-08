@@ -7,6 +7,7 @@ import { CATEGORIES, GOAL_KINDS, type Goal, type GoalKind } from '@/lib/domain';
 import { goalFormSchema, type GoalForm } from '@/lib/validation/goal.schema';
 import { useStore } from '@/lib/store';
 import { LigneListe, Select, TextInput } from './fields';
+import { RappelChamps } from './RappelChamps';
 import { EditorTabs } from './EditorTabs';
 import { PiedEditeur } from './PiedEditeur';
 
@@ -29,6 +30,9 @@ const versFormulaire = (g?: Goal): GoalForm => ({
   deadline: g?.deadline ?? '',
   window: g?.window ?? 90,
   milestones: g?.milestones ?? [],
+  /* `notify` absent vaut OUI : un objectif non réglé suit sa source. */
+  notify: g?.notify !== false,
+  remindAt: g?.remindAt ?? '',
 });
 
 export function GoalEditor({ id, onClose }: { id: string | null; onClose: () => void }) {
@@ -78,6 +82,8 @@ export function GoalEditor({ id, onClose }: { id: string | null; onClose: () => 
       ...(valeurs.deadline ? { deadline: valeurs.deadline } : {}),
       ...(valeurs.kind === 'reduce' ? { window: valeurs.window } : {}),
       ...(valeurs.kind === 'milestones' ? { milestones: valeurs.milestones } : {}),
+      ...(valeurs.notify ? {} : { notify: false }),
+      ...(valeurs.remindAt ? { remindAt: valeurs.remindAt } : {}),
       current: goal?.current ?? 0,
     };
 
@@ -183,6 +189,15 @@ export function GoalEditor({ id, onClose }: { id: string | null; onClose: () => 
           />
         </div>
       </div>
+
+      {/* Sous l'échéance : c'est elle que ce rappel date. */}
+      <RappelChamps
+        notify={v.notify}
+        remindAt={v.remindAt}
+        onNotify={(x) => setValue('notify', x)}
+        onRemindAt={(x) => setValue('remindAt', x)}
+        aide={t('hintDue')}
+      />
 
       {v.kind === 'reduce' ? (
         <TextInput

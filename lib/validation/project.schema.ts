@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { PROJECT_STATUSES } from '@/lib/domain';
-import { dateKeyOuVide } from './habit.schema';
+import { dateKeyOuVide, heure } from './habit.schema';
 
 /* Validation des formulaires de Work.
 
@@ -33,7 +33,21 @@ export const projectTaskFormSchema = z.object({
      L'omettre ici ferait repasser à `false` toute sous-tâche déjà faite au
      premier enregistrement de l'étape — une perte que rien n'annoncerait. */
   subItems: z
-    .array(z.object({ label: z.string().trim().min(1, 'labelRequired'), done: z.boolean() }))
+    .array(
+      z.object({
+        label: z.string().trim().min(1, 'labelRequired'),
+        done: z.boolean(),
+        /* Jour et heure du rappel du SOUS-ÉLÉMENT (spec du 2026-09-07). Les
+           deux ou rien : sans jour, une heure ne désigne aucun instant. */
+        date: dateKeyOuVide.optional(),
+        time: heure.or(z.literal('')).optional(),
+      }),
+    )
     .default([]),
+  /* Rappel propre à l'étape. `remindAt` compte ici plus qu'ailleurs : une
+     échéance ne porte AUCUNE heure, et sans ce champ toutes les étapes
+     sonneraient à la même minute. */
+  notify: z.boolean().default(true),
+  remindAt: heure.or(z.literal('')).default(''),
 });
 export type ProjectTaskForm = z.infer<typeof projectTaskFormSchema>;

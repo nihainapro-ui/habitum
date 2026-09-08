@@ -7,6 +7,7 @@ import { PROJECT_STATUSES, projectSubItems, type ProjectTask } from '@/lib/domai
 import { projectTaskFormSchema, type ProjectTaskForm } from '@/lib/validation/project.schema';
 import { useStore } from '@/lib/store';
 import { LigneListe, Select, TextArea, TextInput } from './fields';
+import { RappelChamps } from './RappelChamps';
 import { PiedEditeur } from './PiedEditeur';
 
 /* Éditeur d'une tâche de projet — cinq champs, sans onglets pour la même
@@ -22,6 +23,28 @@ const versFormulaire = (t?: ProjectTask): ProjectTaskForm => ({
      défait à UN SEUL endroit du produit (tâche 1). La copie est nécessaire —
      le domaine rend une liste en lecture seule, le formulaire la modifie. */
   subItems: t ? [...projectSubItems(t)] : [],
+  /* `notify` absent vaut OUI : une étape non réglée suit sa source. */
+  notify: t?.notify !== false,
+  remindAt: t?.remindAt ?? '',
+});
+
+/** Du formulaire vers l'entité. `notify: true` et les champs vides ne sont
+ *  PAS écrits : un défaut recopié en base deviendrait indiscernable d'un choix,
+ *  et la synchronisation, qui compare champ à champ, en ferait un conflit. */
+const aEcrire = (v: ProjectTaskForm) => ({
+  name: v.name,
+  assignee: v.assignee,
+  deadline: v.deadline,
+  status: v.status,
+  note: v.note,
+  subItems: v.subItems.map((s) => ({
+    label: s.label,
+    done: s.done,
+    ...(s.date ? { date: s.date } : {}),
+    ...(s.time ? { time: s.time } : {}),
+  })),
+  ...(v.notify ? {} : { notify: false }),
+  ...(v.remindAt ? { remindAt: v.remindAt } : {}),
 });
 
 export function ProjectTaskEditor({
@@ -60,12 +83,12 @@ export function ProjectTaskEditor({
 
   const enregistrer = handleSubmit(async (valeurs) => {
     if (tache) {
-      await updateProjectTask(tache.id, valeurs);
+      await updateProjectTask(tache.id, aEcrire(valeurs));
     } else {
       /* Sans projet d'accueil, la tâche serait ORPHELINE : atteignable par
          aucune vue, et écartée au prochain import. On ne l'écrit pas. */
       if (!projectId) return;
-      await createProjectTask({ ...valeurs, projectId });
+      await createProjectTask({ ...aEcrire(valeurs), projectId });
     }
     onClose();
   });
@@ -102,6 +125,17 @@ export function ProjectTaskEditor({
         onChange={(x) => setValue('status', x)}
         options={PROJECT_STATUSES.map((s) => ({ value: s, label: ta(`st_${s}`) }))}
       />
+
+      {/* Placé sous l'échéance, parce que c'est elle qu'il date : une étape
+          n'a qu'un jour, et cette heure est la seule façon de lui en donner
+          une sans en donner la même à toutes. */}
+      <RappelChamps
+        notify={v.notify}
+        remindAt={v.remindAt}
+        onNotify={(x) => setValue('notify', x)}
+        onRemindAt={(x) => setValue('remindAt', x)}
+        aide={t('hintDue')}
+      />
       <LigneListe
         legend={t('fSub')}
         items={v.subItems}
@@ -116,18 +150,52 @@ export function ProjectTaskEditor({
         error={errors.subItems ? messageErreur('labelRequired') : undefined}
       >
         {(i) => (
-          <TextInput
-            label={`${t('fSub')} ${i + 1}`}
-            value={v.subItems[i]?.label ?? ''}
-            onChange={(x) =>
-              setValue(
-                'subItems',
-                /* `{ ...s, label: x }` et non `{ label: x }` : le second
-                   perdrait `done` à chaque frappe. */
-                v.subItems.map((s, j) => (j === i ? { ...s, label: x } : s)),
-              )
-            }
-          />
+          <div className="flex flex-col gap-2">
+            <TextInput
+              label={`${t('fSub')} ${i + 1}`}
+              value={v.subItems[i]?.label ?? ''}
+              onChange={(x) =>
+                setValue(
+                  'subItems',
+                  /* `{ ...s, label: x }` et non `{ label: x }` : le second
+                     perdrait `done` à chaque frappe — et désormais aussi le
+                     jour et l'heure du rappel. */
+                  v.subItems.map((s, j) => (j === i ? { ...s, label: x } : s)),
+                )
+              }
+            />
+            <div className="flex gap-3">
+              <div className="flex-1">
+                <TextInput
+                  label={t('fSubDate')}
+                  type="date"
+                  value={v.subItems[i]?.date ?? ''}
+                  onChange={(x) =>
+                    setValue(
+                      'subItems',
+                      v.subItems.map((s, j) => (j === i ? { ...s, date: x } : s)),
+                    )
+                  }
+                />
+              </div>
+              <div className="flex-1">
+                <TextInput
+                  label={t('fSubTime')}
+                  type="time"
+                  value={v.subItems[i]?.time ?? ''}
+                  onChange={(x) =>
+                    setValue(
+                      'subItems',
+                      v.subItems.map((s, j) => (j === i ? { ...s, time: x } : s)),
+                    )
+                  }
+                />
+              </div>
+            </div>
+            <span className="text-[11px]" style={{ color: 'var(--mut)' }}>
+              {t('hintSub')}
+            </span>
+          </div>
         )}
       </LigneListe>
 

@@ -318,3 +318,152 @@ describe('identifiantNotification', () => {
     }
   });
 });
+
+describe('réglage propre à une entité', () => {
+  it('une tâche muette ne sonne pas, même sa source allumée', () => {
+    /* Le réglage le PLUS PROCHE de l'objet gagne : c'est le seul ordre qui ne
+       surprend personne. */
+    const e = etat({ tasks: [tache({ id: 't1', time: '14:30', notify: false })] });
+    expect(prochainsRappels(e, reglages(), MAINTENANT)).toEqual([]);
+  });
+
+  it('une heure propre remplace l’heure de la tâche, SANS lui appliquer le préavis', () => {
+    /* Quand on écrit « me rappeler à 8 h », on veut 8 h — pas 7 h 30. Le
+       préavis est une règle par défaut ; une heure choisie à la main est déjà
+       la réponse. */
+    const e = etat({ tasks: [tache({ id: 't1', time: '14:30', remindAt: '11:00' })] });
+    const r = prochainsRappels(e, reglages({ notifLead: 30 }), MAINTENANT);
+    expect(heureDe(r[0]!.at)).toBe('11:00');
+    expect(r[0]!.corpsKey).toBe('notifBodyTask');
+  });
+
+  it('une étape Work peut sonner à son heure, les autres à l’heure générale', () => {
+    const e = etat({
+      projectTasks: [
+        /* 10 h 15 et non 7 h 45 : à 8 h, une heure propre déjà passée ne se
+           rattrape pas plus qu'une autre — la règle vaut pour tout le monde. */
+        etape({ id: 'w1', remindAt: '10:15' }),
+        etape({ id: 'w2' }),
+        etape({ id: 'w3', notify: false }),
+      ],
+    });
+    const r = prochainsRappels(e, reglages({ notifDayHour: '17:00' }), MAINTENANT);
+    expect(r.map((x) => [x.id, heureDe(x.at)])).toEqual([
+      ['w1', '10:15'],
+      ['w2', '17:00'],
+    ]);
+  });
+
+  it('un objectif muet se tait, un objectif à heure propre la garde', () => {
+    const e = etat({
+      goals: [objectif({ id: 'g1', remindAt: '20:00' }), objectif({ id: 'g2', notify: false })],
+    });
+    const r = prochainsRappels(e, reglages(), MAINTENANT);
+    expect(r.map((x) => [x.id, heureDe(x.at)])).toEqual([['g1', '20:00']]);
+  });
+});
+
+describe('sous-tâches', () => {
+  it('sonnent seules, à leur propre date et à leur propre heure', () => {
+    const e = etat({
+      tasks: [
+        tache({
+          id: 't1',
+          name: 'Dentiste',
+          date: DEMAIN,
+          time: '14:30',
+          subTasks: [{ label: 'Carte vitale', done: false, date: JOUR, time: '18:00' }],
+        }),
+      ],
+    });
+    const r = prochainsRappels(e, reglages(), MAINTENANT, 7);
+
+    const sous = r.find((x) => x.titre === 'Carte vitale');
+    expect(sous).toBeDefined();
+    expect(heureDe(sous!.at)).toBe('18:00');
+    /* Le corps NOMME LE PARENT : « Carte vitale » ne dit rien tout seul. */
+    expect(sous!.corpsKey).toBe('notifBodySub');
+    expect(sous!.corpsParams).toEqual({ parent: 'Dentiste' });
+    /* Elle relève de la source « tâches » : la couper doit la couper aussi. */
+    expect(sous!.source).toBe('task');
+    expect(prochainsRappels(e, reglages({ notifTasks: false }), MAINTENANT, 7)).toEqual([]);
+  });
+
+  it('ne sonnent pas sans date, sans heure, ou une fois faites', () => {
+    const e = etat({
+      tasks: [
+        tache({
+          id: 't1',
+          subTasks: [
+            { label: 'sans rien', done: false },
+            { label: 'sans heure', done: false, date: JOUR },
+            { label: 'faite', done: true, date: JOUR, time: '18:00' },
+            { label: 'muette', done: false, date: JOUR, time: '18:00', notify: false },
+          ],
+        }),
+      ],
+    });
+    expect(prochainsRappels(e, reglages(), MAINTENANT)).toEqual([]);
+  });
+
+  it('se taisent avec leur parent — couper la tâche coupe ce qui la compose', () => {
+    const e = etat({
+      tasks: [
+        tache({
+          id: 't1',
+          notify: false,
+          subTasks: [{ label: 'Carte vitale', done: false, date: JOUR, time: '18:00' }],
+        }),
+      ],
+    });
+    expect(prochainsRappels(e, reglages(), MAINTENANT)).toEqual([]);
+  });
+
+  it('valent aussi pour les sous-éléments d’une étape Work, étape terminée exclue', () => {
+    const e = etat({
+      projectTasks: [
+        etape({
+          id: 'w1',
+          name: 'Livrer',
+          deadline: '',
+          subItems: [{ label: 'Relire', done: false, date: JOUR, time: '16:00' }],
+        }),
+        etape({
+          id: 'w2',
+          status: 'done',
+          deadline: '',
+          subItems: [{ label: 'Ignorée', done: false, date: JOUR, time: '16:30' }],
+        }),
+      ],
+    });
+    const r = prochainsRappels(e, reglages(), MAINTENANT);
+    expect(r.map((x) => x.titre)).toEqual(['Relire']);
+    expect(r[0]!.source).toBe('work');
+  });
+
+  it('portent une clé DISTINCTE par position — deux sous-tâches à la même heure sonnent deux fois', () => {
+    const e = etat({
+      tasks: [
+        tache({
+          id: 't1',
+          subTasks: [
+            { label: 'A', done: false, date: JOUR, time: '18:00' },
+            { label: 'B', done: false, date: JOUR, time: '18:00' },
+          ],
+        }),
+      ],
+    });
+    const r = prochainsRappels(e, reglages(), MAINTENANT);
+    expect(new Set(r.map((x) => x.cle)).size).toBe(2);
+  });
+});
+
+describe('habitude muette', () => {
+  it('ne sonne plus, mais garde ses heures', () => {
+    /* Couper l'habitude plutôt que vider `reminders[]` : rallumer ne doit pas
+       demander de retaper ses heures. */
+    const muette = habit({ id: 'h1', reminders: ['18:30'], notify: false });
+    expect(prochainsRappels(etat({ habits: [muette] }), reglages(), MAINTENANT)).toEqual([]);
+    expect(muette.reminders).toEqual(['18:30']);
+  });
+});

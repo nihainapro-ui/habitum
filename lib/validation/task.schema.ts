@@ -25,8 +25,22 @@ export const taskFormSchema = z.object({
   /* Un sur N. Borné à 99 : au-delà, ce n'est plus une habitude de vie, et un
      intervalle de 0 rendrait la série infiniment dense. */
   interval: z.coerce.number().int().min(1).max(99),
+  /* Rappel propre à la tâche (spec du 2026-09-07). `notify` est un booléen de
+     formulaire — c'est à l'enregistrement qu'il devient une ABSENCE quand il
+     vaut « oui », pour que « jamais réglé » et « réglé sur oui » restent la
+     même chose en base. */
+  notify: z.boolean(),
+  remindAt: heure.or(z.literal('')).default(''),
   subTasks: z.array(
-    z.object({ label: z.string().trim().min(1, 'labelRequired'), done: z.boolean() }),
+    z.object({
+      label: z.string().trim().min(1, 'labelRequired'),
+      done: z.boolean(),
+      /* Jour et heure du rappel de la SOUS-TÂCHE. Les deux ou rien : sans jour,
+         une heure ne désigne aucun instant, et sans heure un jour n'en désigne
+         pas davantage. */
+      date: dateKeyOuVide.optional(),
+      time: heure.or(z.literal('')).optional(),
+    }),
   ),
   note: z.string().max(2000),
 });

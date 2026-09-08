@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { CATEGORIES, GOAL_KINDS } from '@/lib/domain';
-import { dateKeyOuVide } from './habit.schema';
+import { dateKeyOuVide, heure } from './habit.schema';
 
 /* Validation du formulaire d'objectif.
 
@@ -21,6 +21,11 @@ export const goalFormSchema = z
     milestones: z.array(
       z.object({ label: z.string().trim().min(1, 'labelRequired'), done: z.boolean() }),
     ),
+    /* Rappel propre à l'objectif (spec du 2026-09-07). Une échéance ne porte
+       pas d'heure : `remindAt` est le seul moyen d'en donner une à CET
+       objectif sans la donner à tous. */
+    notify: z.boolean().default(true),
+    remindAt: heure.or(z.literal('')).default(''),
   })
   /* Un objectif cumulatif ou de réduction sans cible n'a pas d'avancement :
      `goalProgress` retomberait sur 1 et afficherait 100 % au premier jour. */

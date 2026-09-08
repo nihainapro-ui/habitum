@@ -4,6 +4,7 @@ import { useMemo } from 'react';
 import { useForm, useWatch, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useTranslations } from 'next-intl';
+import { Switch } from '@/components/ui';
 import {
   addDays,
   CATEGORIES,
@@ -58,6 +59,8 @@ const versFormulaire = (h?: Habit): HabitForm => ({
   start: h?.start ?? '',
   end: h?.end ?? '',
   reminders: h?.reminders ?? [],
+  /* `notify` absent vaut OUI : une habitude non réglée suit sa source. */
+  notify: h?.notify !== false,
   note: h?.note ?? '',
   archived: h?.archived ?? false,
 });
@@ -107,6 +110,7 @@ export function HabitEditor({ id, onClose }: { id: string | null; onClose: () =>
       interval: valeurs.interval,
       subItems: valeurs.subItems,
       reminders: valeurs.reminders,
+      ...(valeurs.notify ? {} : { notify: false }),
       /* Omis, jamais posés à `undefined` — D23. L'objet part en base : dans
          IndexedDB, une clé absente et une clé qui vaut `undefined` ne se
          lisent pas pareil, et le modèle vise la synchronisation, où l'écart
@@ -252,32 +256,42 @@ export function HabitEditor({ id, onClose }: { id: string | null; onClose: () =>
   );
 
   const rappels = (
-    <LigneListe
-      legend={t('fRem')}
-      items={v.reminders}
-      addLabel={t('addRem')}
-      onAdd={() => setValue('reminders', [...v.reminders, '08:00'])}
-      onRemove={(i) =>
-        setValue(
-          'reminders',
-          v.reminders.filter((_, j) => j !== i),
-        )
-      }
-    >
-      {(i) => (
-        <TextInput
-          label={`${t('fRem')} ${i + 1}`}
-          type="time"
-          value={v.reminders[i] ?? ''}
-          onChange={(x) =>
-            setValue(
-              'reminders',
-              v.reminders.map((r, j) => (j === i ? x : r)),
-            )
-          }
-        />
-      )}
-    </LigneListe>
+    <div className="flex flex-col gap-3">
+      {/* Couper ici plutôt que vider la liste : les heures restent
+          enregistrées, et rallumer ne demande pas de les retaper. */}
+      <Switch
+        label={t('fNotify')}
+        reason={t('hintHabit')}
+        checked={v.notify}
+        onChange={(x) => setValue('notify', x)}
+      />
+      <LigneListe
+        legend={t('fRem')}
+        items={v.reminders}
+        addLabel={t('addRem')}
+        onAdd={() => setValue('reminders', [...v.reminders, '08:00'])}
+        onRemove={(i) =>
+          setValue(
+            'reminders',
+            v.reminders.filter((_, j) => j !== i),
+          )
+        }
+      >
+        {(i) => (
+          <TextInput
+            label={`${t('fRem')} ${i + 1}`}
+            type="time"
+            value={v.reminders[i] ?? ''}
+            onChange={(x) =>
+              setValue(
+                'reminders',
+                v.reminders.map((r, j) => (j === i ? x : r)),
+              )
+            }
+          />
+        )}
+      </LigneListe>
+    </div>
   );
 
   const avance = (

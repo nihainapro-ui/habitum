@@ -1,5 +1,45 @@
 # Journal des modifications
 
+## 2026-09-07 (suite 4) — Un rappel par tâche, par habitude, par étape, par sous-tâche
+
+Les réglages généraux disaient QUAND sonner ; ils ne disaient pas quoi taire.
+Chaque entité porte désormais son propre rappel, dans son éditeur, à côté du
+champ qu'il concerne — jamais dans un onglet séparé, qui aurait éloigné la
+question de sa réponse.
+
+- **Tâche, étape Work, objectif** : « me rappeler » et une heure propre. Vide,
+  l'heure reste celle des réglages généraux.
+- **Habitude** : « me rappeler » seulement — ses heures existent déjà. Couper
+  l'habitude plutôt que vider sa liste évite de retaper ses heures pour la
+  rallumer.
+- **Sous-tâches et sous-éléments d'étape** : un jour ET une heure à elles. Elles
+  sonnent SEULES — « prendre la carte vitale la veille » n'a de sens que détaché
+  de la tâche mère.
+
+**L'heure propre d'une étape Work compte double** : une échéance ne porte aucune
+heure, et sans ce champ toutes les étapes du même jour sonnaient à la même
+minute.
+
+**Deux règles de préséance, écrites dans le domaine et testées** : le réglage le
+plus proche de l'objet gagne — une tâche muette le reste, même si sa source est
+allumée ; et une heure choisie à la main n'est PAS décalée du préavis, parce que
+« me rappeler à 8 h » veut dire 8 h.
+
+**L'absence reste l'absence.** `notify: true` n'est jamais écrit en base : un
+défaut recopié deviendrait indiscernable d'un choix, et la synchronisation, qui
+compare champ à champ, en ferait un conflit.
+
+**LE PIÈGE DE L'EXPORT A ÉTÉ TRAITÉ EN PREMIER, avant même les champs.**
+L'export et l'import énumèrent les champs un par un : un champ ajouté au domaine
+et oublié là disparaît en silence à chaque aller-retour. Le test
+(`rappels-aller-retour.test.ts`) a donc été écrit AVANT eux, et il vérifie aussi
+qu'une sauvegarde produite hier — sans aucun de ces champs — se relit sans un
+mot. Le lot B l'avait payé une fois ; on ne l'a pas repayé.
+
+Une note d'en-tête devenue fausse a été corrigée dans la foulée : `TaskEditor`
+affirmait que « le modèle cible ne porte pas de rappel sur la tâche ». Un
+commentaire faux coûte plus cher qu'un commentaire absent.
+
 ## 2026-09-07 (suite 3) — L'interrupteur porte l'intention, pas la permission
 
 Sur un vrai téléphone, l'interrupteur des notifications ne s'allumait pas — et

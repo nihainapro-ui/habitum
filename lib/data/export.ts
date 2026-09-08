@@ -1,5 +1,12 @@
 import { LEGACY_SCHEMA_VERSION } from '@/lib/storage/keys';
-import { logKey, parseOccurrenceKey, projectSubItems, type Frequence } from '@/lib/domain';
+import {
+  logKey,
+  parseOccurrenceKey,
+  projectSubItems,
+  type Frequence,
+  type RappelEntite,
+  type SousTache,
+} from '@/lib/domain';
 import { META_KEYS } from './seed';
 import { nowIso } from './repositories/base';
 import {
@@ -67,10 +74,16 @@ export interface ExportedProjectTask {
   /** Sous-tâches — clé NEUVE (lot B). Format `{ fr, en, done }` comme les
    *  sous-tâches de `tasks` : c'est celui que l'importateur sait déjà lire, et
    *  il garde la place d'un libellé traduit sans en inventer un. */
-  sub: { fr: string; en: string; done: boolean }[];
+  sub: ExportedSubItem[];
+  nt?: false;
+  ra?: string;
 }
 
 export interface ExportedHabit {
+  /** Rappels de l'habitude coupés (spec du 2026-09-07). Optionnel : une
+   *  sauvegarde antérieure n'a pas la clé, et son absence veut dire « suit sa
+   *  source » — jamais « coupée ». */
+  nt?: false;
   id: string;
   fr: string;
   en: string;
@@ -88,6 +101,19 @@ export interface ExportedHabit {
   note: string;
 }
 
+/** Sous-élément exporté. `d`, `time` et `nt` viennent des rappels par entité
+ *  (spec du 2026-09-07) et sont OPTIONNELS : un export récent doit rester
+ *  relisible par un lecteur ancien, et une sauvegarde ancienne doit se relire
+ *  ici sans un mot. */
+export interface ExportedSubItem {
+  fr: string;
+  en: string;
+  done: boolean;
+  d?: string;
+  time?: string;
+  nt?: false;
+}
+
 export interface ExportedTask {
   id: string;
   fr: string;
@@ -98,8 +124,12 @@ export interface ExportedTask {
   dur: number;
   prio: 1 | 2 | 3;
   done: boolean;
-  sub: { fr: string; en: string; done: boolean }[];
+  sub: ExportedSubItem[];
   note: string;
+  /** Rappel propre à la tâche. `nt: false` seulement quand elle est
+   *  explicitement muette : l'absence doit rester l'absence. */
+  nt?: false;
+  ra?: string;
   /* Répétition — `rep` porte la fréquence depuis le prototype (G1) ; les trois
      champs suivants sont apparus avec la tâche 5.6 et restent optionnels, pour
      qu'un export récent reste relisible par un lecteur ancien. */
@@ -123,6 +153,8 @@ export interface ExportedGoal {
   start?: string;
   due?: string;
   cur?: number;
+  nt?: false;
+  ra?: string;
 }
 
 export interface ExportedSession {
@@ -141,6 +173,25 @@ export interface ExportedShoppingItem {
   en: string;
   done: boolean;
 }
+
+/** Écrit un sous-élément, RAPPEL COMPRIS. Une seule implémentation pour les
+ *  sous-tâches et les sous-éléments d'étape : deux fonctions jumelles auraient
+ *  divergé au premier champ ajouté — c'est exactement ainsi qu'un champ
+ *  disparaît d'un seul côté de l'aller-retour. */
+const sousElement = (s: SousTache): ExportedSubItem => ({
+  fr: s.label,
+  en: s.label,
+  done: s.done,
+  ...(s.date ? { d: s.date } : {}),
+  ...(s.time ? { time: s.time } : {}),
+  ...(s.notify === false ? { nt: false as const } : {}),
+});
+
+/** Le rappel propre d'une entité, écrit SEULEMENT s'il a été réglé. */
+const rappelEntite = (e: RappelEntite): { nt?: false; ra?: string } => ({
+  ...(e.notify === false ? { nt: false as const } : {}),
+  ...(e.remindAt ? { ra: e.remindAt } : {}),
+});
 
 export async function exportToJson(): Promise<HabitumExport> {
   const [habits, tasks, goals, sessions, shopping, notes, logs, occ, projects, projectTasks] =
@@ -209,6 +260,7 @@ export async function exportToJson(): Promise<HabitumExport> {
       ...(h.pause ? { pause: h.pause } : {}),
       arch: h.archived,
       note: h.note,
+      ...rappelEntite(h),
     })),
     tasks: tasks.map((t) => ({
       id: t.id,
@@ -220,8 +272,9 @@ export async function exportToJson(): Promise<HabitumExport> {
       dur: t.duration,
       prio: t.priority,
       done: t.done,
-      sub: t.subTasks.map((s) => ({ fr: s.label, en: s.label, done: s.done })),
+      sub: t.subTasks.map(sousElement),
       note: t.note,
+      ...rappelEntite(t),
       ...(t.recurrence
         ? {
             rep: t.recurrence.freq,
@@ -245,6 +298,7 @@ export async function exportToJson(): Promise<HabitumExport> {
       ...(g.start ? { start: g.start } : {}),
       ...(g.deadline ? { due: g.deadline } : {}),
       ...(g.current === undefined ? {} : { cur: g.current }),
+      ...rappelEntite(g),
     })),
     log: journal,
     ov: journal,
@@ -269,7 +323,8 @@ export async function exportToJson(): Promise<HabitumExport> {
       deadline: t.deadline,
       status: t.status,
       note: t.note,
-      sub: projectSubItems(t).map((s) => ({ fr: s.label, en: s.label, done: s.done })),
+      sub: projectSubItems(t).map(sousElement),
+      ...rappelEntite(t),
     })),
   };
 }

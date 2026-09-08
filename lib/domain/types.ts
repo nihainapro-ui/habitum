@@ -76,6 +76,10 @@ export interface Habit {
   interval?: number;
   subItems: { label: string }[];
   reminders: string[];
+  /** Rappels de CETTE habitude coupés, sans effacer ses heures (spec du
+   *  2026-09-07). Absent = elle suit sa source. Couper l'habitude plutôt que
+   *  vider `reminders` évite de retaper ses heures pour la rallumer. */
+  notify?: boolean;
   start?: DateKey;
   end?: DateKey;
   pause?: { from: DateKey; to: DateKey };
@@ -98,6 +102,37 @@ export interface LogEntry {
   deletedAt?: string;
 }
 
+/** Rappel PROPRE à une entité — spec du 2026-09-07.
+ *
+ *  Les deux champs sont facultatifs, et leur absence a un sens précis :
+ *  l'entité suit les réglages généraux. Un `notify: true` écrit d'office
+ *  ferait croire à un choix que personne n'a fait, et il faudrait ensuite
+ *  distinguer « jamais réglé » de « réglé sur oui » sans plus pouvoir le
+ *  faire. Même doctrine qu'au lot B et qu'au lot D : l'absence est défaite en
+ *  un seul endroit, jamais dans les vues. */
+export interface RappelEntite {
+  /** `false` = cette entité ne sonne pas, même si sa source est allumée.
+   *  Absent ou `true` = elle suit sa source. */
+  notify?: boolean;
+  /** Heure de rappel `HH:MM` propre à l'entité. Absente = l'heure vient des
+   *  réglages généraux — heure de la tâche moins le préavis, ou heure des
+   *  échéances pour ce qui n'en porte pas. */
+  remindAt?: string;
+}
+
+/** Sous-élément cochable, avec son rappel facultatif.
+ *
+ *  DATE ET HEURE PROPRES, décision de l'utilisateur : une sous-tâche peut
+ *  devoir sonner avant sa tâche mère — « prendre la carte vitale la veille ».
+ *  Les deux restent facultatives, et sans date il n'y a pas de rappel : on
+ *  n'invente pas une échéance pour pouvoir sonner (règle 3 du CLAUDE.md). */
+export interface SousTache extends RappelEntite {
+  label: string;
+  done: boolean;
+  date?: DateKey;
+  time?: string;
+}
+
 export interface Task {
   id: string;
   name: string;
@@ -108,8 +143,11 @@ export interface Task {
   duration: number;
   priority: 1 | 2 | 3;
   done: boolean;
-  subTasks: { label: string; done: boolean }[];
+  subTasks: SousTache[];
   note: string;
+  /** Rappel propre à cette tâche (spec du 2026-09-07). */
+  notify?: boolean;
+  remindAt?: string;
   /** Répétition simplifiée — `lib/domain/recurrence.ts`. Le champ reste
    *  optionnel : la grande majorité des tâches ne se répète pas. */
   recurrence?: Recurrence;
@@ -174,7 +212,12 @@ export interface ProjectTask {
    *  sans validation ni valeur par défaut). Le déclarer requis mentirait au
    *  compilateur — la ligne existe, sans le champ — et le tableau planterait
    *  sur `.length`. `projectSubItems()` défait l'absence, en un seul endroit. */
-  subItems?: { label: string; done: boolean }[];
+  subItems?: SousTache[];
+  /** Rappel propre à cette étape (spec du 2026-09-07). `remindAt` a ici une
+   *  valeur particulière : une échéance ne porte AUCUNE heure, et c'est le
+   *  seul moyen d'en donner une à celle-ci sans la donner à toutes. */
+  notify?: boolean;
+  remindAt?: string;
   createdAt: string;
   updatedAt: string;
   deletedAt?: string;
@@ -194,6 +237,9 @@ export interface Goal {
   start?: DateKey;
   deadline?: DateKey;
   current?: number;
+  /** Rappel propre à cet objectif (spec du 2026-09-07). */
+  notify?: boolean;
+  remindAt?: string;
   createdAt: string;
   updatedAt: string;
   deletedAt?: string;

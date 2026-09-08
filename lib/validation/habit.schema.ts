@@ -39,6 +39,10 @@ export const habitFormSchema = z
 
     reminders: z.array(heure),
 
+    /* Rappels de cette habitude coupés, sans effacer ses heures. */
+
+    notify: z.boolean().default(true),
+
     note: z.string().max(2000),
     archived: z.boolean(),
   })

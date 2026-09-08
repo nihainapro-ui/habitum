@@ -7,16 +7,22 @@ import { CATEGORIES, dateKey, today, type Task } from '@/lib/domain';
 import { taskFormSchema, type TaskForm } from '@/lib/validation/task.schema';
 import { useStore } from '@/lib/store';
 import { LigneListe, Select, TextArea, TextInput } from './fields';
+import { RappelChamps } from './RappelChamps';
 import { EditorTabs } from './EditorTabs';
 import { PiedEditeur } from './PiedEditeur';
 
 /* Éditeur de tâche — 05-SPEC-VUES.md § 5.
 
-   TROIS onglets, et non quatre. Le modèle cible ne porte pas de rappel sur la
-   tâche : seule l'habitude a `reminders[]`. Afficher un onglet « Rappels » qui
-   n'écrirait nulle part serait un champ décoratif — exactement ce que le Plan 6
-   § 6.4 nous demande de ne plus produire. L'heure de la tâche vit dans
-   « Planning », là où elle est effectivement utilisée. */
+   TROIS onglets, et non quatre. Le rappel n'a pas le sien : il vit dans
+   « Planning », sous l'heure de la tâche, parce que c'est elle qu'il décale.
+   Un onglet « Rappels » séparerait la question de sa réponse.
+
+   NOTE HISTORIQUE — l'en-tête de ce fichier disait « le modèle cible ne porte
+   pas de rappel sur la tâche : seule l'habitude a `reminders[]` ». Ce n'est plus
+   vrai depuis la spec du 2026-09-07 : `Task` porte `notify` et `remindAt`, et
+   ses sous-tâches leur propre jour et heure. La phrase est corrigée plutôt que
+   laissée à traîner — un commentaire faux coûte plus cher qu'un commentaire
+   absent. */
 
 const versFormulaire = (t?: Task): TaskForm => ({
   name: t?.name ?? '',
@@ -27,6 +33,9 @@ const versFormulaire = (t?: Task): TaskForm => ({
   priority: t?.priority ?? 2,
   recurrence: t?.recurrence?.freq ?? 'none',
   interval: t?.recurrence?.interval ?? 1,
+  /* `notify` absent vaut OUI : une tâche non réglée suit sa source. */
+  notify: t?.notify !== false,
+  remindAt: t?.remindAt ?? '',
   subTasks: t?.subTasks ?? [],
   note: t?.note ?? '',
 });
@@ -73,7 +82,16 @@ export function TaskEditor({ id, onClose }: { id: string | null; onClose: () => 
       duration: valeurs.duration,
       priority: valeurs.priority as Task['priority'],
       done: task?.done ?? false,
-      subTasks: valeurs.subTasks,
+      /* `notify: false` seulement quand c'est un choix : écrire `true` ferait
+         d'un défaut une décision, et on ne saurait plus les distinguer. */
+      ...(valeurs.notify ? {} : { notify: false }),
+      ...(valeurs.remindAt ? { remindAt: valeurs.remindAt } : {}),
+      subTasks: valeurs.subTasks.map((s) => ({
+        label: s.label,
+        done: s.done,
+        ...(s.date ? { date: s.date } : {}),
+        ...(s.time ? { time: s.time } : {}),
+      })),
       note: valeurs.note,
       /* L'intervalle n'est écrit que s'il vaut quelque chose : `interval: 1`
          est le défaut, et un champ qui répète le défaut alourdit l'export sans
@@ -161,6 +179,14 @@ export function TaskEditor({ id, onClose }: { id: string | null; onClose: () => 
         ]}
       />
 
+      <RappelChamps
+        notify={v.notify}
+        remindAt={v.remindAt}
+        onNotify={(x) => setValue('notify', x)}
+        onRemindAt={(x) => setValue('remindAt', x)}
+        aide={t('hintTask')}
+      />
+
       {/* L'intervalle n'apparaît que s'il y a une série à espacer. */}
       {v.recurrence === 'none' ? null : (
         <TextInput
@@ -187,16 +213,52 @@ export function TaskEditor({ id, onClose }: { id: string | null; onClose: () => 
       }
     >
       {(i) => (
-        <TextInput
-          label={`${t('fSub')} ${i + 1}`}
-          value={v.subTasks[i]?.label ?? ''}
-          onChange={(x) =>
-            setValue(
-              'subTasks',
-              v.subTasks.map((s, j) => (j === i ? { ...s, label: x } : s)),
-            )
-          }
-        />
+        <div className="flex flex-col gap-2">
+          <TextInput
+            label={`${t('fSub')} ${i + 1}`}
+            value={v.subTasks[i]?.label ?? ''}
+            onChange={(x) =>
+              setValue(
+                'subTasks',
+                v.subTasks.map((s, j) => (j === i ? { ...s, label: x } : s)),
+              )
+            }
+          />
+          {/* Une sous-tâche peut sonner AVANT sa tâche — « prendre la carte
+              vitale la veille ». D'où un jour à elle, et pas seulement une
+              heure. Les deux ou rien : le domaine n'invente pas d'échéance. */}
+          <div className="flex gap-3">
+            <div className="flex-1">
+              <TextInput
+                label={t('fSubDate')}
+                type="date"
+                value={v.subTasks[i]?.date ?? ''}
+                onChange={(x) =>
+                  setValue(
+                    'subTasks',
+                    v.subTasks.map((s, j) => (j === i ? { ...s, date: x } : s)),
+                  )
+                }
+              />
+            </div>
+            <div className="flex-1">
+              <TextInput
+                label={t('fSubTime')}
+                type="time"
+                value={v.subTasks[i]?.time ?? ''}
+                onChange={(x) =>
+                  setValue(
+                    'subTasks',
+                    v.subTasks.map((s, j) => (j === i ? { ...s, time: x } : s)),
+                  )
+                }
+              />
+            </div>
+          </div>
+          <span className="text-[11px]" style={{ color: 'var(--mut)' }}>
+            {t('hintSub')}
+          </span>
+        </div>
       )}
     </LigneListe>
   );
