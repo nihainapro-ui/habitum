@@ -73,6 +73,36 @@ export interface PluginNotifications {
  *  réglages faits sur le premier seraient perdus sans un mot. */
 export const CANAL_RAPPELS = 'habitum-rappels';
 
+/** Erreur d'un appel natif resté sans réponse. */
+export class DelaiDepasse extends Error {
+  constructor() {
+    super('delai');
+    this.name = 'DelaiDepasse';
+  }
+}
+
+/** Borne un appel natif dans le temps.
+ *
+ *  POURQUOI : un appel au pont Capacitor qui ne répond jamais est
+ *  indiscernable, à l'écran, d'un bouton qui ne fonctionne pas — on tape, rien
+ *  ne se passe, et rien ne dira jamais pourquoi. Cinq secondes plus tard, on
+ *  préfère une erreur affichée à une attente muette. */
+export function avecDelai<T>(promesse: Promise<T>, ms = 5000): Promise<T> {
+  return new Promise<T>((resoudre, rejeter) => {
+    const minuterie = setTimeout(() => rejeter(new DelaiDepasse()), ms);
+    promesse.then(
+      (v) => {
+        clearTimeout(minuterie);
+        resoudre(v);
+      },
+      (e: unknown) => {
+        clearTimeout(minuterie);
+        rejeter(e instanceof Error ? e : new Error(String(e)));
+      },
+    );
+  });
+}
+
 /** Charge le vrai plugin. Séparé pour que le canal reste testable sans lui. */
 async function pluginReel(): Promise<PluginNotifications> {
   const { LocalNotifications } = await import('@capacitor/local-notifications');

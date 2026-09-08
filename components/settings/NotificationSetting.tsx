@@ -6,6 +6,7 @@ import { Switch } from '@/components/ui';
 import { useSettings, useStore } from '@/lib/store';
 import {
   alarmesExactes,
+  avecDelai,
   creerCanalNatif,
   demanderAlarmesExactes,
   demanderNotifications,
@@ -67,6 +68,15 @@ export function NotificationSetting() {
      demandé, ou navigateur (où la question n'a pas de sens : les minuteries
      meurent avec la page). */
   const [programmes, setProgrammes] = useState<number | null>(null);
+  /* JOURNAL DE CET ÉCRAN. Six lignes, en mémoire, jamais persistées.
+     Il existe parce qu'un bouton dont l'appel natif ne répond pas est
+     indiscernable, à l'œil, d'un bouton qui ne marche pas : on tape, rien ne
+     bouge, et rien ne dira jamais pourquoi. Chaque geste laisse ici une trace
+     horodatée — la demande partie, la réponse reçue, l'échec s'il y a. */
+  const [journal, setJournal] = useState<string[]>([]);
+  /* Ce qui tourne en ce moment. Un bouton qui ne dit pas qu'il travaille est un
+     bouton qu'on croit mort, et qu'on re-tape. */
+  const [enCours, setEnCours] = useState<'perm' | 'essai' | 'reglages' | null>(null);
 
   useEffect(() => {
     void etatNotificationsAsync().then(setEtat);
@@ -128,8 +138,36 @@ export function NotificationSetting() {
     setEtat(await demande);
   };
 
+  const tracer = (ligne: string) => {
+    const t = new Date();
+    const heure = `${String(t.getHours()).padStart(2, '0')}:${String(t.getMinutes()).padStart(2, '0')}:${String(t.getSeconds()).padStart(2, '0')}`;
+    /* Les plus RÉCENTES en tête, six au plus : le journal doit se lire d'un
+       coup d'œil sur un téléphone, pas se dérouler. */
+    setJournal((lignes) => [`${heure} · ${ligne}`, ...lignes].slice(0, 6));
+  };
+
+  /** Le message d'une erreur, tel quel — c'est lui qui vaut quelque chose. */
+  const raisonDe = (e: unknown): string =>
+    e instanceof Error && e.name === 'DelaiDepasse'
+      ? ts('notifDiagTimeout')
+      : e instanceof Error
+        ? e.message || e.name
+        : String(e);
+
   const ouvrirReglages = async () => {
-    setOuvertureRatee(!(await ouvrirReglagesNotifications()));
+    setEnCours('reglages');
+    tracer(ts('notifDiagOpen'));
+    try {
+      const ouvert = await avecDelai(ouvrirReglagesNotifications());
+      setOuvertureRatee(!ouvert);
+      tracer(ouvert ? ts('notifDiagOpenOk') : ts('notifDiagOpenKo'));
+    } catch (e) {
+      setOuvertureRatee(true);
+      tracer(ts('notifDiagErr', { v: raisonDe(e) }));
+      void logError('notifications', e);
+    } finally {
+      setEnCours(null);
+    }
   };
 
   /* L'ESSAI PART PAR LE MÊME CHEMIN QUE LES VRAIS RAPPELS : le canal natif s'il
@@ -137,13 +175,27 @@ export function NotificationSetting() {
      lui ne prouverait que lui-même. */
   const tester = async () => {
     setEssai(null);
+    setEnCours('essai');
+    tracer(ts('notifDiagTest'));
     try {
-      if (natif) await programmerEssai(ts('notifTestTitle'), ts('notifTestBody'));
-      else await notifier(ts('notifTestTitle'), ts('notifTestBody'), 'essai');
+      await avecDelai(
+        natif
+          ? programmerEssai(ts('notifTestTitle'), ts('notifTestBody'))
+          : notifier(ts('notifTestTitle'), ts('notifTestBody'), 'essai').then(() => undefined),
+      );
       setEssai('ok');
+      tracer(ts('notifDiagTestOk'));
+      if (natif) {
+        const n = await creerCanalNatif().compterProgrammes();
+        setProgrammes(n);
+        tracer(ts('notifDiagCount', { v: n }));
+      }
     } catch (e) {
       void logError('notifications', e);
       setEssai('echec');
+      tracer(ts('notifDiagErr', { v: raisonDe(e) }));
+    } finally {
+      setEnCours(null);
     }
   };
 
@@ -152,9 +204,24 @@ export function NotificationSetting() {
      accordée dans les réglages système doit pouvoir être RELUE sans
      réinstaller. */
   const redemander = async () => {
-    setEtat(await demanderNotifications());
-    setExactes(await alarmesExactes());
-    if (estNatif()) setProgrammes(await creerCanalNatif().compterProgrammes());
+    setEnCours('perm');
+    tracer(ts('notifDiagAsk'));
+    try {
+      const reponse = await avecDelai(demanderNotifications());
+      setEtat(reponse);
+      tracer(ts('notifDiagAnswer', { v: reponse }));
+      setExactes(await alarmesExactes());
+      if (estNatif()) {
+        const n = await creerCanalNatif().compterProgrammes();
+        setProgrammes(n);
+        tracer(ts('notifDiagCount', { v: n }));
+      }
+    } catch (e) {
+      void logError('notifications', e);
+      tracer(ts('notifDiagErr', { v: raisonDe(e) }));
+    } finally {
+      setEnCours(null);
+    }
   };
 
   /* Désactivé UNIQUEMENT là où rien ne pourra jamais marcher : un navigateur
@@ -204,19 +271,24 @@ export function NotificationSetting() {
               <button
                 type="button"
                 onClick={() => void ouvrirReglages()}
-                className="rounded-btn cursor-pointer border px-3 py-1.5 text-[11.5px]"
+                disabled={enCours === 'reglages'}
+                className="rounded-btn cursor-pointer border px-3 py-1.5 text-[11.5px] font-semibold"
                 style={{ borderColor: 'var(--acc2)', color: 'var(--acc2)' }}
               >
-                {ts('notifOpenSettings')}
+                {enCours === 'reglages' ? ts('notifBusy') : ts('notifOpenSettings')}
               </button>
             ) : null}
             <button
               type="button"
               onClick={() => void redemander()}
-              className="rounded-btn cursor-pointer border px-3 py-1.5 text-[11.5px]"
-              style={{ borderColor: 'var(--line)', color: 'var(--txt2)' }}
+              disabled={enCours === 'perm'}
+              /* PLUS DE GRIS. Ces boutons portaient l'encre secondaire et la
+                 ligne fine des éléments passifs : sur téléphone, ils se lisaient
+                 comme désactivés, et on n'essayait même pas de les toucher. */
+              className="rounded-btn cursor-pointer border px-3 py-1.5 text-[11.5px] font-semibold"
+              style={{ borderColor: 'var(--acc)', color: 'var(--acc)' }}
             >
-              {ts('notifRetry')}
+              {enCours === 'perm' ? ts('notifBusy') : ts('notifRetry')}
             </button>
           </div>
 
@@ -243,9 +315,14 @@ export function NotificationSetting() {
           </p>
           <button
             type="button"
-            onClick={() => void demanderAlarmesExactes().then(setExactes)}
-            className="rounded-btn cursor-pointer border px-3 py-1.5 text-[11.5px]"
-            style={{ borderColor: 'var(--line)', color: 'var(--txt2)' }}
+            onClick={() =>
+              void demanderAlarmesExactes().then((r) => {
+                setExactes(r);
+                tracer(ts('notifDiagAnswer', { v: r }));
+              })
+            }
+            className="rounded-btn cursor-pointer border px-3 py-1.5 text-[11.5px] font-semibold"
+            style={{ borderColor: 'var(--acc)', color: 'var(--acc)' }}
           >
             {ts('notifExactBtn')}
           </button>
@@ -260,11 +337,12 @@ export function NotificationSetting() {
           <button
             type="button"
             onClick={() => void tester()}
+            disabled={enCours === 'essai'}
             data-test-notif
-            className="rounded-btn cursor-pointer border px-3 py-1.5 text-[11.5px]"
-            style={{ borderColor: 'var(--line)', color: 'var(--txt2)' }}
+            className="rounded-btn cursor-pointer border px-3 py-1.5 text-[11.5px] font-semibold"
+            style={{ borderColor: 'var(--acc)', color: 'var(--acc)' }}
           >
-            {ts('notifTest')}
+            {enCours === 'essai' ? ts('notifBusy') : ts('notifTest')}
           </button>
           {essai === 'ok' ? (
             <p role="status" className="m-0 text-[11.5px]" style={{ color: 'var(--acc2)' }}>
@@ -287,6 +365,27 @@ export function NotificationSetting() {
               {ts('notifScheduled', { n: programmes })}
             </p>
           ) : null}
+        </div>
+      ) : null}
+
+      {/* LE JOURNAL DE CET ÉCRAN. Il n'apparaît qu'après un premier geste :
+          personne n'a besoin d'un journal vide. Il transforme « j'ai tapé, rien
+          ne s'est passé » en un fait qu'on peut corriger. */}
+      {journal.length > 0 ? (
+        <div className="flex flex-col gap-1 pb-3">
+          <span className="text-[11.5px]" style={{ color: 'var(--txt2)' }}>
+            {ts('notifDiagT')}
+          </span>
+          <span className="text-[10.5px]" style={{ color: 'var(--mut)' }}>
+            {ts('notifDiagHint')}
+          </span>
+          <ul data-journal-notif className="m-0 flex list-none flex-col gap-0.5 p-0">
+            {journal.map((ligne) => (
+              <li key={ligne} className="font-mono text-[10.5px]" style={{ color: 'var(--txt2)' }}>
+                {ligne}
+              </li>
+            ))}
+          </ul>
         </div>
       ) : null}
 

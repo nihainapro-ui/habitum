@@ -1,5 +1,33 @@
 # Journal des modifications
 
+## 2026-09-08 (suite 2) — Des boutons qui répondent, et un journal qui dit pourquoi
+
+« On ne peut pas cliquer sur les lignes grises. » Les boutons répondaient — ils
+ne le MONTRAIENT pas, et deux défauts s'additionnaient.
+
+**Ils avaient l'apparence d'éléments désactivés** : encre secondaire, ligne
+fine, exactement le dessin des choses passives du produit. Sur téléphone, on ne
+tente même pas de les toucher. Ils portent désormais l'encre d'accent et une
+graisse plus forte.
+
+**Et surtout, taper ne produisait rien de visible.** Quand Android répond
+« refusé » sans afficher de dialogue — ce qu'il fait dès qu'un refus est
+mémorisé — l'écran restait strictement identique : ni réponse, ni erreur, ni
+mouvement. Un bouton muet est indiscernable d'un bouton mort.
+
+Trois corrections, dans cet ordre d'importance :
+
+1. **Un journal de l'écran**, six lignes horodatées, en mémoire, jamais
+   persistées, rien qui sorte de l'appareil. Chaque geste y laisse sa trace :
+   la demande partie, la réponse du système mot pour mot, l'échec s'il y a.
+   « J'ai tapé, rien ne s'est passé » devient un fait qu'on peut corriger.
+2. **Les boutons disent qu'ils travaillent** — libellé « En cours… » et bouton
+   désactivé le temps de l'appel. Un bouton qui ne le dit pas est un bouton
+   qu'on croit mort, et qu'on re-tape.
+3. **Tout appel natif est borné à cinq secondes.** Un appel au pont Capacitor
+   qui ne répond jamais était, à l'écran, la même chose qu'un bouton en panne.
+   Passé le délai, l'écran l'écrit.
+
 ## 2026-09-08 (suite) — Fermer Habitum effaçait les rappels qu'il venait de poser
 
 **Le défaut qui empêchait TOUT rappel d'arriver, trouvé.** L'armement appelle

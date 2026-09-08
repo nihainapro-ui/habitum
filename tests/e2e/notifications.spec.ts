@@ -269,3 +269,43 @@ test('la permission manquante affiche l’état brut du système', async ({ page
 
   await expect(page.getByText('État rapporté par le système : denied.')).toBeVisible();
 });
+
+test('chaque geste laisse une trace lisible à l’écran', async ({ page }) => {
+  /* CE JOURNAL EXISTE PARCE QU'UN BOUTON MUET EST INDISCERNABLE D'UN BOUTON
+     MORT. Sur téléphone, taper « redemander la permission » ne produisait
+     RIEN de visible quand le système répondait « refusé » sans dialogue : ni
+     réponse, ni erreur, ni mouvement. On ne pouvait pas distinguer « le bouton
+     ne marche pas » de « le système a dit non ». */
+  await poserNotification(page, 'denied');
+  await ouvrirVierge(page, '/app/settings');
+  await interrupteur(page).click();
+
+  await expect(page.locator('[data-journal-notif]')).toHaveCount(0);
+
+  await page.getByRole('button', { name: 'Redemander la permission' }).click();
+
+  const lignes = page.locator('[data-journal-notif] li');
+  await expect(lignes.first()).toContainText('denied');
+  await expect(lignes).not.toHaveCount(0);
+});
+
+test('le bouton dit qu’il travaille, et se refuse à être tapé deux fois', async ({ page }) => {
+  await poserNotification(page, 'granted');
+  await ouvrirVierge(page, '/app/settings');
+  await interrupteur(page).click();
+
+  /* La réponse est retenue le temps de voir l'état intermédiaire : un bouton
+     qui ne dit pas qu'il travaille est un bouton qu'on croit mort, et qu'on
+     re-tape. */
+  await page.evaluate(() => {
+    Object.defineProperty(window.Notification, 'requestPermission', {
+      configurable: true,
+      value: () =>
+        new Promise((r) => setTimeout(() => r('granted' as NotificationPermission), 1500)),
+    });
+  });
+
+  const bouton = page.getByRole('button', { name: 'Tester dans 10 secondes' });
+  await bouton.click();
+  await expect(page.getByRole('button', { name: 'En cours…' })).toBeDisabled();
+});
