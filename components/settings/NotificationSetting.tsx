@@ -190,7 +190,7 @@ export function NotificationSetting() {
          permission lui-même (son code Kotlin le dit). L'essai semblait alors
          « ne pas répondre » alors qu'une boîte de dialogue attendait. On la
          demande donc nous-mêmes, on l'annonce, et on ne programme qu'après. */
-      if (natif && etat !== 'granted') {
+      {
         tracer(ts('notifDiagAsk'));
         const accord = await avecDelai(demanderNotifications(), DELAI_DIALOGUE);
         setEtat(accord);
@@ -204,7 +204,9 @@ export function NotificationSetting() {
       await avecDelai(
         natif
           ? programmerEssai(ts('notifTestTitle'), ts('notifTestBody'))
-          : notifier(ts('notifTestTitle'), ts('notifTestBody'), 'essai').then(() => undefined),
+          : notifier(ts('notifTestTitle'), ts('notifTestBody'), 'essai').then((affiche) => {
+              if (!affiche) throw new Error(ts('notifTestFailed'));
+            }),
         DELAI_DIALOGUE,
       );
       setEssai('ok');

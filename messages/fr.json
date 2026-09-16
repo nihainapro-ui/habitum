@@ -608,7 +608,7 @@
     "notifDiagT": "Journal de cet écran",
     "notifDiagTest": "Essai : programmation demandée…",
     "notifDiagTestOk": "Essai : programmé. Fermez Habitum et attendez.",
-    "notifDiagTimeout": "Aucune réponse du système après 5 secondes.",
+    "notifDiagTimeout": "Le système n’a pas répondu dans le délai prévu.",
     "notifDiagWait": "Android pose sa question : répondez à la boîte de dialogue.",
     "notifDigestBody": "{compte} chose(s) prévue(s) aujourd’hui.",
     "notifDigestD": "Une notification par jour, avec ce qui reste. Rien n’est envoyé les jours vides.",

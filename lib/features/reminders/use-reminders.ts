@@ -1,13 +1,14 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { prochainsRappels, type Rappel } from '@/lib/domain';
 import { useSettings, useStore } from '@/lib/store';
 import type { Canal, RappelPret } from './canal';
 import { creerCanalMinuteries } from './canal-minuteries';
 import { creerCanalNatif, estNatif } from './canal-natif';
-import { etatNotificationsAsync, notifier } from './permission';
+import { etatNotificationsAsync, notifier, PERMISSION_NOTIFICATIONS_CHANGE } from './permission';
+import { logError } from '@/lib/logger';
 
 /* Armement des rappels — tâche 5.2, étendue par la spec du 2026-09-07.
  *
@@ -24,7 +25,7 @@ import { etatNotificationsAsync, notifier } from './permission';
  * armé : l'interface le dira au prochain passage dans les réglages plutôt que
  * de faire semblant. */
 
-export function useReminders(): void {
+export function useReminders(pret: boolean): void {
   const ts = useTranslations('system');
   const habits = useStore((s) => s.habits);
   const logIndex = useStore((s) => s.logIndex);
@@ -33,11 +34,36 @@ export function useReminders(): void {
   const projectTasks = useStore((s) => s.projectTasks);
   const goals = useStore((s) => s.goals);
   const reglages = useSettings();
+  const canalRef = useRef<Canal | null>(null);
+  const [revision, actualiser] = useState(0);
 
   useEffect(() => {
-    if (!reglages.notifications) return;
+    const rafraichir = () => actualiser((n) => n + 1);
+    const auRetour = () => {
+      if (document.visibilityState === 'visible') rafraichir();
+    };
+    window.addEventListener(PERMISSION_NOTIFICATIONS_CHANGE, rafraichir);
+    window.addEventListener('focus', auRetour);
+    document.addEventListener('visibilitychange', auRetour);
+    /* Renouvelle l'horizon même si l'application reste ouverte plusieurs jours.
+       Sur le web, remplit aussi les places libérées parmi les 24 minuteries. */
+    const minuterie = setInterval(rafraichir, estNatif() ? 3_600_000 : 60_000);
+    return () => {
+      clearInterval(minuterie);
+      window.removeEventListener(PERMISSION_NOTIFICATIONS_CHANGE, rafraichir);
+      window.removeEventListener('focus', auRetour);
+      document.removeEventListener('visibilitychange', auRetour);
+    };
+  }, []);
 
-    let canal: Canal | null = null;
+  useEffect(() => {
+    /* Le réglage initial vaut false AVANT lecture de la base : l'utiliser
+       annulerait les alarmes d'une installation pourtant activée. */
+    if (!pret) return;
+
+    const canal = (canalRef.current ??= estNatif()
+      ? creerCanalNatif()
+      : creerCanalMinuteries((r) => void notifier(r.titre, r.corps, r.cle)));
     let abandonne = false;
 
     /* La traduction a lieu ICI, une fois. Le domaine rend une clé de libellé,
@@ -51,13 +77,12 @@ export function useReminders(): void {
     });
 
     void (async () => {
+      /* Désactivation EXPLICITE, distincte de la fermeture de l'application. */
+      if (!reglages.notifications) {
+        await canal.programmer([]);
+        return;
+      }
       if ((await etatNotificationsAsync()) !== 'granted' || abandonne) return;
-
-      canal = estNatif()
-        ? creerCanalNatif()
-        : creerCanalMinuteries((r) => void notifier(r.titre, r.corps, r.cle));
-
-      if (abandonne) return;
       const rappels = prochainsRappels(
         { habits, log: logIndex, tasks, occurrences, projectTasks, goals },
         reglages,
@@ -65,13 +90,13 @@ export function useReminders(): void {
         canal.horizonJours,
       );
       await canal.programmer(rappels.map(traduire));
-    })();
+    })().catch((e: unknown) => void logError('notifications', e));
 
     return () => {
       abandonne = true;
       /* Le canal peut n'avoir jamais été créé (permission refusée, ou démontage
          pendant la lecture) : on n'arrête que ce qui existe. */
-      void canal?.arreter();
+      void canal.arreter().catch((e: unknown) => void logError('notifications', e));
     };
-  }, [reglages, habits, logIndex, tasks, occurrences, projectTasks, goals, ts]);
+  }, [pret, revision, reglages, habits, logIndex, tasks, occurrences, projectTasks, goals, ts]);
 }

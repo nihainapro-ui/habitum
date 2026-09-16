@@ -1,5 +1,35 @@
 # Journal des modifications
 
+## 2026-09-13 — Débloquer le plugin Android et réarmer les notifications
+
+Les fonctions de chargement asynchrones rendaient directement le proxy Capacitor.
+JavaScript essayait alors d'appeler son membre `then`, comme pour une promesse :
+`LocalNotifications.then()` n'existe pas sur Android. Permissions, diagnostics et
+programmation pouvaient rester suspendus. Les chargeurs rendent désormais des
+objets ordinaires qui appellent les méthodes du plugin.
+
+La programmation reprend après la réponse à une permission et au retour des
+réglages système. Elle attend l'hydratation des données avant toute annulation.
+Couper les notifications retire les alarmes de rappel ; fermer l'application les
+conserve. Les programmations successives sont sérialisées afin qu'un envoi lent
+ne rétablisse pas un rappel après sa désactivation. Le rappel d'essai reste séparé.
+
+L'option d'alarme exacte suit la permission déjà accordée : aucune programmation
+automatique n'ouvre désormais un écran Android. Sans cette permission, le système
+programme une alarme approximative ; le réglage explique toujours le retard possible.
+Les horizons se renouvellent pendant une longue ouverture (une minute sur le web,
+une heure dans l'APK), en plus des changements de données et du retour au premier plan.
+
+Les fins de phase Focus empruntent maintenant le canal natif dans l'APK. Le web
+n'attend plus indéfiniment un service worker inexistant, et l'essai ne prétend plus
+réussir quand aucune notification n'a pu être affichée.
+
+Tests de régression : vrai plugin JavaScript sur pont Android simulé, permission
+tardive, retour système, désactivation, fermeture/réouverture, concurrence des
+programmations, alarmes exactes refusées et notification immédiate. Le pont simulé
+ne prouve pas la réception en veille sur un téléphone réel ; aucun appareil n'était
+connecté pendant cette correction.
+
 ## 2026-09-08 (suite 3) — Mon minuteur coupait la parole à Android
 
 Le journal d'écran, ajouté la veille pour cette raison exacte, a livré le fait

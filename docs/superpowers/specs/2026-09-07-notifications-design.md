@@ -40,6 +40,27 @@ sans exception, et c'est aussi ce qui rend les quatre sources testables d'un seu
 
 ## Les cinq sources
 
+### Cycle de programmation — correction du 13 septembre 2026
+
+- Attendre la lecture des données avant d'appliquer l'interrupteur maître.
+- Réarmer après la réponse à une demande de permission et au retour de l'application
+  au premier plan, y compris après les réglages système Android.
+- Désactivation explicite : programmer une liste vide pour annuler les rappels.
+  Fermeture de la page : arrêter les minuteries web, conserver les alarmes Android.
+- Sérialiser les programmations d'un même canal : la dernière modification gagne.
+- Renouveler l'horizon pendant une longue ouverture : chaque minute sur le web
+  (24 minuteries au maximum), chaque heure dans l'APK (sept jours d'avance).
+- Ne pas demander automatiquement l'accès aux alarmes exactes. Employer cet accès
+  s'il est accordé ; sinon programmer des alarmes approximatives et conserver
+  l'explication visible dans les réglages.
+- Les chargeurs asynchrones ne rendent jamais directement un proxy de plugin
+  Capacitor : son membre `then` est interprété comme celui d'une promesse et bloque
+  l'appel. Rendre un objet ordinaire de méthodes déléguées.
+
+Les tests navigateur remplacent uniquement le pont Android ; le vrai plugin
+JavaScript et toute l'orchestration applicative restent exécutés. La réception
+réelle en veille se vérifie sur appareil.
+
 | Source | Quand | Jamais si |
 |---|---|---|
 | Habitude | chaque heure de `reminders[]` | non planifiée ce jour, déjà faite, heure passée |

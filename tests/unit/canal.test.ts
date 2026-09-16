@@ -228,6 +228,64 @@ describe('canal natif', () => {
     expect(d.annulees).toHaveLength(1);
     expect(d.programmees).toHaveLength(1);
   });
+
+  it('une désactivation pendant un envoi lent reste la dernière programmation', async () => {
+    const d = doublePlugin();
+    let liberer!: () => void;
+    const attente = new Promise<void>((resolve) => {
+      liberer = resolve;
+    });
+    let entrer!: () => void;
+    const commence = new Promise<void>((resolve) => {
+      entrer = resolve;
+    });
+    const plugin: PluginNotifications = {
+      ...d.plugin,
+      async schedule(options) {
+        entrer();
+        await attente;
+        return d.plugin.schedule(options);
+      },
+    };
+    const canal = creerCanalNatif(async () => plugin);
+    const premier = canal.programmer([rappel('13:30')]);
+    await commence;
+    const dernier = canal.programmer([]);
+    /* Laisser l'annulation entrer pendant que le premier envoi attend. */
+    await Promise.resolve();
+    await Promise.resolve();
+    await Promise.resolve();
+    liberer();
+    await Promise.all([premier, dernier]);
+    expect((await d.plugin.getPending()).notifications).toEqual([]);
+  });
+
+  it('programme sans ouvrir les réglages Android quand les alarmes exactes sont refusées', async () => {
+    const d = doublePlugin();
+    const schedule = vi.fn(d.plugin.schedule);
+    const plugin: PluginNotifications = {
+      ...d.plugin,
+      schedule,
+      checkExactNotificationSetting: async () => ({ exact_alarm: 'denied' }),
+    };
+    await creerCanalNatif(async () => plugin).programmer([rappel('13:30')]);
+    expect(schedule.mock.calls[0]?.[0].notifications[0]).toMatchObject({
+      isExactNotification: false,
+    });
+  });
+
+  it('utilise les alarmes exactes quand Android les autorise', async () => {
+    const d = doublePlugin();
+    const schedule = vi.fn(d.plugin.schedule);
+    await creerCanalNatif(async () => ({
+      ...d.plugin,
+      schedule,
+      checkExactNotificationSetting: async () => ({ exact_alarm: 'granted' }),
+    })).programmer([rappel('13:30')]);
+    expect(schedule.mock.calls[0]?.[0].notifications[0]).toMatchObject({
+      isExactNotification: true,
+    });
+  });
 });
 
 /* --- Ce que l'APK ajoute autour du canal --------------------------------- */
@@ -279,6 +337,19 @@ describe('canal Android et rappel d’essai', () => {
     expect(d.programmees).toHaveLength(1);
     expect(d.programmees[0]!.id).toBe(ESSAI_ID);
     expect(d.programmees[0]!.at.getTime()).toBe(MERCREDI.getTime() + 10_000);
+  });
+
+  it('l’essai ne déclenche pas une seconde demande système qui périmerait son heure', async () => {
+    const d = doubleComplet();
+    const schedule = vi.fn(d.plugin.schedule);
+    await programmerEssai('Habitum', 'essai', 10, async () => ({
+      ...d.plugin,
+      schedule,
+      checkExactNotificationSetting: async () => ({ exact_alarm: 'denied' }),
+    }));
+    expect(schedule.mock.calls[0]?.[0].notifications[0]).toMatchObject({
+      isExactNotification: false,
+    });
   });
 
   it('N’ANNULE PAS l’essai en reprogrammant', async () => {

@@ -1,5 +1,14 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { notifier } from '@/lib/features/reminders/permission';
+import { LocalNotifications } from '@capacitor/local-notifications';
+
+vi.mock('@capacitor/local-notifications', () => ({
+  LocalNotifications: {
+    checkPermissions: vi.fn(async () => ({ display: 'granted' })),
+    createChannel: vi.fn(async () => undefined),
+    schedule: vi.fn(async () => ({ notifications: [] })),
+  },
+}));
 
 /* Tâche 5.2 — par où passe une notification, et pourquoi cela compte.
 
@@ -42,18 +51,54 @@ function poser({
   poserGlobal('Notification', FauxNotification);
   poserGlobal(
     'navigator',
-    avecServiceWorker ? { serviceWorker: { ready: Promise.resolve({ showNotification }) } } : {},
+    avecServiceWorker
+      ? {
+          serviceWorker: {
+            ready: Promise.resolve({ showNotification }),
+            getRegistration: async () => ({ active: {}, showNotification }),
+          },
+        }
+      : {},
   );
 
   return { construit, showNotification };
 }
 
 afterEach(() => {
-  for (const nom of ['window', 'navigator', 'Notification']) retirerGlobal(nom);
+  for (const nom of ['window', 'navigator', 'Notification', 'Capacitor']) retirerGlobal(nom);
   vi.restoreAllMocks();
 });
 
 describe('notifier', () => {
+  it('envoie la fin de focus par Android quand l’API web est absente', async () => {
+    poserGlobal('window', {});
+    poserGlobal('Capacitor', { isNativePlatform: () => true });
+    await expect(notifier('Concentration terminée', '', 'phase-focus')).resolves.toBe(true);
+    expect(LocalNotifications.schedule).toHaveBeenCalledWith({
+      notifications: [
+        expect.objectContaining({
+          title: 'Concentration terminée',
+          isExactNotification: false,
+        }),
+      ],
+    });
+    expect(
+      vi.mocked(LocalNotifications.schedule).mock.calls.at(-1)?.[0].notifications[0],
+    ).not.toHaveProperty('schedule');
+  });
+
+  it('ne reste pas suspendu à ready quand aucun service worker n’est enregistré', async () => {
+    const { construit } = poser({ avecServiceWorker: false });
+    poserGlobal('navigator', {
+      serviceWorker: {
+        ready: new Promise(() => {}),
+        getRegistration: async () => undefined,
+      },
+    });
+    await expect(notifier('Méditer', '', 'rappel-med')).resolves.toBe(true);
+    expect(construit).toHaveBeenCalledOnce();
+  }, 1000);
+
   it('passe par le SERVICE WORKER quand il y en a un', async () => {
     const { showNotification, construit } = poser();
 

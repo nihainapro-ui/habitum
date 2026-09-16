@@ -39,6 +39,7 @@ export interface NotificationNative {
   body: string;
   schedule: { at: Date; allowWhileIdle: boolean };
   channelId?: string;
+  isExactNotification?: boolean;
 }
 
 export interface PluginNotifications {
@@ -72,6 +73,27 @@ export interface PluginNotifications {
  *  (l'utilisateur seul le peut). Le renommer en créerait un second, et les
  *  réglages faits sur le premier seraient perdus sans un mot. */
 export const CANAL_RAPPELS = 'habitum-rappels';
+
+/** Retour immédiat (fin de focus), qui ne doit jamais demander une alarme exacte. */
+export async function afficherNotificationNative(
+  titre: string,
+  corps: string,
+  tag: string,
+): Promise<void> {
+  const { LocalNotifications } = await import('@capacitor/local-notifications');
+  await LocalNotifications.createChannel({ id: CANAL_RAPPELS, name: 'Habitum', importance: 5 });
+  await LocalNotifications.schedule({
+    notifications: [
+      {
+        id: identifiantNotification(`immediate|${tag}`),
+        title: titre,
+        body: corps,
+        channelId: CANAL_RAPPELS,
+        isExactNotification: false,
+      },
+    ],
+  });
+}
 
 /** Erreur d'un appel natif resté sans réponse. */
 export class DelaiDepasse extends Error {
@@ -123,7 +145,15 @@ export function avecDelai<T>(promesse: Promise<T>, ms: number = DELAI_LECTURE): 
 /** Charge le vrai plugin. Séparé pour que le canal reste testable sans lui. */
 async function pluginReel(): Promise<PluginNotifications> {
   const { LocalNotifications } = await import('@capacitor/local-notifications');
-  return LocalNotifications as unknown as PluginNotifications;
+  /* Ne pas rendre le proxy lui-même : son `then` factice bloque la Promise. */
+  return {
+    schedule: (options) => LocalNotifications.schedule(options),
+    getPending: () => LocalNotifications.getPending(),
+    cancel: (options) => LocalNotifications.cancel(options),
+    createChannel: (options) => LocalNotifications.createChannel(options),
+    checkExactNotificationSetting: () => LocalNotifications.checkExactNotificationSetting(),
+    changeExactNotificationSetting: () => LocalNotifications.changeExactNotificationSetting(),
+  };
 }
 
 /** Tourne-t-on dans l'APK ? Faux dans tout navigateur, y compris la PWA
@@ -203,6 +233,7 @@ export async function programmerEssai(
 ): Promise<void> {
   const plugin = await charger();
   await declarerCanal(plugin, titre);
+  const isExactNotification = await exactesAutorisees(plugin);
   await plugin.schedule({
     notifications: [
       {
@@ -211,6 +242,7 @@ export async function programmerEssai(
         body: corps,
         schedule: { at: new Date(Date.now() + dansSecondes * 1000), allowWhileIdle: true },
         channelId: CANAL_RAPPELS,
+        isExactNotification,
       },
     ],
   });
@@ -222,7 +254,19 @@ export async function programmerEssai(
  *  reprogrammation qui suit. */
 export const ESSAI_ID = 1;
 
+/** Ne jamais ouvrir les réglages système depuis une programmation automatique.
+ * Le plugin 8.3 les ouvre par défaut si on demande une alarme exacte refusée. */
+async function exactesAutorisees(plugin: PluginNotifications): Promise<boolean> {
+  try {
+    return (await plugin.checkExactNotificationSetting?.())?.exact_alarm === 'granted';
+  } catch {
+    return false;
+  }
+}
+
 export function creerCanalNatif(charger: () => Promise<PluginNotifications> = pluginReel): Canal {
+  /* Une modification suivante doit gagner même si l'envoi précédent est lent. */
+  let suite: Promise<void> = Promise.resolve();
   /* Annule ce qui est en attente, y compris ce qu'une VERSION PRÉCÉDENTE de
      l'application aurait posé : on demande au système ce qu'il détient plutôt
      que de se fier à ce qu'on croit avoir programmé.
@@ -260,17 +304,19 @@ export function creerCanalNatif(charger: () => Promise<PluginNotifications> = pl
       }
     },
 
-    async programmer(rappels) {
-      await annulerTout();
-      if (rappels.length === 0) return;
+    programmer(rappels) {
+      const operation = suite.then(async () => {
+        await annulerTout();
+        if (rappels.length === 0) return;
 
-      const plugin = await charger();
-      await declarerCanal(plugin, rappels[0]?.titre ?? CANAL_RAPPELS);
-      const maintenant = Date.now();
-      await plugin.schedule({
-        notifications: rappels
-          .filter((r: RappelPret) => r.at > maintenant)
-          .map((r) => ({
+        const plugin = await charger();
+        await declarerCanal(plugin, rappels[0]?.titre ?? CANAL_RAPPELS);
+        const isExactNotification = await exactesAutorisees(plugin);
+        const maintenant = Date.now();
+        const futurs = rappels.filter((r) => r.at > maintenant);
+        if (futurs.length === 0) return;
+        await plugin.schedule({
+          notifications: futurs.map((r: RappelPret) => ({
             /* Identifiant DÉRIVÉ de la clé, jamais tiré au hasard : la même
                tâche à la même heure doit retomber sur le même entier d'une
                reprogrammation à l'autre, sinon les annulations ratent leur
@@ -283,8 +329,12 @@ export function creerCanalNatif(charger: () => Promise<PluginNotifications> = pl
                cas où il sert le plus, la nuit et l'appareil posé. */
             schedule: { at: new Date(r.at), allowWhileIdle: true },
             channelId: CANAL_RAPPELS,
+            isExactNotification,
           })),
+        });
       });
+      suite = operation.catch(() => {});
+      return operation;
     },
   };
 }

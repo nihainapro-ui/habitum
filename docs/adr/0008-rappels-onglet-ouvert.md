@@ -2,6 +2,14 @@
 
 - **Statut** : accepté · 2026-08-13 (phase 5, tâche 5.2)
 
+> **Portée actualisée le 13 septembre 2026.** Cette décision décrit le navigateur
+> et la PWA. L'APK Android utilise désormais les notifications locales Capacitor,
+> programmées sept jours à l'avance et conservées à la fermeture. La désactivation
+> explicite annule les rappels. Voir la
+> [spécification des notifications](../superpowers/specs/2026-09-07-notifications-design.md).
+> Le relais de synchronisation chiffrée ne lit pas les données et ne sert pas
+> de serveur Web Push.
+
 ## Contexte
 
 Le plan de la phase 5 demandait deux chemins de planification pour les rappels d'habitude :

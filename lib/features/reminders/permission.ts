@@ -1,5 +1,7 @@
 import { logError } from '@/lib/logger';
-import { estNatif } from './canal-natif';
+import { afficherNotificationNative, estNatif } from './canal-natif';
+
+export const PERMISSION_NOTIFICATIONS_CHANGE = 'habitum:notification-permission';
 
 /* Permission de notifier — tâche 5.2.
 
@@ -32,7 +34,13 @@ interface PluginPermissions {
 async function pluginPermissions(): Promise<PluginPermissions | null> {
   try {
     const { LocalNotifications } = await import('@capacitor/local-notifications');
-    return LocalNotifications as unknown as PluginPermissions;
+    /* Le proxy Capacitor expose une fonction pour TOUT nom, même `then`.
+       Le rendre depuis une fonction async déclenche l'assimilation Promise :
+       LocalNotifications.then() n'existe pas et la permission reste en attente. */
+    return {
+      checkPermissions: () => LocalNotifications.checkPermissions(),
+      requestPermissions: () => LocalNotifications.requestPermissions(),
+    };
   } catch (e) {
     /* JOURNALISÉ, PLUS AVALÉ. Un import de plugin qui échoue dans l'APK rendait
        « ce navigateur ne sait pas afficher de notification » — un message faux,
@@ -74,7 +82,7 @@ export async function etatNotificationsAsync(): Promise<EtatNotifications> {
  *
  *  Les vieux Safari rendent la réponse par rappel plutôt que par promesse :
  *  `await` couvre les deux, une promesse déjà résolue restant une promesse. */
-export async function demanderNotifications(): Promise<EtatNotifications> {
+async function demanderPermission(): Promise<EtatNotifications> {
   if (estNatif()) {
     const plugin = await pluginPermissions();
     if (!plugin) return 'unsupported';
@@ -103,6 +111,17 @@ export async function demanderNotifications(): Promise<EtatNotifications> {
   }
 }
 
+/** Réarme aussi les rappels lorsque la réponse arrive après l'écriture du réglage. */
+export async function demanderNotifications(): Promise<EtatNotifications> {
+  try {
+    return await demanderPermission();
+  } finally {
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event(PERMISSION_NOTIFICATIONS_CHANGE));
+    }
+  }
+}
+
 /** Options communes aux deux chemins d'affichage. `tag` dédoublonne : deux
  *  onglets ouverts, ou un rappel réarmé, ne produisent qu'une notification. */
 const options = (corps: string, tag: string): NotificationOptions => ({
@@ -128,13 +147,26 @@ const options = (corps: string, tag: string): NotificationOptions => ({
  *  Le repli `new Notification` reste nécessaire : en développement, Serwist est
  *  désactivé et il n'y a aucun service worker à interroger. */
 export async function notifier(titre: string, corps: string, tag: string): Promise<boolean> {
+  if (estNatif()) {
+    if ((await etatNotificationsAsync()) !== 'granted') return false;
+    try {
+      await afficherNotificationNative(titre, corps, tag);
+      return true;
+    } catch (e) {
+      void logError('notifications', e);
+      return false;
+    }
+  }
   if (etatNotifications() !== 'granted') return false;
 
   if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
     try {
-      const enregistrement = await navigator.serviceWorker.ready;
-      await enregistrement.showNotification(titre, options(corps, tag));
-      return true;
+      /* `ready` ne rejette jamais sans SW : attendre bloquait le repli web. */
+      const enregistrement = await navigator.serviceWorker.getRegistration();
+      if (enregistrement?.active) {
+        await enregistrement.showNotification(titre, options(corps, tag));
+        return true;
+      }
     } catch {
       /* Pas de service worker prêt : on tente le chemin direct plutôt que de
          renoncer. */

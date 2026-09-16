@@ -50,7 +50,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   /* Rappels d'habitude (tâche 5.2). Armés ici et nulle part ailleurs : un
      planificateur par vue en produirait autant que de vues visitées. */
-  useReminders();
+  useReminders(pret);
   /* Fin de phase du minuteur : elle doit se signaler même hors de la vue
      « Focus ». C'est tout l'intérêt d'un minuteur ancré sur l'horloge murale. */
   usePhaseFeedback();
