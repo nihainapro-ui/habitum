@@ -179,3 +179,30 @@ compare champ à champ, en ferait un conflit.
 test d'aller-retour (`tests/unit/data/rappels-aller-retour.test.ts`) a été écrit
 avant eux, et il couvre aussi la relecture d'une sauvegarde antérieure. C'est le
 piège n°1 du CLAUDE.md, payé une fois au lot B.
+
+
+---
+
+## Ajout du 2026-09-16 — type et calendrier de chaque rappel
+
+Demandé sur capture d'une autre application : pour chaque rappel, choisir **Silencieuse /
+Notification / Alarme**, et un **calendrier** — toujours, certains jours de la semaine, ou
+tant de jours avant l'échéance.
+
+**Modèle.** Un `ReglageRappel { time, type?, days?, before? }`, déclaré une fois dans
+`types.ts`. `Habit.reminders` garde son nom (règle 1) et s'enrichit : chaînes d'origine et
+objets y cohabitent, lus par le seul `normaliserRappel()`. Tâches, étapes et objectifs
+gagnent `rappels[]` ; `remindAt` reste lu, plus jamais écrit.
+
+**« Alarme » = notification insistante**, décision tranchée avec l'utilisateur : canal
+Android d'importance maximale, vibration, son à nous (`res/raw/habitum_alarme.wav`,
+engendré par `scripts/son-alarme.mjs`), persiste jusqu'à être touchée, passe outre les
+heures silencieuses. Un vrai réveil plein écran demande une activité Android à écrire ;
+écarté comme lot à part.
+
+**Trois canaux Android**, un par type : c'est le canal qui porte son et vibration, pas la
+notification. Identifiants figés — Android ne laisse pas modifier un canal existant.
+
+**Calendrier commun aux quatre sources** (`rappelCeJour`) : la source ne fournit que « es-tu
+due tel jour ? ». « Jours avant » n'est proposé qu'à ce qui a une échéance ; « certains
+jours » qu'à ce qui revient.

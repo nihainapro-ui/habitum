@@ -3,7 +3,13 @@
 import { useForm, useWatch, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useTranslations } from 'next-intl';
-import { PROJECT_STATUSES, projectSubItems, type ProjectTask } from '@/lib/domain';
+import {
+  PROJECT_STATUSES,
+  projectSubItems,
+  type ProjectTask,
+  epurerRappel,
+  rappelsEntite,
+} from '@/lib/domain';
 import { projectTaskFormSchema, type ProjectTaskForm } from '@/lib/validation/project.schema';
 import { useStore } from '@/lib/store';
 import { LigneListe, Select, TextArea, TextInput } from './fields';
@@ -25,7 +31,7 @@ const versFormulaire = (t?: ProjectTask): ProjectTaskForm => ({
   subItems: t ? [...projectSubItems(t)] : [],
   /* `notify` absent vaut OUI : une étape non réglée suit sa source. */
   notify: t?.notify !== false,
-  remindAt: t?.remindAt ?? '',
+  rappels: t ? rappelsEntite(t) : [],
 });
 
 /** Du formulaire vers l'entité. `notify: true` et les champs vides ne sont
@@ -44,7 +50,8 @@ const aEcrire = (v: ProjectTaskForm) => ({
     ...(s.time ? { time: s.time } : {}),
   })),
   ...(v.notify ? {} : { notify: false }),
-  ...(v.remindAt ? { remindAt: v.remindAt } : {}),
+  /* Toujours écrit : rend `remindAt` inerte, voir `TaskEditor`. */
+  rappels: v.rappels.map(epurerRappel),
 });
 
 export function ProjectTaskEditor({
@@ -131,9 +138,10 @@ export function ProjectTaskEditor({
           une sans en donner la même à toutes. */}
       <RappelChamps
         notify={v.notify}
-        remindAt={v.remindAt}
+        rappels={v.rappels}
         onNotify={(x) => setValue('notify', x)}
-        onRemindAt={(x) => setValue('remindAt', x)}
+        onRappels={(x) => setValue('rappels', x)}
+        calendriers={['before']}
         aide={t('hintDue')}
       />
       <LigneListe

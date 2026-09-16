@@ -3,8 +3,13 @@ import {
   logKey,
   parseOccurrenceKey,
   projectSubItems,
+  epurerRappel,
+  estRappelNu,
+  normaliserRappel,
   type Frequence,
+  type RappelBrut,
   type RappelEntite,
+  type ReglageRappel,
   type SousTache,
 } from '@/lib/domain';
 import { META_KEYS } from './seed';
@@ -77,6 +82,7 @@ export interface ExportedProjectTask {
   sub: ExportedSubItem[];
   nt?: false;
   ra?: string;
+  rp?: ExportedRappel[];
 }
 
 export interface ExportedHabit {
@@ -93,13 +99,21 @@ export interface ExportedHabit {
   days: number[];
   n?: number;
   sub: { fr: string; en: string }[];
-  rem: string[];
+  /** Heures nues OU réglages complets (spec du 2026-09-16). Une heure nue est
+   *  écrite telle quelle : la sauvegarde reste lisible par une version
+   *  antérieure tant que personne n'a réglé de type ni de calendrier. */
+  rem: ExportedRappel[];
   start?: string;
   end?: string;
   pause?: { from: string; to: string };
   arch: boolean;
   note: string;
 }
+
+/** Un rappel exporté : la chaîne d'origine quand il n'a que son heure, l'objet
+ *  complet sinon. Mêmes noms de champs que le domaine — il n'y a rien à
+ *  traduire, et un renommage serait une occasion de divergence. */
+export type ExportedRappel = string | ReglageRappel;
 
 /** Sous-élément exporté. `d`, `time` et `nt` viennent des rappels par entité
  *  (spec du 2026-09-07) et sont OPTIONNELS : un export récent doit rester
@@ -130,6 +144,7 @@ export interface ExportedTask {
    *  explicitement muette : l'absence doit rester l'absence. */
   nt?: false;
   ra?: string;
+  rp?: ExportedRappel[];
   /* Répétition — `rep` porte la fréquence depuis le prototype (G1) ; les trois
      champs suivants sont apparus avec la tâche 5.6 et restent optionnels, pour
      qu'un export récent reste relisible par un lecteur ancien. */
@@ -155,6 +170,7 @@ export interface ExportedGoal {
   cur?: number;
   nt?: false;
   ra?: string;
+  rp?: ExportedRappel[];
 }
 
 export interface ExportedSession {
@@ -187,10 +203,19 @@ const sousElement = (s: SousTache): ExportedSubItem => ({
   ...(s.notify === false ? { nt: false as const } : {}),
 });
 
-/** Le rappel propre d'une entité, écrit SEULEMENT s'il a été réglé. */
-const rappelEntite = (e: RappelEntite): { nt?: false; ra?: string } => ({
+/** Un rappel, sous sa forme la plus courte qui dise tout. */
+const rappelExporte = (r: RappelBrut): ExportedRappel => {
+  const plein = normaliserRappel(r);
+  return estRappelNu(plein) ? plein.time : epurerRappel(plein);
+};
+
+/** Le rappel propre d'une entité, écrit SEULEMENT s'il a été réglé. `ra` ne
+ *  survit que pour une entité jamais rouverte depuis le 16 septembre ; `rp`
+ *  est la forme d'aujourd'hui. */
+const rappelEntite = (e: RappelEntite): { nt?: false; ra?: string; rp?: ExportedRappel[] } => ({
   ...(e.notify === false ? { nt: false as const } : {}),
   ...(e.remindAt ? { ra: e.remindAt } : {}),
+  ...(e.rappels ? { rp: e.rappels.map(rappelExporte) } : {}),
 });
 
 export async function exportToJson(): Promise<HabitumExport> {
@@ -254,7 +279,7 @@ export async function exportToJson(): Promise<HabitumExport> {
       days: h.days,
       ...(h.interval === undefined ? {} : { n: h.interval }),
       sub: h.subItems.map((s) => ({ fr: s.label, en: s.label })),
-      rem: h.reminders,
+      rem: h.reminders.map(rappelExporte),
       ...(h.start ? { start: h.start } : {}),
       ...(h.end ? { end: h.end } : {}),
       ...(h.pause ? { pause: h.pause } : {}),

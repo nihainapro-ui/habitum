@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { CATEGORIES, FREQUENCES } from '@/lib/domain';
-import { dateKeyOuVide, heure } from './habit.schema';
+import { dateKeyOuVide, heure, reglageRappelSchema } from './habit.schema';
 
 /* Validation du formulaire de tâche.
 
@@ -30,7 +30,7 @@ export const taskFormSchema = z.object({
      vaut « oui », pour que « jamais réglé » et « réglé sur oui » restent la
      même chose en base. */
   notify: z.boolean(),
-  remindAt: heure.or(z.literal('')).default(''),
+  rappels: z.array(reglageRappelSchema).default([]),
   subTasks: z.array(
     z.object({
       label: z.string().trim().min(1, 'labelRequired'),

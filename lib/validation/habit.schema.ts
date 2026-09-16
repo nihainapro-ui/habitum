@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { CATEGORIES, HABIT_GOAL_KINDS } from '@/lib/domain';
+import { CATEGORIES, HABIT_GOAL_KINDS, TYPES_RAPPEL } from '@/lib/domain';
 
 /* Validation du formulaire d'habitude.
 
@@ -21,6 +21,15 @@ export const dateKeyOuVide = z
 /** 'HH:mm' sur 24 heures. */
 export const heure = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'heure');
 
+/** Un rappel réglé — heure, type, calendrier (spec du 2026-09-16). Partagé par
+ *  les quatre formulaires. Le TYPE est la liste blanche IMPORTÉE (G8). */
+export const reglageRappelSchema = z.object({
+  time: heure,
+  type: z.enum(TYPES_RAPPEL).optional(),
+  days: z.array(z.number().int().min(0).max(6)).optional(),
+  before: z.array(z.number().int().min(0).max(365)).optional(),
+});
+
 export const habitFormSchema = z
   .object({
     name: z.string().trim().min(1, 'nameRequired').max(80, 'nameTooLong'),
@@ -37,7 +46,7 @@ export const habitFormSchema = z
     start: dateKeyOuVide,
     end: dateKeyOuVide,
 
-    reminders: z.array(heure),
+    reminders: z.array(reglageRappelSchema),
 
     /* Rappels de cette habitude coupés, sans effacer ses heures. */
 

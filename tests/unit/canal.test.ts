@@ -7,6 +7,7 @@ import {
 import {
   avecDelai,
   CANAL_RAPPELS,
+  CANAUX,
   DELAI_DIALOGUE,
   DELAI_LECTURE,
   DelaiDepasse,
@@ -33,7 +34,7 @@ const MERCREDI = new Date('2026-08-05T09:00:00');
 const rappel = (heure: string, cle = `task|t1|2026-08-05|${heure}`): RappelPret => {
   const [h, m] = heure.split(':').map(Number);
   const at = new Date(2026, 7, 5, h!, m!, 0).getTime();
-  return { cle, at, titre: 'Dentiste', corps: `à ${heure}` };
+  return { cle, at, titre: 'Dentiste', corps: `à ${heure}`, type: 'notif' };
 };
 
 describe('canal des minuteries', () => {
@@ -123,6 +124,7 @@ const doublePlugin = () => {
     body: string;
     at: Date;
     channelId?: string | undefined;
+    ongoing?: boolean | undefined;
   }[] = [];
   const annulees: number[] = [];
   let enAttente: { id: number }[] = [];
@@ -140,6 +142,7 @@ const doublePlugin = () => {
           body: n.body,
           at: n.schedule.at,
           channelId: n.channelId,
+          ongoing: n.ongoing,
         });
       }
       enAttente = [...enAttente, ...notifications.map((n) => ({ id: n.id }))];
@@ -292,11 +295,11 @@ describe('canal natif', () => {
 
 const doubleComplet = () => {
   const base = doublePlugin();
-  const canaux: { id: string; importance: number }[] = [];
+  const canaux: { id: string; importance: number; sound?: string | undefined }[] = [];
   const plugin: PluginNotifications = {
     ...base.plugin,
     async createChannel(c) {
-      canaux.push({ id: c.id, importance: c.importance });
+      canaux.push({ id: c.id, importance: c.importance, sound: c.sound });
     },
   };
   return { ...base, plugin, canaux };
@@ -312,16 +315,40 @@ describe('canal Android et rappel d’essai', () => {
     vi.useRealTimers();
   });
 
-  it('déclare un canal d’importance MAXIMALE avant de programmer', async () => {
+  it('déclare TROIS canaux — un par type de rappel — avant de programmer', async () => {
     /* Sans canal déclaré, le plugin en crée un d'importance moyenne : la
        notification arrive sans bandeau ni son. Un rappel muet qui attend le
-       déverrouillage n'est pas un rappel. */
+       déverrouillage n'est pas un rappel. Et depuis le 16 septembre, c'est le
+       canal qui distingue silencieuse, notification et alarme : Android ne
+       laisse pas une notification choisir son son toute seule. */
     const d = doubleComplet();
     await creerCanalNatif(async () => d.plugin).programmer([rappel('13:30')]);
 
-    expect(d.canaux).toHaveLength(1);
-    expect(d.canaux[0]!.id).toBe(CANAL_RAPPELS);
-    expect(d.canaux[0]!.importance).toBe(5);
+    expect(d.canaux.map((c) => c.id).sort()).toEqual(
+      [CANAUX.silent.id, CANAUX.notif.id, CANAUX.alarm.id].sort(),
+    );
+    expect(d.canaux.find((c) => c.id === CANAL_RAPPELS)?.importance).toBe(5);
+    /* Silencieuse : importance BASSE — c'est elle qui coupe son et bandeau. */
+    expect(d.canaux.find((c) => c.id === CANAUX.silent.id)?.importance).toBe(2);
+    /* Alarme : un son À NOUS, dans `res/raw`, engendré par `scripts/son-alarme.mjs`. */
+    expect(d.canaux.find((c) => c.id === CANAUX.alarm.id)?.sound).toBe('habitum_alarme.wav');
+  });
+
+  it('range chaque rappel dans le canal DE SON TYPE, et rend l’alarme insistante', async () => {
+    const d = doubleComplet();
+    await creerCanalNatif(async () => d.plugin).programmer([
+      { ...rappel('13:30', 'a'), type: 'silent' },
+      { ...rappel('14:00', 'b'), type: 'notif' },
+      { ...rappel('15:00', 'c'), type: 'alarm' },
+    ]);
+
+    const par = (corps: string) => d.programmees.find((p) => p.body === corps);
+    expect(par('à 13:30')?.channelId).toBe(CANAUX.silent.id);
+    expect(par('à 14:00')?.channelId).toBe(CANAUX.notif.id);
+    expect(par('à 15:00')?.channelId).toBe(CANAUX.alarm.id);
+    /* Une alarme PERSISTE jusqu'à être touchée ; les deux autres se balaient. */
+    expect(par('à 15:00')?.ongoing).toBe(true);
+    expect(par('à 14:00')?.ongoing).toBeUndefined();
   });
 
   it('range chaque rappel DANS ce canal — le déclarer sans l’employer ne sert à rien', async () => {

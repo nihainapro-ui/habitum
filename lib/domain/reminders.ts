@@ -1,7 +1,8 @@
 import { dateKey, startOfDay, today } from './date';
 import { isDone } from './metrics';
 import { isScheduled } from './schedule';
-import type { Habit, LogIndex } from './types';
+import { rappelCeJour, rappelsHabitude, typeRappel } from './rappels';
+import type { Habit, LogIndex, TypeRappel } from './types';
 
 /* ============================================================================
    Rappels d'habitude — quoi rappeler, et quand.
@@ -29,6 +30,11 @@ export interface RappelPrevu {
   time: string;
   /** Instant absolu du déclenchement, en millisecondes. */
   at: number;
+  /** Silencieuse, notification ou alarme — porté par le rappel lui-même. */
+  type: TypeRappel;
+  /** Position dans `reminders[]` : deux rappels à la même heure et de types
+   *  différents doivent rester deux rappels, pas un doublon. */
+  index: number;
 }
 
 /** `HH:MM` sur 24 h. Tout le reste est ignoré plutôt que deviné. */
@@ -59,16 +65,22 @@ export function rappelsRestants(
     if (!isScheduled(h, jour, now)) continue;
     if (isDone(log, h, jour, now)) continue;
 
-    for (const time of h.reminders) {
-      const minutes = parseHeure(time);
-      if (minutes === null || minutes <= minutesEcoulees) continue;
+    rappelsHabitude(h).forEach((r, index) => {
+      const minutes = parseHeure(r.time);
+      if (minutes === null || minutes <= minutesEcoulees) return;
+      /* Le CALENDRIER du rappel se lit ici. Une habitude est due chaque jour
+         où elle est planifiée — c'est déjà vérifié au-dessus — donc seule la
+         restriction « certains jours de la semaine » peut encore l'écarter. */
+      if (!rappelCeJour(r, jour, () => true)) return;
       prevus.push({
         habitId: h.id,
         name: h.name,
-        time,
+        time: r.time,
         at: jour.getTime() + minutes * 60_000,
+        type: typeRappel(r),
+        index,
       });
-    }
+    });
   }
 
   return prevus.sort((a, b) => a.at - b.at);
@@ -77,7 +89,7 @@ export function rappelsRestants(
 /** Y a-t-il quelque chose à rappeler aujourd'hui ? Sert à ne pas armer de
  *  minuterie pour rien — et à ne pas promettre un rappel qui n'existe pas. */
 export const aDesRappels = (habits: readonly Habit[]): boolean =>
-  habits.some((h) => !h.archived && h.reminders.some((r) => parseHeure(r) !== null));
+  habits.some((h) => !h.archived && rappelsHabitude(h).some((r) => parseHeure(r.time) !== null));
 
 /** Clé d'unicité d'un rappel : une habitude, un jour, une heure. Deux onglets
  *  ouverts ne doivent pas notifier deux fois la même chose. */

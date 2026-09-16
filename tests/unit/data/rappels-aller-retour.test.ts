@@ -54,7 +54,10 @@ const jeuComplet = async () => {
     mode: 'dow',
     days: [0, 1, 2, 3, 4, 5, 6],
     subItems: [],
-    reminders: ['07:00'],
+    /* Une heure NUE et un réglage complet côte à côte : c'est la forme réelle
+       d'une base d'avant le 16 septembre, rouverte depuis. Les deux doivent
+       traverser — la chaîne telle quelle, l'objet avec son type et ses jours. */
+    reminders: ['07:00', { time: '20:00', type: 'alarm', days: [0, 4] }],
     /* Muette, mais ses heures restent : c'est exactement ce que l'aller-retour
        doit préserver — perdre `nt` rallumerait une habitude qu'on avait tue. */
     notify: false,
@@ -73,6 +76,12 @@ const jeuComplet = async () => {
     /* Heure PROPRE à l'étape : c'est tout l'intérêt du réglage par entité,
        une échéance ne portant aucune heure par elle-même. */
     remindAt: '07:45',
+    /* Et la forme d'aujourd'hui : plusieurs rappels, chacun avec son
+       calendrier. `rappels` doit gagner sur `remindAt` à la relecture. */
+    rappels: [
+      { time: '18:00', before: [1] },
+      { time: '09:00', type: 'silent' },
+    ],
     subItems: [{ label: 'Relire les libellés', done: false, date: '2026-09-11', time: '09:15' }],
   } as never);
 
@@ -100,6 +109,15 @@ describe('aller-retour des rappels par entité', () => {
     expect(charge.ptask[0]?.sub[0]?.time).toBe('09:15');
     expect(charge.obj[0]?.ra).toBe('20:00');
     expect(charge.habits[0]?.nt).toBe(false);
+    /* La chaîne reste une chaîne ; l'objet garde type et jours. */
+    expect(charge.habits[0]?.rem).toEqual([
+      '07:00',
+      { time: '20:00', type: 'alarm', days: [0, 4] },
+    ]);
+    expect(charge.ptask[0]?.rp).toEqual([
+      { time: '18:00', before: [1] },
+      { time: '09:00', type: 'silent' },
+    ]);
   });
 
   it('les relit à l’identique — c’est l’aller-retour qui compte', async () => {
@@ -131,7 +149,41 @@ describe('aller-retour des rappels par entité', () => {
 
     const [habitude] = await habitsRepo.list();
     expect(habitude?.notify).toBe(false);
-    expect(habitude?.reminders).toEqual(['07:00']);
+    expect(habitude?.reminders).toEqual(['07:00', { time: '20:00', type: 'alarm', days: [0, 4] }]);
+    expect(etape?.rappels).toEqual([
+      { time: '18:00', before: [1] },
+      { time: '09:00', type: 'silent' },
+    ]);
+  });
+
+  it('ramène un type de rappel INCONNU à la notification, sans écarter le rappel', async () => {
+    /* Une sauvegarde produite par une version future, ou bricolée : le rappel
+       doit survivre, son type retombe sur le défaut. Écarter l'habitude entière
+       pour un mot inconnu serait la disparition silencieuse que le CLAUDE.md
+       proscrit. Le fichier part d'un VRAI export, altéré en un seul point :
+       une charge écrite à la main aurait testé ma mémoire du format, pas le
+       format. */
+    await habitsRepo.create({
+      name: 'Méditer',
+      category: 'mind',
+      goal: { kind: 'check', target: 1, step: 1, unit: '' },
+      mode: 'dow',
+      days: [0, 1, 2, 3, 4, 5, 6],
+      subItems: [],
+      reminders: ['07:00'],
+      archived: false,
+      note: '',
+    } as never);
+    const charge = await exportToJson();
+    charge.habits[0]!.rem = [{ time: '07:00', type: 'fanfare' as never }];
+
+    if (db.isOpen()) db.close();
+    await db.delete();
+    await db.open();
+    const rapport = await importFromJson(JSON.stringify(charge));
+    expect(rapport.dropped).toEqual([]);
+    const [h] = await habitsRepo.list();
+    expect(h?.reminders).toEqual([{ time: '07:00' }]);
   });
 
   it('n’invente rien quand rien n’est réglé', async () => {

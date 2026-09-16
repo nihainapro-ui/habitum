@@ -62,8 +62,12 @@ export function useReminders(pret: boolean): void {
     if (!pret) return;
 
     const canal = (canalRef.current ??= estNatif()
-      ? creerCanalNatif()
-      : creerCanalMinuteries((r) => void notifier(r.titre, r.corps, r.cle)));
+      ? creerCanalNatif(undefined, {
+          silent: ts('notifChanSilent'),
+          notif: ts('notifChanNotif'),
+          alarm: ts('notifChanAlarm'),
+        })
+      : creerCanalMinuteries((r) => void notifier(r.titre, r.corps, r.cle, r.type)));
     let abandonne = false;
 
     /* La traduction a lieu ICI, une fois. Le domaine rend une clé de libellé,
@@ -72,6 +76,7 @@ export function useReminders(pret: boolean): void {
     const traduire = (r: Rappel): RappelPret => ({
       cle: r.cle,
       at: r.at,
+      type: r.type,
       titre: r.titre || (r.titreKey ? ts(r.titreKey) : ''),
       corps: ts(r.corpsKey, r.corpsParams ?? {}),
     });

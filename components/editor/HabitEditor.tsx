@@ -4,7 +4,6 @@ import { useMemo } from 'react';
 import { useForm, useWatch, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useTranslations } from 'next-intl';
-import { Switch } from '@/components/ui';
 import {
   addDays,
   CATEGORIES,
@@ -13,11 +12,14 @@ import {
   today,
   type Habit,
   type HabitGoalKind,
+  epurerRappel,
+  rappelsHabitude,
 } from '@/lib/domain';
 import { habitFormSchema, type HabitForm } from '@/lib/validation/habit.schema';
 import { useStore } from '@/lib/store';
 import { useLocaleSwitcher } from '@/components/shell/locale-provider';
 import { DayPicker, LigneListe, Select, TextArea, TextInput } from './fields';
+import { RappelChamps } from './RappelChamps';
 import { EditorTabs } from './EditorTabs';
 import { PiedEditeur } from './PiedEditeur';
 
@@ -58,7 +60,7 @@ const versFormulaire = (h?: Habit): HabitForm => ({
   interval: h?.interval ?? 2,
   start: h?.start ?? '',
   end: h?.end ?? '',
-  reminders: h?.reminders ?? [],
+  reminders: h ? rappelsHabitude(h) : [],
   /* `notify` absent vaut OUI : une habitude non réglée suit sa source. */
   notify: h?.notify !== false,
   note: h?.note ?? '',
@@ -109,7 +111,7 @@ export function HabitEditor({ id, onClose }: { id: string | null; onClose: () =>
       days: valeurs.days,
       interval: valeurs.interval,
       subItems: valeurs.subItems,
-      reminders: valeurs.reminders,
+      reminders: valeurs.reminders.map(epurerRappel),
       ...(valeurs.notify ? {} : { notify: false }),
       /* Omis, jamais posés à `undefined` — D23. L'objet part en base : dans
          IndexedDB, une clé absente et une clé qui vaut `undefined` ne se
@@ -255,43 +257,19 @@ export function HabitEditor({ id, onClose }: { id: string | null; onClose: () =>
     </>
   );
 
+  /* Onglet « Rappels ». Le même composant que les trois autres éditeurs : un
+     rappel d'habitude se règle comme un rappel de tâche — heure, type,
+     calendrier — et l'habitude n'a pas de règle générale de repli, d'où
+     l'absence de ligne d'aide. « Jours avant » n'a pas de sens ici : une
+     habitude n'a pas d'échéance, elle revient. */
   const rappels = (
-    <div className="flex flex-col gap-3">
-      {/* Couper ici plutôt que vider la liste : les heures restent
-          enregistrées, et rallumer ne demande pas de les retaper. */}
-      <Switch
-        label={t('fNotify')}
-        reason={t('hintHabit')}
-        checked={v.notify}
-        onChange={(x) => setValue('notify', x)}
-      />
-      <LigneListe
-        legend={t('fRem')}
-        items={v.reminders}
-        addLabel={t('addRem')}
-        onAdd={() => setValue('reminders', [...v.reminders, '08:00'])}
-        onRemove={(i) =>
-          setValue(
-            'reminders',
-            v.reminders.filter((_, j) => j !== i),
-          )
-        }
-      >
-        {(i) => (
-          <TextInput
-            label={`${t('fRem')} ${i + 1}`}
-            type="time"
-            value={v.reminders[i] ?? ''}
-            onChange={(x) =>
-              setValue(
-                'reminders',
-                v.reminders.map((r, j) => (j === i ? x : r)),
-              )
-            }
-          />
-        )}
-      </LigneListe>
-    </div>
+    <RappelChamps
+      notify={v.notify}
+      rappels={v.reminders}
+      onNotify={(x) => setValue('notify', x)}
+      onRappels={(x) => setValue('reminders', x)}
+      calendriers={['days']}
+    />
   );
 
   const avance = (

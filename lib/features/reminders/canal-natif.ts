@@ -1,4 +1,4 @@
-import { identifiantNotification } from '@/lib/domain';
+import { identifiantNotification, type TypeRappel } from '@/lib/domain';
 import type { Canal, RappelPret } from './canal';
 
 /* Canal NATIF — Android, application fermée. Spec du 2026-09-07.
@@ -40,6 +40,9 @@ export interface NotificationNative {
   schedule: { at: Date; allowWhileIdle: boolean };
   channelId?: string;
   isExactNotification?: boolean;
+  /** Une alarme PERSISTE : elle ne se balaie pas, elle se touche. */
+  ongoing?: boolean;
+  autoCancel?: boolean;
 }
 
 export interface PluginNotifications {
@@ -53,6 +56,9 @@ export interface PluginNotifications {
     name: string;
     description?: string;
     importance: 1 | 2 | 3 | 4 | 5;
+    sound?: string;
+    vibration?: boolean;
+    visibility?: -1 | 0 | 1;
   }): Promise<unknown>;
   /** Alarmes EXACTES (Android 12+). Sans elles, le système est libre de
    *  regrouper le rappel avec d'autres réveils — il peut arriver avec une
@@ -74,22 +80,62 @@ export interface PluginNotifications {
  *  réglages faits sur le premier seraient perdus sans un mot. */
 export const CANAL_RAPPELS = 'habitum-rappels';
 
+/** UN CANAL PAR TYPE DE RAPPEL — c'est le canal, pas la notification, qui porte
+ *  le son, la vibration et l'importance sur Android. Trois types, trois canaux,
+ *  et leurs identifiants sont figés pour la même raison que le premier.
+ *
+ *  - silencieux : importance basse — ni son, ni vibration, ni bandeau ;
+ *  - rappels    : le canal historique, importance maximale ;
+ *  - alarmes    : importance maximale, vibration, et un SON À NOUS
+ *                 (`res/raw/habitum_alarme.wav`, engendré par
+ *                 `scripts/son-alarme.mjs`) — plus long et plus franc que la
+ *                 sonnerie par défaut, sans dépendre d'un fichier tiers. */
+export const CANAUX: Record<
+  TypeRappel,
+  { id: string; importance: 1 | 2 | 3 | 4 | 5; sound?: string; vibration: boolean }
+> = {
+  silent: { id: 'habitum-silencieux', importance: 2, vibration: false },
+  notif: { id: CANAL_RAPPELS, importance: 5, vibration: true },
+  alarm: { id: 'habitum-alarmes', importance: 5, sound: 'habitum_alarme.wav', vibration: true },
+};
+
+/** Noms des canaux tels qu'Android les affiche dans ses réglages. Traduits
+ *  par l'appelant : le canal ne connaît pas la langue de l'utilisateur. */
+export type NomsCanaux = Record<TypeRappel, string>;
+
+/** Ce qu'une notification native porte en plus selon son type. */
+export function optionsParType(
+  type: TypeRappel,
+): Pick<NotificationNative, 'channelId' | 'ongoing' | 'autoCancel'> {
+  return {
+    channelId: CANAUX[type].id,
+    /* Une alarme reste affichée jusqu'à être touchée — c'est ce qui la rend
+       insistante sans en faire un réveil plein écran. Toucher la ferme. */
+    ...(type === 'alarm' ? { ongoing: true, autoCancel: true } : {}),
+  };
+}
+
 /** Retour immédiat (fin de focus), qui ne doit jamais demander une alarme exacte. */
 export async function afficherNotificationNative(
   titre: string,
   corps: string,
   tag: string,
+  type: TypeRappel = 'notif',
 ): Promise<void> {
   const { LocalNotifications } = await import('@capacitor/local-notifications');
-  await LocalNotifications.createChannel({ id: CANAL_RAPPELS, name: 'Habitum', importance: 5 });
+  await LocalNotifications.createChannel({
+    id: CANAUX[type].id,
+    name: 'Habitum',
+    importance: CANAUX[type].importance,
+  });
   await LocalNotifications.schedule({
     notifications: [
       {
         id: identifiantNotification(`immediate|${tag}`),
         title: titre,
         body: corps,
-        channelId: CANAL_RAPPELS,
         isExactNotification: false,
+        ...optionsParType(type),
       },
     ],
   });
@@ -207,16 +253,33 @@ export async function demanderAlarmesExactes(
   }
 }
 
-/** Déclare le canal. Idempotent côté Android : le redéclarer ne réécrit rien
- *  si l'identifiant existe déjà. */
-async function declarerCanal(plugin: PluginNotifications, nom: string): Promise<void> {
-  try {
-    await plugin.createChannel?.({ id: CANAL_RAPPELS, name: nom, importance: 5 });
-  } catch {
-    /* Un canal qui ne se crée pas ne doit pas empêcher de programmer : la
-       notification retombera sur le canal par défaut du plugin. */
+/** Déclare les trois canaux. Idempotent côté Android : redéclarer un canal
+ *  existant ne réécrit rien — l'utilisateur seul peut modifier un canal, et
+ *  c'est pour cela que les identifiants ne bougent jamais. */
+async function declarerCanaux(plugin: PluginNotifications, noms: NomsCanaux): Promise<void> {
+  for (const type of Object.keys(CANAUX) as TypeRappel[]) {
+    const c = CANAUX[type];
+    try {
+      await plugin.createChannel?.({
+        id: c.id,
+        name: noms[type],
+        importance: c.importance,
+        vibration: c.vibration,
+        ...(c.sound ? { sound: c.sound } : {}),
+        /* Visible sur l'écran verrouillé : un rappel qu'il faut déverrouiller
+           pour lire arrive trop tard. */
+        visibility: 1,
+      });
+    } catch {
+      /* Un canal qui ne se crée pas ne doit pas empêcher de programmer : la
+         notification retombera sur le canal par défaut du plugin. */
+    }
   }
 }
+
+/** Noms de repli, quand l'appelant n'en fournit pas — un double de test, ou
+ *  un appel de secours. Jamais affichés à un utilisateur en temps normal. */
+const NOMS_REPLI: NomsCanaux = { silent: 'Habitum', notif: 'Habitum', alarm: 'Habitum' };
 
 /** Programme UN rappel d'essai, dans quelques secondes.
  *
@@ -230,9 +293,11 @@ export async function programmerEssai(
   corps: string,
   dansSecondes = 10,
   charger: () => Promise<PluginNotifications> = pluginReel,
+  noms: NomsCanaux = NOMS_REPLI,
+  type: TypeRappel = 'notif',
 ): Promise<void> {
   const plugin = await charger();
-  await declarerCanal(plugin, titre);
+  await declarerCanaux(plugin, noms);
   const isExactNotification = await exactesAutorisees(plugin);
   await plugin.schedule({
     notifications: [
@@ -241,8 +306,8 @@ export async function programmerEssai(
         title: titre,
         body: corps,
         schedule: { at: new Date(Date.now() + dansSecondes * 1000), allowWhileIdle: true },
-        channelId: CANAL_RAPPELS,
         isExactNotification,
+        ...optionsParType(type),
       },
     ],
   });
@@ -264,7 +329,10 @@ async function exactesAutorisees(plugin: PluginNotifications): Promise<boolean> 
   }
 }
 
-export function creerCanalNatif(charger: () => Promise<PluginNotifications> = pluginReel): Canal {
+export function creerCanalNatif(
+  charger: () => Promise<PluginNotifications> = pluginReel,
+  noms: NomsCanaux = NOMS_REPLI,
+): Canal {
   /* Une modification suivante doit gagner même si l'envoi précédent est lent. */
   let suite: Promise<void> = Promise.resolve();
   /* Annule ce qui est en attente, y compris ce qu'une VERSION PRÉCÉDENTE de
@@ -310,7 +378,7 @@ export function creerCanalNatif(charger: () => Promise<PluginNotifications> = pl
         if (rappels.length === 0) return;
 
         const plugin = await charger();
-        await declarerCanal(plugin, rappels[0]?.titre ?? CANAL_RAPPELS);
+        await declarerCanaux(plugin, noms);
         const isExactNotification = await exactesAutorisees(plugin);
         const maintenant = Date.now();
         const futurs = rappels.filter((r) => r.at > maintenant);
@@ -328,8 +396,8 @@ export function creerCanalNatif(charger: () => Promise<PluginNotifications> = pl
                prochain réveil du téléphone — c'est-à-dire précisément dans le
                cas où il sert le plus, la nuit et l'appareil posé. */
             schedule: { at: new Date(r.at), allowWhileIdle: true },
-            channelId: CANAL_RAPPELS,
             isExactNotification,
+            ...optionsParType(r.type),
           })),
         });
       });

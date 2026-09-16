@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { FREQUENCES, GOAL_KINDS, HABIT_GOAL_KINDS } from '@/lib/domain';
+import { FREQUENCES, GOAL_KINDS, HABIT_GOAL_KINDS, TYPES_RAPPEL } from '@/lib/domain';
 
 /* ⚠ PIÈGE DÉJÀ PAYÉ. Les listes blanches ci-dessous sont IMPORTÉES de
    lib/domain/types.ts. Les recopier, c'est reproduire le défaut qui a fait
@@ -18,6 +18,19 @@ const bilingue = z.union([
 ]);
 export type Bilingue = z.infer<typeof bilingue>;
 
+/* Un rappel relu (spec du 2026-09-16) : chaîne d'origine ou objet. Le TYPE
+   passe par la liste blanche importée — jamais recopiée (G8) ; un type inconnu
+   retombe sur la notification plutôt que d'écarter le rappel entier. */
+const legacyRappel = z.union([
+  z.string(),
+  z.object({
+    time: z.string(),
+    type: z.enum(TYPES_RAPPEL).catch('notif').optional(),
+    days: z.array(z.number().int().min(0).max(6)).optional(),
+    before: z.array(z.number().int().min(0).max(365)).optional(),
+  }),
+]);
+
 export const legacyHabit = z.object({
   id: z.string().min(1),
   fr: z.string().optional(),
@@ -34,7 +47,7 @@ export const legacyHabit = z.object({
   days: z.array(z.number().int().min(0).max(6)).default([]),
   n: z.number().int().positive().optional(),
   sub: z.array(bilingue).default([]),
-  rem: z.array(z.string()).default([]),
+  rem: z.array(legacyRappel).default([]),
   start: z.string().optional(),
   end: z.string().optional(),
   pause: z.object({ from: dateKey, to: dateKey }).optional(),
@@ -82,6 +95,7 @@ export const legacyTask = z.object({
   /* Rappel propre à la tâche (spec du 2026-09-07). */
   nt: z.boolean().optional(),
   ra: z.string().optional(),
+  rp: z.array(legacyRappel).optional(),
 });
 
 export const legacyGoal = z.object({
@@ -107,6 +121,7 @@ export const legacyGoal = z.object({
   due: z.string().optional(),
   nt: z.boolean().optional(),
   ra: z.string().optional(),
+  rp: z.array(legacyRappel).optional(),
   cur: z.number().optional(),
 });
 
@@ -152,6 +167,7 @@ export const legacyProjectTask = z.object({
   note: z.string().default(''),
   nt: z.boolean().optional(),
   ra: z.string().optional(),
+  rp: z.array(legacyRappel).optional(),
   /* Sous-tâches — lot B. `.default([])` n'est pas de la complaisance : une
      sauvegarde produite avant ce lot n'a pas la clé, et l'absence ne doit
      écarter aucune étape. Même forme que `sub` sur `legacyTask`. */

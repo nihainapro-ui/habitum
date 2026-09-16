@@ -1,3 +1,5 @@
+import type { TypeRappel } from '@/lib/domain';
+
 /* LA COUTURE — spec du 2026-09-07.
  *
  * D'un côté, `lib/domain/notifications.ts` dit QUOI rappeler et QUAND, sans
@@ -18,6 +20,10 @@ export interface RappelPret {
   at: number;
   titre: string;
   corps: string;
+  /** Silencieuse, notification ou alarme. Le canal décide ce que ça VEUT DIRE
+   *  chez lui — un canal Android, une option d'affichage web ; le domaine, lui,
+   *  n'a décidé que du mot. */
+  type: TypeRappel;
 }
 
 export interface Canal {

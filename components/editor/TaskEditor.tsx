@@ -3,7 +3,7 @@
 import { useForm, useWatch, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useTranslations } from 'next-intl';
-import { CATEGORIES, dateKey, today, type Task } from '@/lib/domain';
+import { CATEGORIES, dateKey, epurerRappel, rappelsEntite, today, type Task } from '@/lib/domain';
 import { taskFormSchema, type TaskForm } from '@/lib/validation/task.schema';
 import { useStore } from '@/lib/store';
 import { LigneListe, Select, TextArea, TextInput } from './fields';
@@ -35,7 +35,7 @@ const versFormulaire = (t?: Task): TaskForm => ({
   interval: t?.recurrence?.interval ?? 1,
   /* `notify` absent vaut OUI : une tâche non réglée suit sa source. */
   notify: t?.notify !== false,
-  remindAt: t?.remindAt ?? '',
+  rappels: t ? rappelsEntite(t) : [],
   subTasks: t?.subTasks ?? [],
   note: t?.note ?? '',
 });
@@ -85,7 +85,10 @@ export function TaskEditor({ id, onClose }: { id: string | null; onClose: () => 
       /* `notify: false` seulement quand c'est un choix : écrire `true` ferait
          d'un défaut une décision, et on ne saurait plus les distinguer. */
       ...(valeurs.notify ? {} : { notify: false }),
-      ...(valeurs.remindAt ? { remindAt: valeurs.remindAt } : {}),
+      /* TOUJOURS écrit, même vide — c'est ce qui rend `remindAt` (l'écriture
+         d'avant) inerte : `rappelsEntite()` préfère `rappels` dès qu'il existe.
+         Une liste vide dit « je suis les réglages généraux », par choix. */
+      rappels: valeurs.rappels.map(epurerRappel),
       subTasks: valeurs.subTasks.map((s) => ({
         label: s.label,
         done: s.done,
@@ -181,9 +184,12 @@ export function TaskEditor({ id, onClose }: { id: string | null; onClose: () => 
 
       <RappelChamps
         notify={v.notify}
-        remindAt={v.remindAt}
+        rappels={v.rappels}
         onNotify={(x) => setValue('notify', x)}
-        onRemindAt={(x) => setValue('remindAt', x)}
+        onRappels={(x) => setValue('rappels', x)}
+        /* Une tâche RÉCURRENTE revient : certains jours de la semaine ont un
+           sens. Une tâche datée a une échéance : « jours avant » aussi. */
+        calendriers={v.recurrence === 'none' ? ['before'] : ['days', 'before']}
         aide={t('hintTask')}
       />
 

@@ -1,3 +1,4 @@
+import type { TypeRappel } from '@/lib/domain';
 import { logError } from '@/lib/logger';
 import { afficherNotificationNative, estNatif } from './canal-natif';
 
@@ -124,12 +125,19 @@ export async function demanderNotifications(): Promise<EtatNotifications> {
 
 /** Options communes aux deux chemins d'affichage. `tag` dédoublonne : deux
  *  onglets ouverts, ou un rappel réarmé, ne produisent qu'une notification. */
-const options = (corps: string, tag: string): NotificationOptions => ({
-  ...(corps ? { body: corps } : {}),
-  tag,
-  icon: '/icons/icon-192.png',
-  badge: '/icons/icon-192.png',
-});
+const options = (corps: string, tag: string, type: TypeRappel = 'notif'): NotificationOptions =>
+  ({
+    ...(corps ? { body: corps } : {}),
+    tag,
+    icon: '/icons/icon-192.png',
+    badge: '/icons/icon-192.png',
+    /* Ce que le TYPE veut dire dans un navigateur — moins que sur Android,
+       et c'est écrit : `silent` coupe le son et la vibration ;
+       `requireInteraction` garde l'alarme affichée jusqu'à un geste, et la
+       vibration est un motif long là où le moteur la connaît. */
+    ...(type === 'silent' ? { silent: true } : {}),
+    ...(type === 'alarm' ? { requireInteraction: true, vibrate: [300, 100, 300, 100, 600] } : {}),
+  }) as NotificationOptions;
 
 /** Envoie une notification. Rend `false` si rien n'a pu être affiché — c'est
  *  ce que l'appelant doit savoir pour ne pas prétendre avoir prévenu.
@@ -146,11 +154,16 @@ const options = (corps: string, tag: string): NotificationOptions => ({
  *
  *  Le repli `new Notification` reste nécessaire : en développement, Serwist est
  *  désactivé et il n'y a aucun service worker à interroger. */
-export async function notifier(titre: string, corps: string, tag: string): Promise<boolean> {
+export async function notifier(
+  titre: string,
+  corps: string,
+  tag: string,
+  type: TypeRappel = 'notif',
+): Promise<boolean> {
   if (estNatif()) {
     if ((await etatNotificationsAsync()) !== 'granted') return false;
     try {
-      await afficherNotificationNative(titre, corps, tag);
+      await afficherNotificationNative(titre, corps, tag, type);
       return true;
     } catch (e) {
       void logError('notifications', e);
@@ -164,7 +177,7 @@ export async function notifier(titre: string, corps: string, tag: string): Promi
       /* `ready` ne rejette jamais sans SW : attendre bloquait le repli web. */
       const enregistrement = await navigator.serviceWorker.getRegistration();
       if (enregistrement?.active) {
-        await enregistrement.showNotification(titre, options(corps, tag));
+        await enregistrement.showNotification(titre, options(corps, tag, type));
         return true;
       }
     } catch {
@@ -174,7 +187,7 @@ export async function notifier(titre: string, corps: string, tag: string): Promi
   }
 
   try {
-    new Notification(titre, options(corps, tag));
+    new Notification(titre, options(corps, tag, type));
     return true;
   } catch {
     return false;

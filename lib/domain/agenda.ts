@@ -1,3 +1,4 @@
+import { rappelsHabitude } from './rappels';
 import type { DateKey, Habit, LogIndex, Task } from './types';
 import { addDays, dateKey, startOfWeek, today, type WeekStart } from './date';
 import { isDone, loggedValue } from './metrics';
@@ -37,7 +38,7 @@ export type EntreeJour = EntreeHabitude | EntreeTache;
 /** Heure d'ancrage d'une habitude : son premier rappel, sinon aucune.
  *  Le modèle cible n'a pas de champ `time` sur l'habitude — le prototype s'en
  *  servait à la fois pour l'ordre et pour le rappel (03-ARCHITECTURE.md § 3). */
-export const habitTime = (h: Habit): string | null => h.reminders[0] ?? null;
+export const habitTime = (h: Habit): string | null => rappelsHabitude(h)[0]?.time ?? null;
 
 /** Une entrée sans heure passe APRÈS celles qui en ont une : elle n'est pas
  *  « à minuit », elle est « quand vous voulez ». À heure égale, l'habitude

@@ -75,7 +75,9 @@ export interface Habit {
   /** intervalle en jours (mode 'every') */
   interval?: number;
   subItems: { label: string }[];
-  reminders: string[];
+  /** Heures nues (forme d'origine) ou réglages complets, mêlés. À lire par
+   *  `rappelsHabitude()`, jamais directement. */
+  reminders: RappelBrut[];
   /** Rappels de CETTE habitude coupés, sans effacer ses heures (spec du
    *  2026-09-07). Absent = elle suit sa source. Couper l'habitude plutôt que
    *  vider `reminders` évite de retaper ses heures pour la rallumer. */
@@ -102,6 +104,46 @@ export interface LogEntry {
   deletedAt?: string;
 }
 
+/** Types de rappel — spec du 2026-09-16. DÉCLARÉS UNE FOIS, ici, comme les
+ *  sept types d'habitude : un menu ou un validateur qui recopierait la liste
+ *  finirait par en oublier un, et le rappel de ce type-là disparaîtrait.
+ *
+ *  - `silent` : arrive sans son ni vibration ;
+ *  - `notif`  : la notification ordinaire — le défaut ;
+ *  - `alarm`  : notification INSISTANTE — son fort, vibration, priorité
+ *               maximale, persiste jusqu'à être touchée, passe outre les heures
+ *               silencieuses. Ce n'est PAS un réveil plein écran : Android n'en
+ *               laisse poser un qu'à une activité native, décision écartée
+ *               avec l'utilisateur le 16 septembre 2026. */
+export const TYPES_RAPPEL = ['silent', 'notif', 'alarm'] as const;
+export type TypeRappel = (typeof TYPES_RAPPEL)[number];
+
+export const isTypeRappel = (v: unknown): v is TypeRappel =>
+  typeof v === 'string' && (TYPES_RAPPEL as readonly string[]).includes(v);
+
+/** Réglage d'UN rappel : heure, type, calendrier. Tout sauf l'heure est
+ *  facultatif, et l'absence a un sens : notification, tous les jours, le jour
+ *  même. Voir `lib/domain/rappels.ts`, seul endroit qui défasse ces absences. */
+export interface ReglageRappel {
+  /** `HH:MM`. */
+  time: string;
+  /* `| undefined` EXPLICITE sur les trois champs facultatifs, et ce n'est pas
+     un relâchement : les formulaires (zod) produisent `undefined` pour un
+     champ absent, et `exactOptionalPropertyTypes` refuse de l'assigner à un
+     `?:` nu. C'est `epurerRappel()`, à l'écriture, qui retire ces `undefined`
+     avant la base — jamais le type qui les interdit. */
+  type?: TypeRappel | undefined;
+  /** Certains jours de la semaine seulement — 0 = lundi … 6 = dimanche. */
+  days?: number[] | undefined;
+  /** Jours AVANT l'échéance : `[1]` la veille, `[3, 1, 0]` trois rappels. */
+  before?: number[] | undefined;
+}
+
+/** Ce qu'une liste de rappels contient RÉELLEMENT en base : `Habit.reminders`
+ *  a longtemps été une liste d'heures, et ces chaînes restent valides. Le nom
+ *  de la clé est figé (CLAUDE.md § 1) ; son contenu s'est enrichi. */
+export type RappelBrut = string | ReglageRappel;
+
 /** Rappel PROPRE à une entité — spec du 2026-09-07.
  *
  *  Les deux champs sont facultatifs, et leur absence a un sens précis :
@@ -114,10 +156,14 @@ export interface RappelEntite {
   /** `false` = cette entité ne sonne pas, même si sa source est allumée.
    *  Absent ou `true` = elle suit sa source. */
   notify?: boolean;
-  /** Heure de rappel `HH:MM` propre à l'entité. Absente = l'heure vient des
-   *  réglages généraux — heure de la tâche moins le préavis, ou heure des
-   *  échéances pour ce qui n'en porte pas. */
+  /** Heure de rappel `HH:MM` propre à l'entité — ÉCRITURE D'AVANT le
+   *  2026-09-16, conservée pour les lignes déjà en base et celles qu'un
+   *  appareil resté en arrière enverra. Relue par `rappelsEntite()` comme un
+   *  rappel unique ; plus jamais écrite par les éditeurs. */
   remindAt?: string;
+  /** Les rappels de l'entité, chacun avec son type et son calendrier.
+   *  Absent = suivre les réglages généraux ; vide = idem, par choix. */
+  rappels?: ReglageRappel[];
 }
 
 /** Sous-élément cochable, avec son rappel facultatif.
@@ -145,9 +191,10 @@ export interface Task {
   done: boolean;
   subTasks: SousTache[];
   note: string;
-  /** Rappel propre à cette tâche (spec du 2026-09-07). */
+  /** Rappel propre à cette tâche (spec du 2026-09-07, enrichi le 16). */
   notify?: boolean;
   remindAt?: string;
+  rappels?: ReglageRappel[];
   /** Répétition simplifiée — `lib/domain/recurrence.ts`. Le champ reste
    *  optionnel : la grande majorité des tâches ne se répète pas. */
   recurrence?: Recurrence;
@@ -218,6 +265,7 @@ export interface ProjectTask {
    *  seul moyen d'en donner une à celle-ci sans la donner à toutes. */
   notify?: boolean;
   remindAt?: string;
+  rappels?: ReglageRappel[];
   createdAt: string;
   updatedAt: string;
   deletedAt?: string;
@@ -237,9 +285,10 @@ export interface Goal {
   start?: DateKey;
   deadline?: DateKey;
   current?: number;
-  /** Rappel propre à cet objectif (spec du 2026-09-07). */
+  /** Rappel propre à cet objectif (spec du 2026-09-07, enrichi le 16). */
   notify?: boolean;
   remindAt?: string;
+  rappels?: ReglageRappel[];
   createdAt: string;
   updatedAt: string;
   deletedAt?: string;

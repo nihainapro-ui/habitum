@@ -2,15 +2,28 @@ import { addDays, dateKey, parseKey, startOfDay, today } from './date';
 import { isDone } from './metrics';
 import { isScheduled } from './schedule';
 import { parseHeure, rappelsRestants } from './reminders';
+import { rappelCeJour, rappelsEntite, typeRappel } from './rappels';
 import { estOccurrence, occurrenceKey } from './recurrence';
-import type { Goal, Habit, LogIndex, ProjectTask, Settings, SousTache, Task } from './types';
+import type {
+  Goal,
+  Habit,
+  LogIndex,
+  ProjectTask,
+  RappelEntite,
+  ReglageRappel,
+  Settings,
+  SousTache,
+  Task,
+  TypeRappel,
+} from './types';
 
 /* ============================================================================
    Rappels — QUOI rappeler, et QUAND. Cinq sources, un seul calcul.
 
-   Spec du 2026-09-07. Ce fichier ne connaît ni le navigateur, ni Android, ni
-   aucune langue : il rend une clé de libellé et ses paramètres, et c'est la
-   couche d'envoi qui traduit (`lib/features/reminders/`). C'est la règle 2 du
+   Spec du 2026-09-07, enrichie le 16 par le TYPE et le CALENDRIER de chaque
+   rappel. Ce fichier ne connaît ni le navigateur, ni Android, ni aucune
+   langue : il rend une clé de libellé et ses paramètres, et c'est la couche
+   d'envoi qui traduit (`lib/features/reminders/`). C'est la règle 2 du
    CLAUDE.md, étendue à l'i18n — un texte français écrit ici serait un texte
    qu'aucune traduction ne rattrape.
 
@@ -25,13 +38,17 @@ import type { Goal, Habit, LogIndex, ProjectTask, Settings, SousTache, Task } fr
    Et une quatrième, propre au récapitulatif : **on ne sonne pas pour dire
    qu'il n'y a rien**. « Rien à faire aujourd'hui » envoyé chaque matin est le
    plus sûr moyen de faire couper les notifications.
+
+   UNE CINQUIÈME depuis le 16 septembre : **une alarme passe outre les heures
+   silencieuses**. C'est tout ce qui distingue une alarme d'une notification
+   du point de vue du calcul — le reste (son, insistance) est affaire de canal.
    ========================================================================= */
 
 export const SOURCES_RAPPEL = ['habit', 'task', 'work', 'goal', 'digest'] as const;
 export type SourceRappel = (typeof SOURCES_RAPPEL)[number];
 
 export interface Rappel {
-  /** Identité stable d'un rappel : `source|id|jour|heure`. Elle sert au
+  /** Identité stable d'un rappel : `source|id|jour|heure|rang`. Elle sert au
    *  dédoublonnage côté minuteries ET à l'identifiant numérique du canal
    *  natif — la même chose reprogrammée doit retomber sur la même clé. */
   cle: string;
@@ -41,6 +58,8 @@ export interface Rappel {
   id: string;
   /** Instant absolu du déclenchement, en millisecondes. */
   at: number;
+  /** Silencieuse, notification ou alarme. */
+  type: TypeRappel;
   /** CONTENU UTILISATEUR — le nom de l'entité. Il ne se traduit pas, il
    *  s'affiche tel quel. Vide pour le récapitulatif. */
   titre: string;
@@ -95,22 +114,21 @@ export function dansLesHeuresSilencieuses(at: number, s: Settings): boolean {
 const tacheFaite = (t: Task, k: string, occurrences: ReadonlySet<string>): boolean =>
   t.recurrence ? occurrences.has(occurrenceKey(t.id, k)) : t.done;
 
-/** Les tâches à honorer un jour donné, récurrences comprises. */
-function tachesDuJour(
-  tasks: readonly Task[],
-  occurrences: ReadonlySet<string>,
-  jour: Date,
-): Task[] {
-  const k = dateKey(jour);
-  return tasks.filter((t) => {
-    if (tacheFaite(t, k, occurrences)) return false;
-    if (t.recurrence) {
-      const ancre = parseKey(t.date);
-      return ancre ? estOccurrence(t.recurrence, ancre, jour) : false;
-    }
-    return t.date === k;
-  });
+/** Une tâche est-elle DUE le jour `d`, et pas encore faite ? C'est la seule
+ *  question que le calendrier d'un rappel pose à sa source. */
+function tacheDue(t: Task, d: Date, occurrences: ReadonlySet<string>): boolean {
+  const k = dateKey(d);
+  if (tacheFaite(t, k, occurrences)) return false;
+  if (t.recurrence) {
+    const ancre = parseKey(t.date);
+    return ancre ? estOccurrence(t.recurrence, ancre, d) : false;
+  }
+  return t.date === k;
 }
+
+/** Les tâches à honorer un jour donné, récurrences comprises. */
+const tachesDuJour = (tasks: readonly Task[], occurrences: ReadonlySet<string>, jour: Date) =>
+  tasks.filter((t) => tacheDue(t, jour, occurrences));
 
 const workDuJour = (pt: readonly ProjectTask[], k: string): ProjectTask[] =>
   pt.filter((t) => t.deadline === k && t.status !== 'done' && !t.deletedAt);
@@ -160,6 +178,7 @@ function rappelsSousElements<T>(
         source,
         id,
         at: jour.getTime() + minutes * 60_000,
+        type: 'notif',
         /* Le titre est le libellé du sous-élément, le corps nomme son parent :
            « Prendre la carte vitale » ne dit rien sans « Dentiste ». */
         titre: element.label,
@@ -168,6 +187,50 @@ function rappelsSousElements<T>(
       });
     });
   }
+
+  return rappels;
+}
+
+/** Les rappels PROPRES d'une entité pour le jour `jour`, calendrier appliqué.
+ *
+ *  Commun aux tâches, étapes et objectifs : pour chacun de ses réglages, on
+ *  demande à la source « es-tu due tel jour ? » et le réglage répond s'il sonne
+ *  aujourd'hui — le jour même, ou tant de jours avant. Le corps dit dans
+ *  combien de jours tombe l'échéance quand ce n'est pas aujourd'hui. */
+function rappelsPropres(
+  e: RappelEntite & { id: string; name: string },
+  source: SourceRappel,
+  jour: Date,
+  estEcheance: (d: Date) => boolean,
+  corpsKey: string,
+  corpsParams: Record<string, string | number> = {},
+): Rappel[] {
+  const k = dateKey(jour);
+  const rappels: Rappel[] = [];
+
+  rappelsEntite(e).forEach((r: ReglageRappel, index) => {
+    const minutes = parseHeure(r.time);
+    if (minutes === null) return;
+    if (!rappelCeJour(r, jour, estEcheance)) return;
+
+    /* Dans combien de jours l'échéance tombe-t-elle ? Le plus proche des
+       « jours avant » qui correspond à une échéance réelle. */
+    const avant = (r.before && r.before.length > 0 ? r.before : [0]).find((n) =>
+      estEcheance(addDays(jour, n)),
+    );
+    const dans = avant ?? 0;
+
+    rappels.push({
+      cle: `${source}|${e.id}|${k}|${r.time}|r${index}`,
+      source,
+      id: e.id,
+      at: jour.getTime() + minutes * 60_000,
+      type: typeRappel(r),
+      titre: e.name,
+      corpsKey: dans > 0 ? 'notifBodyBefore' : corpsKey,
+      corpsParams: dans > 0 ? { jours: dans } : corpsParams,
+    });
+  });
 
   return rappels;
 }
@@ -200,10 +263,11 @@ export function prochainsRappels(
       const parlantes = etat.habits.filter((h) => h.notify !== false);
       for (const r of rappelsRestants(parlantes, etat.log, i === 0 ? now : jour)) {
         rappels.push({
-          cle: `habit|${r.habitId}|${k}|${r.time}`,
+          cle: `habit|${r.habitId}|${k}|${r.time}|r${r.index}`,
           source: 'habit',
           id: r.habitId,
           at: r.at,
+          type: r.type,
           titre: r.name,
           corpsKey: 'notifBodyHabit',
         });
@@ -211,32 +275,47 @@ export function prochainsRappels(
     }
 
     if (s.notifTasks) {
-      for (const t of tachesDuJour(etat.tasks, etat.occurrences, jour)) {
+      for (const t of etat.tasks) {
         /* LE RÉGLAGE DE L'ENTITÉ D'ABORD. Une tâche muette le reste, même si sa
            source est allumée : le réglage le plus proche de l'objet gagne, et
            c'est le seul ordre qui ne surprend personne. */
-        if (t.notify === false) continue;
+        if (t.notify === false || t.deletedAt) continue;
 
-        /* L'HEURE PROPRE N'EST PAS DÉCALÉE DU PRÉAVIS. Quand on écrit « me
-           rappeler à 8 h », on veut 8 h — pas 7 h 30. Le préavis est une règle
-           par défaut appliquée à l'heure de la tâche ; une heure choisie à la
-           main est déjà la réponse. */
-        const propre = t.remindAt ? parseHeure(t.remindAt) : null;
-        const minutes = propre ?? (t.time ? parseHeure(t.time) : null);
-        /* Sans heure, pas de rappel : une tâche « un jour dans la journée » ne
-           peut pas sonner sans qu'on invente son heure, et un chiffre inventé
-           n'a pas sa place ici (règle 3 du CLAUDE.md). */
+        const propres = rappelsEntite(t);
+        if (propres.length > 0) {
+          /* Ses PROPRES rappels, avec leur calendrier — « la veille à 18 h »
+             sonne la veille, même si la tâche n'est due que demain. L'heure
+             choisie n'est PAS décalée du préavis : « me rappeler à 8 h » veut
+             dire 8 h. */
+          rappels.push(
+            ...rappelsPropres(
+              t,
+              'task',
+              jour,
+              (d) => tacheDue(t, d, etat.occurrences),
+              'notifBodyTask',
+              { heure: t.time ?? '', minutes: 0 },
+            ),
+          );
+          continue;
+        }
+
+        /* Sans rappel propre : la règle générale — l'heure de la tâche moins le
+           préavis, le jour même. Sans heure, pas de rappel : une tâche « un jour
+           dans la journée » ne peut pas sonner sans qu'on invente son heure, et
+           un chiffre inventé n'a pas sa place ici (règle 3 du CLAUDE.md). */
+        if (!tacheDue(t, jour, etat.occurrences)) continue;
+        const minutes = t.time ? parseHeure(t.time) : null;
         if (minutes === null) continue;
-
-        const preavis = propre === null ? s.notifLead : 0;
         rappels.push({
-          cle: `task|${t.id}|${k}|${t.remindAt ?? t.time ?? ''}`,
+          cle: `task|${t.id}|${k}|${t.time ?? ''}`,
           source: 'task',
           id: t.id,
-          at: jour.getTime() + (minutes - preavis) * 60_000,
+          at: jour.getTime() + (minutes - s.notifLead) * 60_000,
+          type: 'notif',
           titre: t.name,
-          corpsKey: preavis > 0 ? 'notifBodyTaskLead' : 'notifBodyTask',
-          corpsParams: { heure: t.time ?? '', minutes: preavis },
+          corpsKey: s.notifLead > 0 ? 'notifBodyTaskLead' : 'notifBodyTask',
+          corpsParams: { heure: t.time ?? '', minutes: s.notifLead },
         });
       }
 
@@ -255,17 +334,24 @@ export function prochainsRappels(
     }
 
     if (s.notifWork) {
-      for (const t of workDuJour(etat.projectTasks, k)) {
-        if (t.notify === false) continue;
-        /* L'heure propre compte ici plus qu'ailleurs : une échéance ne porte
-           AUCUNE heure, et sans ce champ toutes les étapes sonneraient à la
-           même minute. */
-        const heure = t.remindAt || s.notifDayHour;
+      for (const t of etat.projectTasks) {
+        if (t.notify === false || t.status === 'done' || t.deletedAt || !t.deadline) continue;
+        const echeance = t.deadline;
+        const propres = rappelsEntite(t);
+        if (propres.length > 0) {
+          rappels.push(
+            ...rappelsPropres(t, 'work', jour, (d) => dateKey(d) === echeance, 'notifBodyWork'),
+          );
+          continue;
+        }
+        if (echeance !== k) continue;
+        /* L'heure générale des échéances : une étape n'en porte aucune. */
         rappels.push({
-          cle: `work|${t.id}|${k}|${heure}`,
+          cle: `work|${t.id}|${k}|${s.notifDayHour}`,
           source: 'work',
           id: t.id,
-          at: heureVersMs(jour, heure, 9 * 60),
+          at: heureVersMs(jour, s.notifDayHour, 9 * 60),
+          type: 'notif',
           titre: t.name,
           corpsKey: 'notifBodyWork',
         });
@@ -283,14 +369,23 @@ export function prochainsRappels(
     }
 
     if (s.notifGoals) {
-      for (const g of objectifsDuJour(etat.goals, k)) {
-        if (g.notify === false) continue;
-        const heure = g.remindAt || s.notifDayHour;
+      for (const g of etat.goals) {
+        if (g.notify === false || g.deletedAt || !g.deadline) continue;
+        const echeance = g.deadline;
+        const propres = rappelsEntite(g);
+        if (propres.length > 0) {
+          rappels.push(
+            ...rappelsPropres(g, 'goal', jour, (d) => dateKey(d) === echeance, 'notifBodyGoal'),
+          );
+          continue;
+        }
+        if (echeance !== k) continue;
         rappels.push({
-          cle: `goal|${g.id}|${k}|${heure}`,
+          cle: `goal|${g.id}|${k}|${s.notifDayHour}`,
           source: 'goal',
           id: g.id,
-          at: heureVersMs(jour, heure, 9 * 60),
+          at: heureVersMs(jour, s.notifDayHour, 9 * 60),
+          type: 'notif',
           titre: g.name,
           corpsKey: 'notifBodyGoal',
         });
@@ -312,6 +407,7 @@ export function prochainsRappels(
           source: 'digest',
           id: '',
           at: heureVersMs(jour, s.notifDigestHour, 8 * 60),
+          type: 'notif',
           titre: '',
           titreKey: 'notifDigestTitle',
           corpsKey: 'notifDigestBody',
@@ -321,9 +417,15 @@ export function prochainsRappels(
     }
   }
 
-  return rappels
-    .filter((r) => r.at > maintenant && !dansLesHeuresSilencieuses(r.at, s))
-    .sort((a, b) => a.at - b.at || a.cle.localeCompare(b.cle));
+  return (
+    rappels
+      /* Une ALARME passe outre les heures silencieuses : c'est le sens même du
+         mot. Tout le reste s'y plie. */
+      .filter(
+        (r) => r.at > maintenant && (r.type === 'alarm' || !dansLesHeuresSilencieuses(r.at, s)),
+      )
+      .sort((a, b) => a.at - b.at || a.cle.localeCompare(b.cle))
+  );
 }
 
 /** Identifiant NUMÉRIQUE stable, dérivé de la clé.

@@ -1,5 +1,43 @@
 # Journal des modifications
 
+## 2026-09-16 (suite) — Silencieuse, notification ou alarme, et quand : rappel par rappel
+
+Chaque rappel — d'une habitude, d'une tâche, d'une étape de projet, d'un
+objectif — se règle désormais dans un dialogue à trois questions : **à quelle
+heure**, **de quel type** (silencieuse, notification, alarme) et **selon quel
+calendrier** (toujours, certains jours de la semaine, tant de jours avant
+l'échéance). Plusieurs rappels par entité, chacun avec les siens.
+
+**« Alarme » est une notification insistante, pas un réveil.** Son fort et à
+nous, vibration, priorité maximale, reste affichée jusqu'à être touchée, passe
+outre les heures silencieuses. Un réveil plein écran qui sonne en boucle
+demande une activité Android à écrire ; décision prise avec l'utilisateur de
+l'écarter comme lot à part. Le dialogue le dit sous le bouton.
+
+**Trois canaux Android, un par type.** Sur Android, c'est le canal — pas la
+notification — qui porte le son, la vibration et l'importance. Silencieux :
+importance basse, ni son ni bandeau. Alarmes : son `habitum_alarme.wav`, trois
+tonalités calculées par `scripts/son-alarme.mjs` — aucun fichier tiers, aucune
+licence à retrouver dans deux ans (règle n°5).
+
+**`Habit.reminders` garde son nom et s'enrichit.** La clé est figée (règle 1) ;
+son contenu ne l'est pas : les heures nues d'origine et les réglages complets y
+cohabitent, et un seul endroit sait lire les deux — `normaliserRappel()`. Une
+sauvegarde d'avant se relit telle quelle ; une sauvegarde d'aujourd'hui écrit
+encore une chaîne pour tout rappel qui n'a que son heure, donc reste lisible
+par la version précédente. Un type de rappel inconnu retombe sur la
+notification plutôt que d'écarter l'habitude entière.
+
+**Le calendrier est commun aux quatre sources.** Chacune ne fournit qu'une
+chose — « es-tu due tel jour ? » — et `rappelCeJour()` répond. « La veille à
+18 h » sonne la veille, avec un corps qui dit dans combien de jours tombe
+l'échéance. Une alarme passe outre les heures silencieuses : c'est le sens même
+du mot, et c'est la seule chose qui la distingue d'une notification aux yeux
+du calcul — le reste est affaire de canal.
+
+Onze tests unitaires neufs sur le domaine, deux sur les canaux, et
+l'aller-retour de sauvegarde étendu aux deux formes.
+
 ## 2026-09-13 — Débloquer le plugin Android et réarmer les notifications
 
 Les fonctions de chargement asynchrones rendaient directement le proxy Capacitor.

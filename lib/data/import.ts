@@ -15,13 +15,21 @@ import {
   legacyTask,
   type Bilingue,
 } from './import.schema';
-import { addDays, dateKey, today } from '@/lib/domain';
+import {
+  addDays,
+  dateKey,
+  epurerRappel,
+  isTypeRappel,
+  normaliserRappel,
+  today,
+} from '@/lib/domain';
 import type {
   DateKey,
   Goal,
   Habit,
   LogEntry,
   Note,
+  RappelBrut,
   RappelEntite,
   Session,
   ShoppingItem,
@@ -131,10 +139,47 @@ const sousElement = (s: {
   ...(s.nt === false ? { notify: false } : {}),
 });
 
+/** Un rappel relu : la chaîne reste une chaîne (forme d'origine), l'objet
+ *  est épuré de ses défauts. Un type inconnu a déjà été ramené à `notif` par
+ *  le schéma : rien n'est écarté. */
+const rappelRelu = (
+  r:
+    | string
+    | {
+        time: string;
+        type?: string | undefined;
+        days?: number[] | undefined;
+        before?: number[] | undefined;
+      },
+): RappelBrut =>
+  typeof r === 'string'
+    ? r
+    : epurerRappel({
+        time: r.time,
+        ...(isTypeRappel(r.type) ? { type: r.type } : {}),
+        ...(r.days ? { days: r.days } : {}),
+        ...(r.before ? { before: r.before } : {}),
+      });
+
 /** Le rappel propre d'une entité. L'absence reste l'absence. */
-const rappelEntite = (e: { nt?: boolean | undefined; ra?: string | undefined }): RappelEntite => ({
+const rappelEntite = (e: {
+  nt?: boolean | undefined;
+  ra?: string | undefined;
+  rp?:
+    | (
+        | string
+        | {
+            time: string;
+            type?: string | undefined;
+            days?: number[] | undefined;
+            before?: number[] | undefined;
+          }
+      )[]
+    | undefined;
+}): RappelEntite => ({
   ...(e.nt === false ? { notify: false } : {}),
   ...(e.ra ? { remindAt: e.ra } : {}),
+  ...(e.rp ? { rappels: e.rp.map(rappelRelu).map(normaliserRappel) } : {}),
 });
 
 /** Valide un tableau d'entités, une par une. Chaque refus est reporté avec son
@@ -219,7 +264,7 @@ export async function importFromJson(input: unknown): Promise<ImportReport> {
     ...(h.n === undefined ? {} : { interval: h.n }),
     subItems: h.sub.map((s) => ({ label: libelle(s) })),
     ...rappelEntite(h),
-    reminders: h.rem,
+    reminders: h.rem.map(rappelRelu),
     ...(h.start ? { start: h.start } : {}),
     ...(h.end ? { end: h.end } : {}),
     ...(h.pause ? { pause: h.pause } : {}),

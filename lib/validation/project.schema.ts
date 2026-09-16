@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { PROJECT_STATUSES } from '@/lib/domain';
-import { dateKeyOuVide, heure } from './habit.schema';
+import { dateKeyOuVide, heure, reglageRappelSchema } from './habit.schema';
 
 /* Validation des formulaires de Work.
 
@@ -48,6 +48,6 @@ export const projectTaskFormSchema = z.object({
      échéance ne porte AUCUNE heure, et sans ce champ toutes les étapes
      sonneraient à la même minute. */
   notify: z.boolean().default(true),
-  remindAt: heure.or(z.literal('')).default(''),
+  rappels: z.array(reglageRappelSchema).default([]),
 });
 export type ProjectTaskForm = z.infer<typeof projectTaskFormSchema>;
