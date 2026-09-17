@@ -7,6 +7,8 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useStore } from '@/lib/store';
 import { Segmented } from '@/components/ui';
 import { ViewActions } from '@/components/shell/view-actions';
+import { Forme } from '@/components/shell/forme';
+import { CalendarMobile } from './mobile/CalendarMobile';
 import { AgendaList } from './AgendaList';
 import { MonthGrid } from './MonthGrid';
 import { TimeGrid } from './TimeGrid';
@@ -32,7 +34,17 @@ export type ModeCalendrier = 'month' | 'week' | 'day' | 'agenda';
  *  clic sur un évènement déclencherait un déplacement de trois pixels. */
 const SEUIL_GLISSEMENT = 6;
 
+/* Deux formes, une seule dans le document (`components/shell/forme.tsx`) :
+   sous 768 px `mobile/CalendarMobile.tsx` (refonte mobile, PDF p. 9) — le
+   mois y existe enfin, avec un trait d'état par jour ; au-dessus, la forme
+   portée du prototype, inchangée. Le repli `etroit → agenda` ci-dessous ne
+   sert donc plus que si la fenêtre rétrécit APRÈS le montage sans que la
+   forme n'ait encore basculé. */
 export function CalendarView() {
+  return <Forme mobile={<CalendarMobile />} bureau={<CalendarBureau />} />;
+}
+
+function CalendarBureau() {
   const t = useTranslations('app');
   const moveTask = useStore((s) => s.moveTask);
 

@@ -1,5 +1,6 @@
 'use client';
 
+import type { RefObject } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { ListTodo, NotebookPen, Repeat2, Timer } from 'lucide-react';
@@ -17,9 +18,11 @@ import { useStore } from '@/lib/store';
 export function FeuilleCreation({
   open,
   onOpenChange,
+  retourFocus,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
+  retourFocus?: RefObject<HTMLElement | null> | undefined;
 }) {
   const t = useTranslations('app');
   const router = useRouter();
@@ -48,6 +51,7 @@ export function FeuilleCreation({
       title={t('mobCreate')}
       description={t('mobCreateD')}
       testId="feuille-creation"
+      retourFocus={retourFocus}
     >
       <ul className="m-0 flex list-none flex-col gap-1 p-0">
         {lignes.map(({ key, Icone, action }) => (

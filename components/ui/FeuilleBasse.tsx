@@ -1,7 +1,7 @@
 'use client';
 
 import * as RadixDialog from '@radix-ui/react-dialog';
-import type { ReactNode } from 'react';
+import type { ReactNode, RefObject } from 'react';
 
 /* Feuille BASSE — refonte mobile (PDF p. 2, « feuille de choix », p. 9
    « feuille basse aux deux tiers », p. 17 « feuille de confirmation »).
@@ -24,6 +24,7 @@ export function FeuilleBasse({
   description,
   children,
   testId,
+  retourFocus,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
@@ -31,6 +32,11 @@ export function FeuilleBasse({
   description?: string | undefined;
   children: ReactNode;
   testId?: string | undefined;
+  /** Élément à qui RENDRE LE FOCUS à la fermeture. La feuille est ouverte par
+   *  un état, pas par un `Dialog.Trigger` : sans ce repère, Radix ne sait pas
+   *  d'où l'on vient, et Échap renverrait un utilisateur au clavier tout en
+   *  haut du document. */
+  retourFocus?: RefObject<HTMLElement | null> | undefined;
 }) {
   return (
     <RadixDialog.Root open={open} onOpenChange={onOpenChange}>
@@ -41,6 +47,12 @@ export function FeuilleBasse({
         />
         <RadixDialog.Content
           data-testid={testId}
+          onCloseAutoFocus={(e) => {
+            const cible = retourFocus?.current;
+            if (!cible) return;
+            e.preventDefault();
+            cible.focus();
+          }}
           className="fixed inset-x-0 bottom-0 z-50 mx-auto flex max-h-[85vh] w-full max-w-[560px] flex-col rounded-t-[22px] border px-4 pt-3 outline-none"
           style={{
             borderColor: 'var(--line2)',

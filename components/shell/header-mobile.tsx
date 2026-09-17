@@ -1,7 +1,7 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { CalendarDays, Plus, Search } from 'lucide-react';
 import { addDays, today } from '@/lib/domain';
@@ -10,7 +10,7 @@ import { ENCRE_SUR_TEINTE } from '@/components/ui/encre';
 import { useLocaleSwitcher } from './locale-provider';
 import { enteteMobile, estActif, itemActif } from './nav-items';
 import { FeuilleCreation } from './feuille-creation';
-import { MonthPicker } from './month-picker';
+import { FeuilleDate } from './feuille-date';
 
 /* En-tête MOBILE — sous 768 px seulement. Refonte mobile, PDF p. 2 :
    « L'en-tête garde trois éléments : titre, une action contextuelle (date ou
@@ -42,6 +42,9 @@ export function HeaderMobile() {
   const setCommandOpen = useStore((s) => s.setCommandOpen);
   const openEditor = useStore((s) => s.openEditor);
   const [choix, setChoix] = useState(false);
+  const [dateOuverte, setDateOuverte] = useState(false);
+  const boutonDate = useRef<HTMLButtonElement>(null);
+  const boutonPlus = useRef<HTMLButtonElement>(null);
   const [monte, setMonte] = useState(false);
   useEffect(() => setMonte(true), []);
 
@@ -110,23 +113,22 @@ export function HeaderMobile() {
       </h1>
 
       {entete.action === 'date' ? (
-        <MonthPicker
-          trigger={
-            <button
-              type="button"
-              aria-label={t('app.openMonth')}
-              title={t('app.openMonth')}
-              className={BOUTON}
-              style={{
-                borderColor: 'var(--line)',
-                background: 'var(--panel2)',
-                color: 'var(--txt2)',
-              }}
-            >
-              <CalendarDays size={17} strokeWidth={1.8} aria-hidden="true" />
-            </button>
-          }
-        />
+        <button
+          type="button"
+          ref={boutonDate}
+          onClick={() => setDateOuverte(true)}
+          aria-label={t('app.openMonth')}
+          aria-haspopup="dialog"
+          title={t('app.openMonth')}
+          className={BOUTON}
+          style={{
+            borderColor: 'var(--line)',
+            background: 'var(--panel2)',
+            color: 'var(--txt2)',
+          }}
+        >
+          <CalendarDays size={17} strokeWidth={1.8} aria-hidden="true" />
+        </button>
       ) : null}
 
       {entete.action === 'search' ? (
@@ -144,6 +146,7 @@ export function HeaderMobile() {
       {entete.plus ? (
         <button
           type="button"
+          ref={boutonPlus}
           onClick={surPlus}
           aria-label={t('app.newItem')}
           aria-haspopup={entete.plus === 'choice' ? 'dialog' : undefined}
@@ -154,7 +157,8 @@ export function HeaderMobile() {
         </button>
       ) : null}
 
-      <FeuilleCreation open={choix} onOpenChange={setChoix} />
+      <FeuilleCreation open={choix} onOpenChange={setChoix} retourFocus={boutonPlus} />
+      <FeuilleDate open={dateOuverte} onOpenChange={setDateOuverte} retourFocus={boutonDate} />
     </header>
   );
 }

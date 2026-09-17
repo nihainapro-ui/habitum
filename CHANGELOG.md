@@ -1,5 +1,55 @@
 # Journal des modifications
 
+## 2026-09-17 (suite) — Refonte mobile, P2 : tableau de bord compact, calendrier et sélecteur de jour
+
+Deuxième livraison de la cartographie « Refonte mobile Habitum » (PDF p. 4 et
+9). Toujours sous 768 px seulement ; le bureau ne bouge pas.
+
+**Le tableau de bord répond en un regard, puis laisse agir.** L'anneau occupait
+un tiers de l'écran à côté d'un vide, et quatre tuiles s'imbriquaient dans une
+grande carte. Il y a maintenant une ligne de synthèse — anneau de 52 px, date,
+« 3 habitudes faites · 2 tâches à faire · série 8 j » —, trois indicateurs sur
+une rangée (Record, Focus, Tâches, chacun menant à sa vue), puis « À faire
+maintenant » : cinq entrées non faites au plus, avec les lignes d'Aujourd'hui
+— donc cochables, avec leur pas à pas et leur feuille d'actions, dès le
+premier écran. « Tout voir » devient « Aujourd'hui › ». Dernière ligne :
+l'objectif en cours le plus avancé. Le rappel de sauvegarde, les tâches à
+venir et la mini-carte de trente jours restent, sous l'essentiel : rien n'est
+retiré. Un compte vierge lit 0/0, 0 j, 0 h 00, et propose d'ajouter une
+habitude.
+
+**Le mois existe enfin sur téléphone.** Avant, tout retombait sur l'agenda
+sous 768 px. Trois modes désormais — Mois, Semaine, Agenda. Le mois : 42 cases
+de 44 px, un TRAIT d'état sous chaque jour — complet, partiel, manqué — avec
+sa légende écrite et l'état dans le nom accessible de la case : jamais la
+couleur seule. Un jour à venir, un jour sans rien de planifié et le jour
+courant pas encore fini ne sont pas « manqués » : ils n'ont pas de trait. Sous
+la grille, le détail du jour choisi — le même `ui.day` qu'Aujourd'hui —, ses
+lignes cochables, et « Ouvrir › ». Glisser change de mois ; deux flèches font
+de même pour qui ne glisse pas.
+
+**Le sélecteur de jour est cette même grille, en feuille basse.** Le dialogue
+plein écran, sans indication de ce qui s'était passé chaque jour, est remplacé
+sur téléphone par `MoisMobile` dans une feuille ancrée en bas : un appui
+choisit, la feuille se referme sur Aujourd'hui réglée sur ce jour, et Échap
+rend le focus au bouton du calendrier. Le dialogue du bureau est inchangé.
+
+**Écart assumé :** la vue Semaine n'est pas une grille horaire où l'on glisse
+une tâche — sept colonnes d'heures ne tiennent pas dans 358 px sans défilement
+horizontal, que les règles du dépôt interdisent. C'est la semaine en sept
+cellules puis le détail du jour ; déplacer une tâche passe par « Reprogrammer »
+ou son éditeur. Le titre d'en-tête reste « Calendrier » : le mois est écrit
+au-dessus de la grille, entre ses deux flèches.
+
+**`Forme`, une seule forme dans le document.** Aujourd'hui, le tableau de bord
+et le calendrier choisissent leur forme après montage
+(`components/shell/forme.tsx`) au lieu de rendre les deux et d'en masquer une :
+une vue rendue deux fois double son DOM et fait exister chaque texte en double.
+
+Cinq briques de domaine testées — `etatJour`, `longestCurrentStreak`,
+`nearestGoal`, `aFaireMaintenant`, `ecartMois` — et dix-sept tests de bout en
+bout neufs (`vue-dash-mobile`, `vue-calendar-mobile`).
+
 ## 2026-09-17 — Refonte mobile, P1 : une seule barre, une seule carte, une seule couleur d'action
 
 Première livraison de la cartographie UX/UI « Refonte mobile Habitum » (PDF de

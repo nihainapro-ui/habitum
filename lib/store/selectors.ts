@@ -8,6 +8,7 @@ import {
   dateKey,
   dayAgenda,
   dayRatio,
+  etatJour,
   parseKey,
   focusMinutes,
   isScheduled,
@@ -17,6 +18,7 @@ import {
   sumValues,
   today,
   type DayRatio,
+  type EtatJour,
   type EntreeJour,
   type Habit,
   type Progression,
@@ -82,6 +84,17 @@ export const useDayCounts = (date: Date): { all: number; habits: number; tasks: 
       const habits = entrees.filter((e) => e.kind === 'habit').length;
       return { all: entrees.length, habits, tasks: entrees.length - habits };
     }),
+  );
+
+/** État de plusieurs journées — le trait sous chaque jour du calendrier
+ *  mobile. Des CHAÎNES, donc `useShallow` les compare une à une. */
+export const useDayStates = (dates: readonly Date[]): EtatJour[] =>
+  useStore(
+    useShallow((s) =>
+      dates.map((d) =>
+        etatJour(dayRatio(s.logIndex, s.habits, s.tasks, d, today(), s.occurrences), d),
+      ),
+    ),
   );
 
 /** Habitudes planifiées ce jour-là, archivées exclues. */

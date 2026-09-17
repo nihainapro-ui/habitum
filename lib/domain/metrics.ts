@@ -161,3 +161,30 @@ export function nbJoursJournalises(log: LogIndex, habitId: string): number {
   for (const cle of log.keys()) if (cle.startsWith(prefixe)) n++;
   return n;
 }
+
+/** État d'une journée pour le trait du calendrier mobile (PDF p. 9) :
+ *  complet / partiel / manqué, ou rien.
+ *
+ *  `none` couvre deux cas qui ne doivent PAS se dire « manqué » : un jour où
+ *  rien n'était planifié, et un jour à venir — on ne peut pas avoir manqué
+ *  demain. Le jour courant sans rien de fait n'est pas manqué non plus : il
+ *  n'est pas fini (même tolérance que la série). */
+export type EtatJour = 'none' | 'missed' | 'partial' | 'complete';
+
+export function etatJour(r: DayRatio, d: Date, now: Date = today()): EtatJour {
+  if (r.scheduled === 0 || d > now) return 'none';
+  if (r.ratio >= 1) return 'complete';
+  if (r.ratio > 0) return 'partial';
+  return dateKey(d) === dateKey(now) ? 'none' : 'missed';
+}
+
+/** La plus longue série EN COURS, toutes habitudes confondues — la « série
+ *  6 j » de la synthèse du tableau de bord mobile. Distincte du record
+ *  (`bestStreakOverall`), qui regarde le passé. */
+export function longestCurrentStreak(
+  log: LogIndex,
+  habits: readonly Habit[],
+  now: Date = today(),
+): number {
+  return habits.reduce((max, h) => Math.max(max, currentStreak(log, h, now)), 0);
+}

@@ -56,3 +56,10 @@ export const semaineDe = (d: Date, weekStart: WeekStart = 'mon'): Date[] => {
   const debut = startOfWeek(d, weekStart);
   return Array.from({ length: 7 }, (_, i) => addDays(debut, i));
 };
+
+/** Écart en MOIS entre le mois de `d` et celui de `now` — négatif dans le
+ *  passé. C'est le décalage que prend `monthGrid` : le calendrier et le
+ *  sélecteur de jour s'ouvrent sur le mois du jour affiché, pas sur le mois
+ *  courant. Écrit une fois ici depuis qu'ils sont deux à en avoir besoin. */
+export const ecartMois = (d: Date, now: Date = today()): number =>
+  (d.getFullYear() - now.getFullYear()) * 12 + (d.getMonth() - now.getMonth());
