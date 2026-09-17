@@ -42,6 +42,15 @@ planifiées, tâches restantes, série la plus longue, minutes de focus), liste 
 avec case d'action directe, prochaines tâches, mini-heatmap 30 jours, objectifs en cours.
 **Interactions :** cocher une habitude depuis la liste, clic sur une carte → vue détaillée.
 
+> **Refonte mobile (P2).** Sous 768 px (`components/dashboard/mobile/DashMobile.tsx`, PDF
+> p. 4) : synthèse sur UNE ligne (anneau de 52 px, date, « n habitudes faites · n tâches
+> à faire · série n j »), trois indicateurs sur une rangée (Record → Statistiques, Focus
+> → Focus, Tâches → Tâches), puis « À faire maintenant » — cinq entrées non faites au
+> plus (`aFaireMaintenant`), avec les lignes d'Aujourd'hui, donc cochables dès le premier
+> écran — et l'objectif en cours le plus avancé (`nearestGoal`). « Tout voir » y devient
+> « Aujourd'hui › ». Le rappel de sauvegarde, les tâches à venir (une ligne vers Tâches)
+> et la mini-carte de trente jours restent, sous l'essentiel.
+
 ## 2. `today` — Aujourd'hui
 **But :** exécution séquentielle de la journée.
 **Contenu :** navigation jour précédent/suivant (`state.day`), filtres par catégorie
@@ -75,7 +84,17 @@ appui long ne l'est qu'au doigt.
 > **cinq** — `tests/RECETTE.md` § 6 disait vrai. Le cinquième, `orbit` (« projection orbitale du
 > mois »), est une variante **décorative** de la grille mensuelle : il n'affiche aucune information
 > que `month` ne donne pas. Il n'est **pas porté**, et ce choix est délibéré plutôt que subi.
-> Les quatre modes ci-dessus le sont, et retombent tous sur `agenda` sous 768 px (D6).
+> Les quatre modes ci-dessus le sont. ~~Ils retombent tous sur `agenda` sous 768 px (D6).~~
+>
+> **Refonte mobile (P2).** Ce repli n'existe plus. Sous 768 px
+> (`components/calendar/mobile/`, PDF p. 9), trois modes : **Mois** — 42 cases de 44 px,
+> un trait d'état par jour (complet / partiel / manqué, `etatJour`), légende écrite, état
+> dans le nom accessible de chaque case —, **Semaine** — les sept cellules d'Aujourd'hui —
+> et **Agenda**. Sous la grille, le détail du jour choisi (`ui.day`, partagé avec
+> Aujourd'hui), lignes cochables, et « Ouvrir › ». La grille horaire et le glisser-déposer
+> ne sont PAS portés sur téléphone : sept colonnes d'heures ne tiennent pas dans 358 px
+> sans défilement horizontal. Le sélecteur de jour de l'en-tête mobile est cette même
+> grille, en feuille basse (`components/shell/feuille-date.tsx`).
 
 **Interactions :** navigation par `calOff` (animation directionnelle `calDir`), **glisser-déposer**
 d'une tâche vers un autre jour/heure, **redimensionnement** modifiant `duration` (minimum 15 min),

@@ -148,3 +148,9 @@ export function partagerPlusTard(entrees: readonly EntreeJour[]): FileDuJour {
   if (avecHeure.length === 0) return { maintenant: [...entrees], plusTard: [] };
   return { maintenant: avecHeure, plusTard: entrees.filter((e) => e.time === null) };
 }
+
+/** « À faire maintenant » — les premières entrées NON FAITES de la journée,
+ *  dans l'ordre de la file. Le tableau de bord mobile en montre cinq au plus
+ *  (PDF p. 4) : il résume, et renvoie à Aujourd'hui pour le reste. */
+export const aFaireMaintenant = (entrees: readonly EntreeJour[], max = 5): EntreeJour[] =>
+  entrees.filter((e) => !e.done).slice(0, max);

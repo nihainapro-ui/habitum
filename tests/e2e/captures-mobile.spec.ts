@@ -88,3 +88,41 @@ test('capture éditeur d’habitude', async ({ page }) => {
   await page.waitForTimeout(400);
   await page.screenshot({ path: `${DOSSIER}/05c-editeur-supprimer.png` });
 });
+
+/* --- P2 : tableau de bord (PDF p. 4), calendrier et sélecteur de jour (p. 9) */
+
+test('capture tableau de bord', async ({ page }) => {
+  await page.setViewportSize(TELEPHONE);
+  await ouvrirAvecDemo(page, '/app', { historique: true });
+  await page.waitForTimeout(400);
+  await page.screenshot({ path: `${DOSSIER}/06-dash.png` });
+  await page.screenshot({ path: `${DOSSIER}/06b-dash-entier.png`, fullPage: true });
+});
+
+test('capture tableau de bord vide', async ({ page }) => {
+  await page.setViewportSize(TELEPHONE);
+  await ouvrirVierge(page, '/app');
+  await page.waitForTimeout(400);
+  await page.screenshot({ path: `${DOSSIER}/06c-dash-vide.png` });
+});
+
+test('capture calendrier', async ({ page }) => {
+  await page.setViewportSize(TELEPHONE);
+  await ouvrirAvecDemo(page, '/app/calendar', { historique: true });
+  await page.waitForTimeout(400);
+  await page.screenshot({ path: `${DOSSIER}/07-calendrier.png` });
+  await page.getByRole('radio', { name: 'Semaine' }).click();
+  await page.waitForTimeout(300);
+  await page.screenshot({ path: `${DOSSIER}/07b-calendrier-semaine.png` });
+});
+
+test('capture sélecteur de jour', async ({ page }) => {
+  await page.setViewportSize(TELEPHONE);
+  await ouvrirAvecDemo(page, '/app/today', { historique: true });
+  await page
+    .getByTestId('header-mobile')
+    .getByRole('button', { name: 'Ouvrir le calendrier' })
+    .click();
+  await page.waitForTimeout(400);
+  await page.screenshot({ path: `${DOSSIER}/08-feuille-date.png` });
+});

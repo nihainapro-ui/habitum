@@ -159,3 +159,21 @@ export function goalTrail(
   }
   return courbe;
 }
+
+/** L'objectif NON ATTEINT le plus proche du but — la dernière ligne du
+ *  tableau de bord mobile (PDF p. 4). `null` s'il n'y en a aucun en cours :
+ *  la ligne disparaît alors, elle n'affiche pas un objectif de courtoisie. */
+export function nearestGoal(
+  goals: readonly Goal[],
+  habits: readonly Habit[],
+  log: LogIndex,
+  now: Date = today(),
+): { goal: Goal; progress: GoalProgress } | null {
+  let meilleur: { goal: Goal; progress: GoalProgress } | null = null;
+  for (const goal of goals) {
+    const progress = goalProgress(goal, habits, log, now);
+    if (progress.percent >= 100) continue;
+    if (!meilleur || progress.percent > meilleur.progress.percent) meilleur = { goal, progress };
+  }
+  return meilleur;
+}

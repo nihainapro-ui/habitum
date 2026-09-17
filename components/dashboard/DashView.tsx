@@ -19,6 +19,8 @@ import { useDayRatio, useFocusMinutes, useStore } from '@/lib/store';
 import { CategoryGlyph, Panel, Ring } from '@/components/ui';
 import { EmptyState } from '@/components/shell/empty-state';
 import { RowCheck } from '@/components/today/RowCheck';
+import { Forme } from '@/components/shell/forme';
+import { DashMobile } from './mobile/DashMobile';
 
 /* Vue « Tableau de bord » — 05-SPEC-VUES.md § 1.
 
@@ -30,7 +32,14 @@ import { RowCheck } from '@/components/today/RowCheck';
 const JOURS_MINI = 30;
 const MAX_TACHES = 5;
 
+/* Deux formes, une seule dans le document (`components/shell/forme.tsx`) :
+   sous 768 px `mobile/DashMobile.tsx` (refonte mobile, PDF p. 4) ; au-dessus,
+   la forme portée du prototype, inchangée. */
 export function DashView() {
+  return <Forme mobile={<DashMobile />} bureau={<DashBureau />} />;
+}
+
+function DashBureau() {
   const t = useTranslations('app');
   const ts = useTranslations('system');
 
