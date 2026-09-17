@@ -66,6 +66,19 @@ export const createTasksSlice: StateCreator<AppState, [], [], TasksActions> = (s
      (`occ`, format figé G1), la tâche avance à son échéance suivante, et
      l'affichage garde la trace de ce qui a été fait ce jour-là. Décocher
      défait exactement cela — l'échéance revient au jour décoché. */
+  /* Même geste, annoncé et annulable — voir `toggleHabitAnnulable`. */
+  async toggleTaskOnAnnulable(id, date) {
+    const t = get().tasks.find((x) => x.id === id);
+    if (!t) return;
+    const faite = t.recurrence ? get().occurrences.has(occurrenceKey(id, date)) : t.done;
+    await withUndo(
+      set,
+      get,
+      { messageKey: faite ? 'app.tUnchecked' : 'app.tChecked', label: t.name },
+      () => get().toggleTaskOn(id, date),
+    );
+  },
+
   async toggleTaskOn(id, date) {
     const t = get().tasks.find((x) => x.id === id);
     if (!t) return;

@@ -60,10 +60,6 @@ export interface UiState {
   editor: EditorState | null;
   toast: ToastState | null;
   commandOpen: boolean;
-  /** Tiroir de navigation MOBILE. Sous 768 px le rail n'est pas rendu : sans ce
-   *  tiroir, sept des onze vues n'ont aucun chemin d'accès au doigt — la
-   *  palette ⌘K suppose un clavier, que l'APK n'a pas. */
-  menuOpen: boolean;
   /** Le rideau du verrou biométrique est-il levé pour CETTE ouverture ?
    *
    *  Volontairement dans l'état d'interface et non dans `meta` : un verrou qui
@@ -131,6 +127,9 @@ export interface HabitsActions {
   /** Journalise explicitement un zéro : « passée », et non « jamais saisie ».
    *  La distinction porte la sémantique de `limit` (G9). */
   skipHabit(habitId: string, date: DateKey): Promise<void>;
+  /** Comme `toggleHabit`, avec un toast « Annuler » (refonte mobile, PDF p. 5 :
+   *  toute action réversible se signale et se défait en un appui). */
+  toggleHabitAnnulable(habitId: string, date: DateKey): Promise<void>;
 }
 
 export interface TasksActions {
@@ -144,6 +143,8 @@ export interface TasksActions {
    *  faite CE JOUR-LÀ, et elle avance à son occurrence suivante. La distinction
    *  n'existe pas pour une tâche unique, où l'action revient à `toggleTask`. */
   toggleTaskOn(id: string, date: DateKey): Promise<void>;
+  /** Comme `toggleTaskOn`, avec un toast « Annuler ». */
+  toggleTaskOnAnnulable(id: string, date: DateKey): Promise<void>;
   /** Reporte au lendemain, avec annulation. */
   snoozeTask(id: string): Promise<void>;
   toggleSubTask(id: string, index: number): Promise<void>;
@@ -208,8 +209,10 @@ export interface UiActions {
   openEditor(editor: EditorState): void;
   closeEditor(): void;
   setCommandOpen(open: boolean): void;
-  setMenuOpen(open: boolean): void;
   showToast(toast: ToastState): void;
+  /** Toast sans annulation, effacé seul après six secondes — « Habitude
+   *  enregistrée ». Il passe par la même minuterie que les toasts annulables. */
+  flashToast(messageKey: string, label?: string): void;
   dismissToast(): void;
 }
 

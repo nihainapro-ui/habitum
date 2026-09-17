@@ -18,6 +18,18 @@ larges. Mode zen (`⌘\`) masque rail et panneau.
 Navigation (ordre du prototype, corrigé) :
 `dash · today · cal · habits · tasks · goals · stats · profile · timer · notes · settings`
 
+> **Refonte mobile (P1, 17 septembre 2026).** Sous 768 px, la coque ci-dessus ne
+> s'applique plus. La référence est le PDF « Refonte mobile Habitum — cartographie
+> UX/UI » (`UX-UI/`, hors dépôt) : **une seule barre** basse — Aujourd'hui ·
+> Habitudes · Tâches · Plus — sans tiroir latéral ; un écran **Plus**
+> (`/app/plus`, `components/plus/PlusView.tsx`) qui porte la carte de profil et
+> huit tuiles vers les autres vues, chacune avec une ligne d'état réelle ; un
+> en-tête à **trois éléments** (titre, action contextuelle, « + ») ; et
+> **Aujourd'hui comme écran d'ouverture** — `/app` reste le tableau de bord, mais
+> la première arrivée d'une session sur téléphone y est renvoyée. Le niveau,
+> le thème et la langue ne sont plus dans la navigation : Profil et Réglages.
+> Au-dessus de 768 px, rien ne change. Tables : `components/shell/nav-items.ts`.
+
 Raccourcis globaux : `⌘K`/`Ctrl+K` palette · `Escape` ferme palette/modale/éditeur ·
 `⌘\` mode zen · `Tab` piégé dans les modales ouvertes.
 
@@ -40,6 +52,19 @@ compteurs quantitatifs avec `−`/`+`.
 sens pour une habitude, « Passer » n'en a pas pour une tâche). Toast avec **Annuler**.
 L'appui long n'est pas porté : le bouton « ⋯ » est atteignable au doigt comme au clavier, un
 appui long ne l'est qu'au doigt.
+
+> **Refonte mobile (P1).** Sous 768 px (`components/today/mobile/`, PDF p. 5) : le titre
+> de l'en-tête est la date du jour affiché ; **sept cellules égales** pour la semaine
+> qui contient ce jour (glisser : semaine ±1, flèches : jour ±1) ; segments avec
+> compteurs ; ligne = case ronde de 44 px · glyphe · nom · méta · action droite (pas à
+> pas de 44 px pour les compteurs, ▷ pour une habitude de durée, qui lance Focus) ;
+> les entrées **sans heure** sont repliées sous « Plus tard · n » (`partagerPlusTard`).
+> Le « ⋯ » n'existe pas : l'appui sur le nom ouvre une **feuille d'actions** dont
+> « Modifier » est la première ligne, puis Réussi · Saisir la valeur · Focus ·
+> Passer / Reporter · Note · Supprimer (confirmation chiffrée). Glisser une ligne à
+> gauche lance Focus, à droite reporte une tâche. Cocher pose un toast « Annuler ».
+> États : « Journée libre » ; bandeau « Vous modifiez le … » sur un jour passé ;
+> « Pas encore » et cases à 45 % sur un jour à venir ; « Journée parfaite ».
 
 ## 3. `cal` — Calendrier
 **But :** planification.
@@ -80,6 +105,16 @@ taux sur 30 jours, bouton d'édition. Bouton « Nouvelle habitude » en haut à 
 - **Avancé** : note libre, archivage, suppression (avec annulation).
 Validation à porter en `zod` ; état brouillon isolé du store principal.
 
+> **Refonte mobile (P1).** Sous 768 px, l'éditeur d'**habitude** n'a plus d'onglets
+> (PDF p. 7) : un seul écran progressif — Nom → Catégorie + Type → sept jours en cases
+> rondes de 44 px avec phrase de confirmation (`resumeJours`) → Rappels → « Réglages
+> avancés » repliés (répétition, dates, note, archivage) → « Supprimer l'habitude… »
+> séparé, confirmé avec le nombre de jours d'historique (`nbJoursJournalises`).
+> En-tête Annuler / Titre / Enregistrer en zone sûre, bouton « Enregistrer » ancré en
+> bas, « Annuler » avec des modifications → « Abandonner ? ». Même `useForm`, même
+> schéma : seule la mise en page change. Les autres éditeurs gardent leurs onglets
+> jusqu'à P3.
+>
 > **Précisé au portage (phase 4).** L'habitude a **quatre** onglets, la tâche **trois** : le modèle
 > cible ne porte pas de rappel sur une tâche, et un onglet « Rappels » qui n'écrirait nulle part
 > serait le champ décoratif que le plan 6 § 6.4 interdit. L'objectif a son propre éditeur, à deux

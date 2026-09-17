@@ -18,12 +18,20 @@ import { releverDebordements } from './helpers/debordement';
 
 const dialogue = (page: Page) => page.getByRole('dialog', { name: 'Nouveau rappel' });
 
+/** Sur bureau, les rappels vivent dans un onglet ; sur téléphone (refonte
+ *  mobile, PDF p. 7), l'éditeur d'habitude est un seul écran et les rappels y
+ *  sont directement. On clique l'onglet s'il existe, et c'est tout. */
+const versRappels = async (page: Page) => {
+  const onglet = page.getByRole('tab', { name: 'Rappels' });
+  if (await onglet.count()) await onglet.click();
+};
+
 test('une habitude gagne un rappel « alarme, certains jours », et le garde', async ({ page }) => {
   await ouvrirVierge(page, '/app/habits');
   await page.getByRole('button', { name: 'Nouvelle habitude' }).first().click();
   await page.getByLabel('Nom', { exact: true }).fill('Factures');
 
-  await page.getByRole('tab', { name: 'Rappels' }).click();
+  await versRappels(page);
   await page.getByRole('button', { name: 'Ajouter un rappel' }).click();
   await expect(dialogue(page)).toBeVisible();
 
@@ -48,14 +56,15 @@ test('une habitude gagne un rappel « alarme, certains jours », et le garde', a
   await expect(ligne).toContainText('Alarme');
   await expect(ligne).toContainText('1 jour(s) par semaine');
 
-  await page.getByRole('button', { name: 'Enregistrer' }).click();
+  /* `.last()` : sur téléphone, l'éditeur porte deux « Enregistrer » (en-tête et pied). */
+  await page.getByRole('button', { name: 'Enregistrer' }).last().click();
   await expect(page.getByRole('article', { name: 'Factures' })).toBeVisible();
 
   /* ÉCRIT, pas affiché : rechargement, puis réouverture. */
   await page.reload();
   await attendreHydratation(page);
   await page.getByRole('button', { name: 'Modifier Factures' }).click();
-  await page.getByRole('tab', { name: 'Rappels' }).click();
+  await versRappels(page);
   await expect(page.locator('[data-rappels] li').first()).toContainText('Alarme');
 });
 
@@ -94,7 +103,7 @@ test('le dialogue ne déborde pas à 390 px — il vit hors du filet des vues', 
   await page.setViewportSize({ width: 390, height: 800 });
   await ouvrirVierge(page, '/app/habits');
   await page.getByRole('button', { name: 'Nouvelle habitude' }).first().click();
-  await page.getByRole('tab', { name: 'Rappels' }).click();
+  await versRappels(page);
   await page.getByRole('button', { name: 'Ajouter un rappel' }).click();
   await expect(dialogue(page)).toBeVisible();
 

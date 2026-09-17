@@ -71,6 +71,19 @@ export const useDayAgenda = (date: Date): EntreeJour[] => {
   }, [logIndex, habits, tasks, occurrences, filter, jour]);
 };
 
+/** Compteurs des segments de la vue Aujourd'hui sur téléphone — PDF p. 5 :
+ *  « Tout · 5 · Habitudes · 4 · Tâches · 1 ». Calculés AVANT le filtre, sinon
+ *  choisir « Tâches » ferait tomber le compte des habitudes à zéro. Trois
+ *  nombres, donc `useShallow` suffit. */
+export const useDayCounts = (date: Date): { all: number; habits: number; tasks: number } =>
+  useStore(
+    useShallow((s) => {
+      const entrees = dayAgenda(s.logIndex, s.habits, s.tasks, date, today(), s.occurrences);
+      const habits = entrees.filter((e) => e.kind === 'habit').length;
+      return { all: entrees.length, habits, tasks: entrees.length - habits };
+    }),
+  );
+
 /** Habitudes planifiées ce jour-là, archivées exclues. */
 export const useHabitsOfDay = (date: Date): Habit[] =>
   useStore(useShallow((s) => s.habits.filter((h) => isScheduled(h, date))));

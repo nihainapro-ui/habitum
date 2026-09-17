@@ -109,6 +109,24 @@ export const createHabitsSlice: StateCreator<AppState, [], [], HabitsActions> = 
     await get().setLogValue(habitId, date, fait ? 0 : dailyTarget(h));
   },
 
+  /* La même bascule, annoncée et annulable. Sur téléphone, la case est le
+     geste le plus fréquent du produit et une coche posée par erreur doit se
+     défaire d'un appui — sans chercher la case qu'on vient de toucher. Le
+     bureau garde `toggleHabit` nu : y poser un toast à chaque coche changerait
+     un rendu validé. */
+  async toggleHabitAnnulable(habitId, date) {
+    const h = get().habits.find((x) => x.id === habitId);
+    const jour = parseKey(date);
+    if (!h || !jour) return;
+    const fait = isDone(get().logIndex, h, jour);
+    await withUndo(
+      set,
+      get,
+      { messageKey: fait ? 'app.hUnchecked' : 'app.hChecked', label: h.name },
+      () => get().toggleHabit(habitId, date),
+    );
+  },
+
   async bumpHabit(habitId, date, delta) {
     const actuel = get().logIndex.get(logKey(habitId, date)) ?? 0;
     await get().setLogValue(habitId, date, Math.max(0, actuel + delta));

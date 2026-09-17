@@ -18,7 +18,9 @@ test('les onze vues répondent', async ({ page }) => {
   for (const route of routes) {
     const res = await page.goto(route);
     expect(res?.status(), route).toBeLessThan(400);
-    await expect(page.locator('h1')).toBeVisible();
+    /* Par rôle, pas par balise : la coque rend deux titres, l'en-tête de
+       bureau et l'en-tête mobile, et le CSS n'en montre qu'un. */
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
   }
 });
 

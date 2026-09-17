@@ -86,6 +86,7 @@ test('un ancrage n’atterrit pas sous l’en-tête collant', async ({ page }) =
   const marge = await page.evaluate(() =>
     parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop),
   );
-  const enTete = (await page.locator('header').first().boundingBox())!.height;
+  /* L'en-tête VISIBLE : à 390 px c'est l'en-tête mobile, l'autre est masqué. */
+  const enTete = (await page.locator('header:visible').first().boundingBox())!.height;
   expect(marge, 'la marge doit couvrir l’en-tête').toBeGreaterThanOrEqual(enTete);
 });

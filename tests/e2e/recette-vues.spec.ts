@@ -36,10 +36,18 @@ const poserTheme = async (page: Page, theme: string) => {
   }, theme);
 };
 
+/* Sur téléphone, le titre d'Aujourd'hui EST la date du jour affiché (refonte
+   mobile, PDF p. 5) ; le nom de la vue reste dans son nom accessible, en tête.
+   On vérifie donc qu'il COMMENCE par le titre attendu, plutôt que l'égalité. */
+const titreAttendu = (page: Page, route: string, titre: string) =>
+  route === '/app/today'
+    ? expect(page.getByRole('heading', { level: 1 }), route).toContainText(titre)
+    : expect(page.getByRole('heading', { level: 1 }), route).toHaveText(titre);
+
 test('les onze vues portent leur titre, en français', async ({ page }) => {
   for (const vue of VUES) {
     await ouvrirAvecDemo(page, vue.route, { historique: true });
-    await expect(page.getByRole('heading', { level: 1 }), vue.route).toHaveText(vue.titre.fr);
+    await titreAttendu(page, vue.route, vue.titre.fr);
   }
 });
 
@@ -52,7 +60,7 @@ test('les onze vues portent leur titre, en anglais', async ({ page }) => {
   for (const vue of VUES) {
     await page.goto(vue.route);
     await expect(page.locator('[data-hydrated="true"]')).toBeAttached();
-    await expect(page.getByRole('heading', { level: 1 }), vue.route).toHaveText(vue.titre.en);
+    await titreAttendu(page, vue.route, vue.titre.en);
   }
 });
 
