@@ -11,9 +11,11 @@ import { RailFooter } from './rail-footer';
 
 /* Contenu du rail : marque, carte d'expérience, groupes, pied.
 
-   EXTRAIT DE `rail.tsx` pour être rendu DEUX FOIS — dans le rail latéral, et
-   dans le tiroir mobile (`nav-drawer.tsx`). Deux copies de cette liste
-   divergeraient ; c'est déjà la raison d'être de `nav-items.ts`.
+   EXTRAIT DE `rail.tsx` à l'époque où il était rendu DEUX FOIS — dans le rail
+   latéral et dans un tiroir mobile. Le tiroir a disparu avec la refonte
+   mobile (PDF p. 2) : sous 768 px, c'est l'écran « Plus » qui donne accès aux
+   douze vues. Le composant garde sa prop `deplie` — elle ne coûte rien, et
+   le rail replié en dépend.
 
    `deplie` n'est pas un réglage de goût. Le rail latéral se replie sous
    1060 px et cela se décide en CSS (`min-[1060px]:`), avant la première

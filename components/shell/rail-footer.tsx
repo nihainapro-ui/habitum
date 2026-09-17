@@ -16,11 +16,9 @@ import { useLocaleSwitcher } from './locale-provider';
    il ne reste que la pastille et le code de langue. C'est ce que montre
    `tests/visual/reference/01-dash.png`, en bas du rail.
 
-   `deplie` force l'état large indépendamment de la fenêtre : c'est ce que le
-   tiroir mobile (`nav-drawer.tsx`) demande. Sans lui, thème et langue étaient
-   INJOIGNABLES au doigt — le pied du rail n'est pas rendu sous 768 px, et les
-   Réglages qui les portent aussi n'étaient eux-mêmes accessibles que par la
-   palette ⌘K. */
+   `deplie` force l'état large indépendamment de la fenêtre. Il servait au
+   tiroir mobile, disparu avec la refonte (PDF p. 2) : sous 768 px, thème et
+   langue se règlent dans les Réglages, à deux appuis par « Plus ». */
 
 export function RailFooter({ deplie = false }: { deplie?: boolean }) {
   const t = useTranslations('app');

@@ -252,7 +252,7 @@ autres sont propres à l'application portée et documentées ici plutôt que dev
 | Clé | Contenu | Posée par |
 |---|---|---|
 | `settings` | préférences (`lang`, `theme`, `weekStart`, `notifications`, `sound`, `vibrate`, `confetti`, `customCursor`) + rappels (`notifHabits`, `notifTasks`, `notifWork`, `notifGoals`, `notifLead`, `notifDayHour`, `notifDigest`, `notifDigestHour`, `notifQuiet`, `notifQuietFrom`, `notifQuietTo`) — ajout non destructif, `DEFAULT_SETTINGS` comble les trous à l'hydratation | réglages |
-| `demo` | le jeu de démonstration a été chargé — l'en-tête l'affiche en permanence (B4) | `seedDemo()` |
+| `demo` | le jeu de démonstration a été chargé — l'en-tête de bureau l'affiche en permanence (B4) ; sur téléphone, la carte de profil de « Plus » et la vue Profil | `seedDemo()` |
 | `seeded` | amorçage effectué ; rend `seedEmpty()` idempotent | `seedEmpty()` |
 | `onboarded` | parcours d'accueil franchi ; absent = première ouverture, l'application renvoie à `/onboarding` (5.5) | `completeOnboarding()` |
 | `activeProfile` | profil courant (`pid` du prototype, renommé car nouvelle table) | réglages / profils |

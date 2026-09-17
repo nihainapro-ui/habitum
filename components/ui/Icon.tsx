@@ -3,6 +3,7 @@ import {
   CalendarDays,
   CheckSquare,
   ClipboardList,
+  Ellipsis,
   FolderKanban,
   LayoutDashboard,
   ListTodo,
@@ -41,6 +42,10 @@ const ICONES = {
   list: ClipboardList,
   /* Work : un contenant d'étapes, pas une liste de plus. */
   work: FolderKanban,
+  /* « Plus » — la quatrième entrée de la barre basse (refonte mobile, PDF
+     p. 3) : trois points, pas une flèche, parce qu'elle ouvre un écran de
+     destinations et non un menu déroulant. */
+  more: Ellipsis,
 } satisfies Record<string, LucideIcon>;
 
 export type IconName = keyof typeof ICONES;

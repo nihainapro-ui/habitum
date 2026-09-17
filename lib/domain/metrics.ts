@@ -148,3 +148,16 @@ export function focusMinutes(
   }
   return m;
 }
+
+/** Nombre de jours pour lesquels une habitude a une entrée de journal.
+ *
+ *  Sert à la confirmation de suppression — « Supprimer et 84 jours
+ *  d'historique ? » — qui doit dire un chiffre RÉEL (CLAUDE.md § 3) : une
+ *  habitude jamais cochée annonce 0 jour, pas une estimation. Une entrée à
+ *  zéro compte : « passée » est une information écrite, pas une absence. */
+export function nbJoursJournalises(log: LogIndex, habitId: string): number {
+  const prefixe = `${habitId}|`;
+  let n = 0;
+  for (const cle of log.keys()) if (cle.startsWith(prefixe)) n++;
+  return n;
+}

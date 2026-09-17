@@ -19,11 +19,9 @@ import { RailContenu } from './rail-contenu';
    avant la première peinture. ADR-0005 l'autorise explicitement — « au portage,
    Tailwind et les classes reprennent ce rôle ».
 
-   Sous 768 px le rail disparaît au profit de `BottomBar` — qui ne porte que
-   quatre entrées. Les sept autres vues passent alors par `NavDrawer`, qui
-   rend LE MÊME contenu que ce rail, déplié, dans un tiroir. Le mode zen les
-   masque tous les deux ; le bouton du tiroir, lui, reste dans l'en-tête, sans
-   quoi le zen mobile serait une impasse. */
+   Sous 768 px le rail disparaît au profit de `BottomBar` — quatre entrées,
+   dont « Plus », l'écran qui porte les huit autres vues et la carte de profil
+   (refonte mobile, PDF p. 3). Le mode zen masque les deux. */
 
 export function Rail({ zen }: { zen: boolean }) {
   const t = useTranslations('app');

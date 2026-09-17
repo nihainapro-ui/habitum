@@ -7,6 +7,10 @@ import { ouvrirAvecDemo, ouvrirVierge } from './helpers/app';
 
 const ROUTE = '/app/habits';
 
+/* L'éditeur d'HABITUDE prend sous 768 px la forme de la refonte mobile (PDF
+   p. 7), éprouvée par `editeur-mobile.spec.ts`. Ici, les quatre onglets. */
+test.skip(({ isMobile }) => !!isMobile, 'forme bureau de l’éditeur');
+
 test.describe('éditeur', () => {
   /* G8 — le piège déjà payé : une liste blanche incomplète fait disparaître des
      entités. Ici elle empêcherait simplement de créer trois types sur sept,

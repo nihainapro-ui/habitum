@@ -43,3 +43,21 @@ export function isScheduled(h: Habit, d: Date, _now: Date = today()): boolean {
   if (mode === 'week' || mode === 'month') return true;
   return (h.days || []).includes(dow(d));
 }
+
+export type FormeJours = 'none' | 'all' | 'weekdays' | 'weekend' | 'custom';
+
+/** Résumé d'une sélection de jours de semaine (0 = lundi … 6 = dimanche),
+ *  pour la phrase de confirmation sous les sept cases de l'éditeur —
+ *  « En semaine · 5 jours sur 7 ». Le libellé vit dans `messages/*.json` ;
+ *  ici on ne rend qu'une FORME et un compte, jamais une langue. */
+export function resumeJours(days: readonly number[]): { forme: FormeJours; n: number } {
+  const retenus = new Set(days.filter((d) => d >= 0 && d <= 6));
+  const n = retenus.size;
+  if (n === 0) return { forme: 'none', n };
+  if (n === 7) return { forme: 'all', n };
+  const semaine = [0, 1, 2, 3, 4].every((d) => retenus.has(d));
+  const weekend = retenus.has(5) && retenus.has(6);
+  if (n === 5 && semaine) return { forme: 'weekdays', n };
+  if (n === 2 && weekend) return { forme: 'weekend', n };
+  return { forme: 'custom', n };
+}

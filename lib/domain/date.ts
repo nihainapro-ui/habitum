@@ -46,3 +46,13 @@ export const startOfWeek = (d: Date, weekStart: WeekStart = 'mon'): Date => {
   const offset = weekStart === 'mon' ? dow(base) : base.getDay();
   return addDays(base, -offset);
 };
+
+/** Les sept jours de la semaine qui contient `d`, dans l'ordre de la
+ *  préférence de début de semaine. Le bandeau de la vue Aujourd'hui sur
+ *  téléphone montre TOUJOURS une semaine entière, jamais une fenêtre glissante
+ *  tronquée : c'est la seule façon que le jour affiché ne bouge pas sous le
+ *  doigt d'un appui à l'autre. */
+export const semaineDe = (d: Date, weekStart: WeekStart = 'mon'): Date[] => {
+  const debut = startOfWeek(d, weekStart);
+  return Array.from({ length: 7 }, (_, i) => addDays(debut, i));
+};
