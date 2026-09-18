@@ -76,7 +76,9 @@ test('capture éditeur d’habitude', async ({ page }) => {
   await page.waitForTimeout(300);
   await page.screenshot({ path: `${DOSSIER}/04-habits-entete.png` });
 
-  await page.getByRole('button', { name: 'Méditer', exact: true }).click();
+  /* Depuis P3, le nom ouvre la feuille de menu ; l'éditeur est sa première ligne. */
+  await page.locator('[data-name]', { hasText: 'Méditer' }).click();
+  await page.getByTestId('feuille-menu').getByRole('button', { name: 'Modifier' }).click();
   await page.waitForTimeout(400);
   await page.screenshot({ path: `${DOSSIER}/05-editeur.png` });
 
@@ -87,6 +89,40 @@ test('capture éditeur d’habitude', async ({ page }) => {
   await page.getByRole('button', { name: 'Supprimer l’habitude…' }).click();
   await page.waitForTimeout(400);
   await page.screenshot({ path: `${DOSSIER}/05c-editeur-supprimer.png` });
+});
+
+/* --- P3, lot 1 : Habitudes (PDF p. 6) et Tâches (p. 8) */
+
+test('capture habitudes', async ({ page }) => {
+  await page.setViewportSize(TELEPHONE);
+  await ouvrirAvecDemo(page, '/app/habits', { historique: true });
+  await page.waitForTimeout(400);
+  await page.screenshot({ path: `${DOSSIER}/09-habits.png` });
+  await page.screenshot({ path: `${DOSSIER}/09b-habits-entier.png`, fullPage: true });
+  await page.locator('[data-name]', { hasText: 'Méditer' }).click();
+  await page.waitForTimeout(400);
+  await page.screenshot({ path: `${DOSSIER}/09c-habits-menu.png` });
+});
+
+test('capture habitudes vide', async ({ page }) => {
+  await page.setViewportSize(TELEPHONE);
+  await ouvrirVierge(page, '/app/habits');
+  await page.waitForTimeout(400);
+  await page.screenshot({ path: `${DOSSIER}/09d-habits-vide.png` });
+});
+
+test('capture tâches', async ({ page }) => {
+  await page.setViewportSize(TELEPHONE);
+  await ouvrirAvecDemo(page, '/app/tasks', { historique: true });
+  await page.waitForTimeout(400);
+  await page.screenshot({ path: `${DOSSIER}/10-tasks.png` });
+  await page.getByRole('button', { name: /Liste de courses/ }).click();
+  await page.waitForTimeout(300);
+  await page.screenshot({ path: `${DOSSIER}/10b-tasks-entier.png`, fullPage: true });
+  await page.locator('[data-name]', { hasText: 'Cours de guitare' }).click();
+  await page.getByTestId('feuille-menu').getByRole('button', { name: 'Reporter' }).click();
+  await page.waitForTimeout(400);
+  await page.screenshot({ path: `${DOSSIER}/10c-tasks-reporter.png` });
 });
 
 /* --- P2 : tableau de bord (PDF p. 4), calendrier et sélecteur de jour (p. 9) */

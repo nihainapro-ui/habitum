@@ -67,10 +67,10 @@ test('l’éditeur ouvert ne fait pas défiler la page derrière lui', async ({ 
   await page.setViewportSize({ width: 390, height: 844 });
   await ouvrirAvecDemo(page, '/app/tasks');
 
-  await page
-    .getByRole('button', { name: /modifier/i })
-    .first()
-    .click();
+  /* À 390 px la vue est sa forme téléphone : le nom ouvre la feuille de
+     menu, « Modifier » y est en tête. */
+  await page.locator('[data-name]').first().click();
+  await page.getByTestId('feuille-menu').getByRole('button', { name: 'Modifier' }).click();
   await expect(page.getByRole('dialog')).toBeVisible();
 
   expect(await chainageNonRetenu(page)).toEqual([]);

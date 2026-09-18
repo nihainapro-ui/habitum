@@ -20,10 +20,15 @@ export function WeekDots({
   name,
   jours,
   onToggle,
+  tactile = false,
 }: {
   name: string;
   jours: JourSemaine[];
   onToggle: (key: string) => void;
+  /** Cibles de 44 px — refonte mobile (PDF p. 17 : « jours » parmi les
+   *  cibles tactiles). Le bureau garde ses pastilles de 36 px, validées par
+   *  le socle visuel. */
+  tactile?: boolean;
 }) {
   const t = useTranslations('app');
   const { locale } = useLocaleSwitcher();
@@ -48,7 +53,7 @@ export function WeekDots({
             aria-label={libelle}
             disabled={!actif}
             onClick={() => onToggle(j.key)}
-            className="rounded-btn flex flex-1 flex-col items-center gap-1 border py-1.5"
+            className={`rounded-btn flex flex-1 flex-col items-center gap-1 border ${tactile ? 'min-h-[44px] justify-center py-1' : 'py-1.5'}`}
             style={{
               borderColor: j.done ? 'var(--ok)' : j.scheduled ? 'var(--line2)' : 'var(--line)',
               background: j.done ? 'var(--ok)' : 'transparent',

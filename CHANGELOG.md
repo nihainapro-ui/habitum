@@ -1,5 +1,66 @@
 # Journal des modifications
 
+## 2026-09-18 — Refonte mobile, P3 lot 1 : Habitudes et Tâches
+
+Troisième livraison de la cartographie « Refonte mobile Habitum » (PDF p. 6 et
+8), précédée d'une analyse d'écart de chacun des neuf écrans que le PDF avait
+dessinés sans les avoir vus — `docs/handoff/10-ECARTS-P3-MOBILE.md`, dont les
+onze arbitrages ont été validés le 18 septembre. Toujours sous 768 px
+seulement ; le bureau ne bouge pas.
+
+**Habitudes : deux onglets, une ligne, sept pastilles.** Segments Actives ·
+n / Archivées · n. Chaque ligne : glyphe de catégorie, nom, « fréquence ·
+catégorie · objectif » en clair, taux sur 30 jours et record sur une ligne
+d'appoint, la série en gros à droite, et les SEPT PASTILLES cochables de la
+semaine à 44 px — c'est par elles qu'on rattrape un jour oublié, la maquette
+les avait oubliées, elles restent. Cocher pose un toast « Annuler ». Sous la
+liste, « 7 derniers jours : 4 jours complets · 1 partiel · 1 manqué » — une
+brique de domaine, `resumeSemaine`, qui ne compte que des jours journalisés
+(jour courant exclu, jours sans rien de planifié ignorés) ; un compte vierge
+ne l'affiche pas. État vide : « Aucune habitude » et les trois suggestions de
+l'accueil, à un appui, aucune créée d'avance. Archivées vide : « Rien
+d'archivé ».
+
+**Tâches : À faire / Faites, groupes dans une seule carte, retard écrit.**
+Les groupes Aujourd'hui → Demain → Cette semaine → Plus tard sont des sections
+à en-tête dans une seule carte, plus des cartes dans une carte. La ligne
+écrit tout : carré ET mot de priorité, heure, date lisible (« Hier »,
+« Demain », « ven. 7 août »), ↻ ET mot de récurrence, « 2/3 » et les
+sous-tâches cochables en place. Une tâche en retard reste dans « Aujourd'hui »
+— choix du domaine, conservé — mais le dit en rouge et en toutes lettres
+(`estEnRetard`). La liste de courses n'est pas retirée : repliée sous « Liste
+de courses · n ». États : « Aucune tâche » + « Nouvelle tâche » ; « Tout est
+fait » seulement s'il y a des tâches ; « Aucune tâche terminée ».
+
+**Pas d'appui long : une feuille de menu.** Le PDF voulait un appui long sur
+six écrans ; le dépôt n'en a pas, c'est un geste caché sans équivalent
+clavier. L'appui sur le nom ouvre `FeuilleMenu` (`components/shell/`), en
+cibles de 52 px : Modifier · Archiver/Désarchiver · Voir les statistiques ·
+Supprimer pour une habitude ; Modifier · Marquer fait · Reporter · Ajouter
+une note · Supprimer pour une tâche. Supprimer passe par la feuille de
+confirmation à conséquence chiffrée, puis reste annulable six secondes.
+Archiver depuis la liste est neuf et annulable (`archiveHabitAnnulable`).
+Reporter ouvre `FeuilleReport` : Aujourd'hui / Demain / Choisir un jour — la
+grille du mois de P2 — et « Demain » est le lendemain d'aujourd'hui, pas de
+l'échéance, sinon une tâche en retard de trois jours le resterait.
+
+**Écarts assumés au PDF :** pas de groupe « En retard » ; pas de « Dupliquer »
+(inexistant) ; pas de bandeau « Sauvegarde différée » (aucun mode différé
+n'existe) ; le glissement gauche = Supprimer/Archiver n'est pas repris (P1 a
+fixé gauche = Focus, droite = Reporter, et la liste ne porte pas de geste
+horizontal) ; « Faites » garde toutes les tâches terminées, sans fenêtre.
+
+Trois briques de domaine testées — `resumeSemaine`, `archivedHabits`,
+`estEnRetard` —, `habitDepuisSuggestion` partagée avec l'accueil, `WeekDots`
+et `ShoppingList` gagnent une option sans changer leur forme de bureau, et
+dix-neuf tests de bout en bout neufs (`vue-habits-mobile`,
+`vue-tasks-mobile`). Les specs de bureau de ces deux vues se retirent sous
+768 px, comme Aujourd'hui.
+
+À faire hors de ce lot, parce qu'il touche une capture du socle visuel : la
+ligne de tâche du bureau (`TaskItem`) n'écrit pas la récurrence alors
+qu'Aujourd'hui le fait.
+
 ## 2026-09-17 (suite) — Refonte mobile, P2 : tableau de bord compact, calendrier et sélecteur de jour
 
 Deuxième livraison de la cartographie « Refonte mobile Habitum » (PDF p. 4 et

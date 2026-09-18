@@ -1,5 +1,5 @@
 import AxeBuilder from '@axe-core/playwright';
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import { HABIT_GOAL_KINDS } from '@/lib/domain';
 import { ouvrirAvecDemo, ouvrirVierge } from './helpers/app';
 import { releverDebordements } from './helpers/debordement';
@@ -19,6 +19,12 @@ test.skip(({ isMobile }) => !isMobile, 'forme téléphone de l’éditeur');
 const ouvrirNouvelle = async (page: import('@playwright/test').Page) => {
   await page.getByTestId('header-mobile').getByRole('button', { name: 'Nouveau' }).click();
   await expect(page.getByTestId('editeur-habitude-mobile')).toBeVisible();
+};
+
+/** Depuis P3, l'appui sur le nom ouvre la feuille de menu ; « Modifier » y est en tête. */
+const ouvrirModifier = async (page: Page, nom: string) => {
+  await page.locator('[data-name]', { hasText: nom }).click();
+  await page.getByTestId('feuille-menu').getByRole('button', { name: 'Modifier' }).click();
 };
 
 test('un seul écran : nom, catégorie et type, sept jours, rappel, réglages avancés repliés', async ({
@@ -141,7 +147,7 @@ test('la suppression est séparée, confirmée avec le nombre de jours, puis ann
   await ouvrirAvecDemo(page, ROUTE, { historique: true });
   const avant = await page.getByRole('article').count();
 
-  await page.getByRole('button', { name: 'Méditer', exact: true }).click();
+  await ouvrirModifier(page, 'Méditer');
   await expect(page.getByTestId('editeur-habitude-mobile')).toBeVisible();
   await page.getByRole('button', { name: 'Supprimer l’habitude…' }).click();
 
@@ -169,7 +175,7 @@ test('une habitude « jours précis » sans jour est refusée', async ({ page })
 
 test('modifier une habitude existante enregistre le nouveau nom', async ({ page }) => {
   await ouvrirAvecDemo(page, ROUTE);
-  await page.getByRole('button', { name: 'Méditer', exact: true }).click();
+  await ouvrirModifier(page, 'Méditer');
   await page.getByLabel('Nom', { exact: true }).fill('Méditation guidée');
   await page.getByRole('button', { name: 'Enregistrer' }).first().click();
   await expect(page.getByRole('article', { name: 'Méditation guidée' })).toBeVisible();

@@ -130,6 +130,9 @@ export interface HabitsActions {
   /** Comme `toggleHabit`, avec un toast « Annuler » (refonte mobile, PDF p. 5 :
    *  toute action réversible se signale et se défait en un appui). */
   toggleHabitAnnulable(habitId: string, date: DateKey): Promise<void>;
+  /** Comme `archiveHabit`, avec un toast « Annuler » — depuis la liste des
+   *  habitudes sur téléphone (PDF p. 6), où le geste n'a pas d'éditeur autour. */
+  archiveHabitAnnulable(id: string, archived: boolean): Promise<void>;
 }
 
 export interface TasksActions {

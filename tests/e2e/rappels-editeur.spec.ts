@@ -26,7 +26,10 @@ const versRappels = async (page: Page) => {
   if (await onglet.count()) await onglet.click();
 };
 
-test('une habitude gagne un rappel « alarme, certains jours », et le garde', async ({ page }) => {
+test('une habitude gagne un rappel « alarme, certains jours », et le garde', async ({
+  page,
+  isMobile,
+}) => {
   await ouvrirVierge(page, '/app/habits');
   await page.getByRole('button', { name: 'Nouvelle habitude' }).first().click();
   await page.getByLabel('Nom', { exact: true }).fill('Factures');
@@ -63,7 +66,10 @@ test('une habitude gagne un rappel « alarme, certains jours », et le garde', a
   /* ÉCRIT, pas affiché : rechargement, puis réouverture. */
   await page.reload();
   await attendreHydratation(page);
-  await page.getByRole('button', { name: 'Modifier Factures' }).click();
+  if (isMobile) {
+    await page.locator('[data-name]', { hasText: 'Factures' }).click();
+    await page.getByTestId('feuille-menu').getByRole('button', { name: 'Modifier' }).click();
+  } else await page.getByRole('button', { name: 'Modifier Factures' }).click();
   await versRappels(page);
   await expect(page.locator('[data-rappels] li').first()).toContainText('Alarme');
 });
