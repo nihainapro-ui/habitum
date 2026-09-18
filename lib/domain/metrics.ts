@@ -178,6 +178,34 @@ export function etatJour(r: DayRatio, d: Date, now: Date = today()): EtatJour {
   return dateKey(d) === dateKey(now) ? 'none' : 'missed';
 }
 
+export interface ResumeSemaine {
+  complets: number;
+  partiels: number;
+  manques: number;
+}
+
+/** « 7 derniers jours : 4 complets · 1 partiel · 1 manqué » — pied de la
+ *  liste des habitudes sur téléphone (PDF p. 6). Les sept jours PASSÉS, le
+ *  jour courant exclu : il n'est pas fini. Habitudes seules — les tâches
+ *  ne sont pas de cette vue — et archivées exclues par `dayRatio`. Un jour
+ *  où rien n'était planifié (`none`) ne compte nulle part : ce n'est pas un
+ *  échec. */
+export function resumeSemaine(
+  log: LogIndex,
+  habits: readonly Habit[],
+  now: Date = today(),
+): ResumeSemaine {
+  const r: ResumeSemaine = { complets: 0, partiels: 0, manques: 0 };
+  for (let i = 7; i >= 1; i--) {
+    const d = addDays(now, -i);
+    const etat = etatJour(dayRatio(log, habits, [], d, now), d, now);
+    if (etat === 'complete') r.complets++;
+    else if (etat === 'partial') r.partiels++;
+    else if (etat === 'missed') r.manques++;
+  }
+  return r;
+}
+
 /** La plus longue série EN COURS, toutes habitudes confondues — la « série
  *  6 j » de la synthèse du tableau de bord mobile. Distincte du record
  *  (`bestStreakOverall`), qui regarde le passé. */

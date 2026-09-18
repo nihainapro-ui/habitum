@@ -10,6 +10,10 @@ import { isScheduled } from './schedule';
 export const activeHabits = (habits: readonly Habit[]): Habit[] =>
   habits.filter((h) => !h.archived);
 
+/** Les archivées seules — l'onglet « Archivées » de la forme mobile. */
+export const archivedHabits = (habits: readonly Habit[]): Habit[] =>
+  habits.filter((h) => h.archived);
+
 /** Ordre du catalogue : les archivées en fin de liste plutôt que masquées.
  *  Les masquer rendrait leur historique inatteignable — c'est la différence
  *  entre archiver et supprimer. */

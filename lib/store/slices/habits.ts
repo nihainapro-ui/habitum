@@ -127,6 +127,17 @@ export const createHabitsSlice: StateCreator<AppState, [], [], HabitsActions> = 
     );
   },
 
+  async archiveHabitAnnulable(id, archived) {
+    const h = get().habits.find((x) => x.id === id);
+    if (!h) return;
+    await withUndo(
+      set,
+      get,
+      { messageKey: archived ? 'app.hArchived' : 'app.hUnarchived', label: h.name },
+      () => get().archiveHabit(id, archived),
+    );
+  },
+
   async bumpHabit(habitId, date, delta) {
     const actuel = get().logIndex.get(logKey(habitId, date)) ?? 0;
     await get().setLogValue(habitId, date, Math.max(0, actuel + delta));

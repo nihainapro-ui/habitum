@@ -144,7 +144,11 @@ Vibration sont branchés ou masqués avec raison. Le commentaire périmé de
 ## 5. Ordre de livraison proposé
 
 Une PR par écran ou par paire, empilées comme P1/P2, dans l'ordre d'usage :
-1. Habitudes + Tâches (les deux onglets de la barre) ;
+1. Habitudes + Tâches (les deux onglets de la barre) — **livré le 18 septembre
+   2026** (branche `refonte-mobile-p3a`). Écarts au § 4 : la correction bureau
+   de `TaskItem` (récurrence absente) est reportée, car elle changerait une
+   capture du socle visuel ; « Dupliquer » n'a pas été ajouté (`editor.dup`
+   reste un libellé mort à nettoyer) ;
 2. Objectifs (avec le jalon cochable) + Statistiques ;
 3. Focus + Notes ;
 4. Work + Profil + Réglages.

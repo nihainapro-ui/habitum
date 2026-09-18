@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
-import type { Category, HabitGoalKind } from '@/lib/domain';
+import type { Category, Habit, HabitGoalKind } from '@/lib/domain';
+import type { CreateInput } from '@/lib/data';
 import { ENCRE_SUR_TEINTE } from '@/components/ui/encre';
 
 /* Troisième écran : trois habitudes suggérées.
@@ -29,6 +30,26 @@ export const SUGGESTIONS: Suggestion[] = [
   { cle: 'obH2', category: 'sport', kind: 'time', target: 20, unite: 'obU2' },
   { cle: 'obH3', category: 'study', kind: 'count', target: 10, unite: 'obU3' },
 ];
+
+/** L'habitude qu'une suggestion crée : tous les jours, sans rappel. Partagé
+ *  entre l'accueil et l'état vide de la liste des habitudes sur téléphone
+ *  (PDF p. 6 : « 3 suggestions à un appui »). `t` est celui de `app`. */
+export function habitDepuisSuggestion(
+  s: Suggestion,
+  t: (cle: string) => string,
+): CreateInput<Habit> {
+  return {
+    name: t(s.cle),
+    category: s.category,
+    goal: { kind: s.kind, target: s.target, step: 1, unit: s.unite ? t(s.unite) : '' },
+    mode: 'dow',
+    days: [0, 1, 2, 3, 4, 5, 6],
+    subItems: [],
+    reminders: [],
+    archived: false,
+    note: '',
+  };
+}
 
 export function StepHabits({
   onFinish,

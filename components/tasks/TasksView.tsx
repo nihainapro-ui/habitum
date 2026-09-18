@@ -7,10 +7,15 @@ import { useSettings, useStore } from '@/lib/store';
 import { EmptyState } from '@/components/shell/empty-state';
 import { PrimaryButton } from '@/components/shell/primary-button';
 import { ViewActions } from '@/components/shell/view-actions';
+import { Forme } from '@/components/shell/forme';
 import { ShoppingList } from './ShoppingList';
 import { TaskItem } from './TaskItem';
+import { TasksMobile } from './mobile/TasksMobile';
 
-/* Vue « Tâches » — 05-SPEC-VUES.md § 6. */
+/* Vue « Tâches » — 05-SPEC-VUES.md § 6.
+
+   Deux formes : sous 768 px `mobile/TasksMobile.tsx` (refonte mobile, PDF
+   p. 8) ; au-dessus, la forme portée du prototype, inchangée. */
 
 /* Les groupes ont leurs PROPRES libellés. Réutiliser ceux de la navigation
    (« Jour suivant », « Plus ») donnait des titres qui ne nomment pas ce qu'ils
@@ -24,6 +29,10 @@ const TITRES: Record<GroupeTache, string> = {
 };
 
 export function TasksView() {
+  return <Forme mobile={<TasksMobile />} bureau={<TasksBureau />} />;
+}
+
+function TasksBureau() {
   const t = useTranslations('app');
   const tasks = useStore((s) => s.tasks);
   const openEditor = useStore((s) => s.openEditor);

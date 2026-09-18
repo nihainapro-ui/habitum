@@ -9,6 +9,9 @@ import { ouvrirAvecDemo, ouvrirVierge, verifierPaliers } from './helpers/app';
 
 const ROUTE = '/app/tasks';
 
+/* Sous 768 px la vue prend sa forme téléphone (`vue-tasks-mobile.spec.ts`). */
+test.skip(({ isMobile }) => !!isMobile, 'forme bureau de la vue');
+
 test.describe('tasks', () => {
   test('regroupe les tâches par échéance', async ({ page }) => {
     await ouvrirAvecDemo(page, ROUTE);
