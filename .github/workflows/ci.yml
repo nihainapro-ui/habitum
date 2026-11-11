@@ -50,23 +50,15 @@ jobs:
       - run: npm ci
       # Les sept contrôles : typecheck, lint, format, libellés, jetons, tests, build.
       - run: npm run verify
-      - name: Vulnérabilités
-        # D11 — FERMÉE le 25 août 2026. Les quatre vulnérabilités hautes étaient
-        # dans `postcss` et `sharp` IMBRIQUÉS SOUS `next`, pas dans `next` : elles
-        # se corrigent par `overrides` (package.json), sans la montée majeure qui
-        # avait été tentée puis annulée le 18 août parce qu'elle coûtait le
-        # fonctionnement hors ligne.
-        #
-        # La modérée `next-intl@3` est tombée le 27 août : `next-intl@4` monte
-        # SEUL, sans `next@16`. `npm audit` rend « found 0 vulnerabilities ».
-        # Le seuil reste à `high`, comme le plan 8 le demandait, plutôt qu'à
-        # `moderate` : on est à zéro avec de la marge, et un seuil plus serré
-        # ferait rougir la CI sur des avis publiés ailleurs, sans qu'une ligne
-        # du dépôt ait bougé. Le durcir se décide, il ne se subit pas.
-        #
-        # Ce contrôle interroge le registre : une haute publiée demain rougit la
-        # CI sans qu'une ligne du dépôt ait changé. C'est voulu.
-        run: npm audit --audit-level=high
+      # `npm audit` N'EST PLUS ICI — 11 novembre 2026. Il vit dans son propre
+      # workflow, `.github/workflows/audit.yml`.
+      #
+      # Tant qu'il était une étape de ce job, un avis publié AILLEURS rougissait
+      # `verify`, et `e2e` comme `visuel` — qui en dépendent — étaient sautés.
+      # C'est ce qui est arrivé du 16 septembre au 11 novembre : `main` rouge
+      # sur un avis `next`, et les trois PR de la refonte mobile jamais passées
+      # par un seul test de bout en bout en CI. Un contrôle qui interroge le
+      # registre ne doit pas pouvoir éteindre ceux qui interrogent le code.
 
   secrets:
     name: secrets
@@ -81,12 +73,13 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  # Sur un dépôt privé en plan gratuit, GitHub ne peut pas EMPÊCHER une fusion
-  # rouge : les contrôles obligatoires n'existent pas. Ce qu'on peut faire, en
-  # revanche, c'est rendre l'échec impossible à ne pas voir. Un `main` rouge
-  # ouvre une issue critique — même mécanisme que la sonde de production, même
-  # raison : sans blocage, il reste le signal, et un signal qu'on peut manquer
-  # n'en est pas un.
+  # Les contrôles de statut ne sont PAS obligatoires sur `main` — choix
+  # délibéré, voir SECURITY.md § Protection de branche (le dépôt est public
+  # depuis le 25 août 2026, ce n'est donc plus une limite du plan). Ce qu'on
+  # fait à la place, c'est rendre l'échec impossible à ne pas voir. Un `main`
+  # rouge ouvre une issue critique — même mécanisme que la sonde de production,
+  # même raison : sans blocage, il reste le signal, et un signal qu'on peut
+  # manquer n'en est pas un.
   alerte-main-rouge:
     needs: [verify, e2e, visuel]
     if: failure() && github.ref == 'refs/heads/main' && github.event_name == 'push'
@@ -113,8 +106,8 @@ jobs:
                 '',
                 `Exécution : ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
                 '',
-                "Le dépôt étant privé sur un plan gratuit, GitHub ne peut pas bloquer une",
-                "fusion rouge. Le garde-fou est en amont (`.githooks/pre-push`) et ici, en aval.",
+                "Les contrôles de statut ne sont pas obligatoires sur `main` (SECURITY.md).",
+                "Le garde-fou est en amont (`.githooks/pre-push`) et ici, en aval.",
               ].join('\n'),
             });
 

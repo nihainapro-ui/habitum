@@ -2,9 +2,20 @@
 
 ## Ce que Habitum protège
 
-Habitum est **local-first** : vos données ne quittent pas votre appareil. Il n'y a ni compte, ni
-serveur applicatif, ni base de données distante, ni télémétrie. La surface d'attaque se limite au
-navigateur de l'utilisateur et à la chaîne de construction du projet.
+Habitum est **local-first** : par défaut, vos données ne quittent pas votre appareil. Il n'y a ni
+compte, ni télémétrie.
+
+**Une exception, facultative et éteinte par défaut : la synchronisation entre appareils**
+(ADR-0009, livrée le 2 septembre 2026). Si vous l'activez, vos données sont chiffrées **sur
+l'appareil** (AES-GCM, clé dérivée d'un code de 100 bits qui ne part jamais) puis déposées sur un
+relais — un Worker Cloudflare et sa base D1 (`sync-server/`). Le relais reçoit des octets
+illisibles, un identifiant opaque et une date de modification ; il ne peut rien lire. Sans
+`NEXT_PUBLIC_SYNC_URL` à la construction, la fonctionnalité n'existe pas dans l'interface et
+aucune requête ne part.
+
+La surface d'attaque est donc : le navigateur de l'utilisateur, la chaîne de construction, et —
+seulement si la synchronisation est activée — le relais. Ce que le relais ne protège pas encore
+est écrit plus bas, sous « Limitations connues ».
 
 ## Signaler une vulnérabilité
 
@@ -30,9 +41,12 @@ charge encore ses polices depuis `fonts.googleapis.com` : défaut connu, suivi s
   `tests/e2e/headers.spec.ts` : un en-tête retiré casse la CI.
 - **Aucune surface d'injection** : ni `innerHTML`, ni `eval`, ni `new Function`, ni
   `dangerouslySetInnerHTML` — vérifié par test automatique, y compris dans le prototype.
-- **Aucun appel réseau tiers** dans l'application.
-- **Veille** : Dependabot hebdomadaire (npm et actions), `npm audit` en intégration continue,
-  `gitleaks` sur les secrets.
+- **Aucun appel réseau tiers** dans l'application, hors le relais de synchronisation quand
+  l'utilisateur l'a activée — et la CSP (`connect-src`) n'autorise que cette adresse-là.
+- **Veille** : Dependabot hebdomadaire (npm et actions), `gitleaks` sur les secrets, et
+  `npm audit --audit-level=high` dans son propre workflow (`.github/workflows/audit.yml`) : à
+  chaque PR, à chaque push sur `main`, et **chaque matin** — un avis publié pendant que personne
+  ne pousse ouvre une issue critique.
 - **Analyse de sécurité statique** : `eslint-plugin-security` (Apache-2.0) dans `npm run lint`,
   donc dans `verify`, donc en CI sur chaque push et chaque PR. `eval`, `new Function`,
   `child_process`, expressions régulières non littérales et lectures de fichier par chemin
@@ -61,11 +75,22 @@ charge encore ses polices depuis `fonts.googleapis.com` : défaut connu, suivi s
   hook `pre-push`, qui exige `npm run verify` vert **avant** que le code quitte la machine,
   reste donc le contrôle de fond, et il garde sa limite : `--no-verify` le contourne.
 
-  **Ce qui reste hors de portée :**
-  - une fusion faite depuis l'interface web de GitHub ne passe par aucun hook. C'est là que
-    l'alerte sur `main` rouge prend le relais : elle ne bloque pas, elle rend l'échec impossible
-    à ne pas voir ;
-  - une fusion faite depuis l'interface web de GitHub ne passe par aucun hook.
+  **Ce qui reste hors de portée :** une fusion faite depuis l'interface web de GitHub ne passe
+  par aucun hook. C'est là que l'alerte sur `main` rouge prend le relais : elle ne bloque pas,
+  elle rend l'échec impossible à ne pas voir.
+
+  **Ce que cette alerte n'a pas empêché :** `main` est resté rouge du 16 septembre au
+  11 novembre 2026, l'issue ouverte et non lue. Le choix de ne pas exiger les contrôles a été
+  fait pour un dépôt où l'on pousse directement sur `main` ; depuis la refonte mobile, le
+  travail passe par des PR, et la question mérite d'être reposée.
+
+- **Le relais de synchronisation n'est pas durci** (audit du 11 novembre 2026) : ni limitation
+  de débit, ni plafond de taille par ligne, création d'espaces illimitée, CORS ouvert. Le
+  chiffrement protège le **contenu** ; il ne protège pas le relais d'être saturé, et un appareil
+  dont l'horloge avance gagne les arbitrages. Le code d'appairage est conservé en clair dans le
+  stockage local de l'appareil. Corrections planifiées avec la fiabilité des données.
+- **Le verrou biométrique est un rideau d'interface**, pas un chiffrement : il empêche de lire
+  l'écran, pas de lire le stockage du navigateur.
 
 - `script-src 'unsafe-inline'` dans la CSP : sans cette tolérance, Next.js ne s'hydrate pas. Le
   passage à un `nonce` est couplé à la décision sur le rendu statique (défaut `D12`) et sera
@@ -83,3 +108,9 @@ charge encore ses polices depuis `fonts.googleapis.com` : défaut connu, suivi s
   Éprouvé avant d'être livré — 487 tests unitaires, 625 tests e2e, et le contrôle
   « aucune page de vitrine ne charge le registre sombre » rejoué nommément, puisque c'est
   celui que la montée de `next@16` avait cassé.
+
+  **11 novembre 2026 : ce zéro n'a pas tenu, et le dire fait partie de la politique.** Huit
+  semaines sans push ont laissé s'accumuler 22 avis, dont deux critiques dans `next` ≤ 15.5.23.
+  Corrigé le jour même sans montée majeure de `next` (15.5.29, correctifs de `sharp` et
+  `js-yaml`) ; `zod` est monté en 4, seul correctif de GHSA-mrhx-c7xc-m3w5. `npm audit
+  --audit-level=high` repasse ; il reste des avis **modérés**, sous le seuil.

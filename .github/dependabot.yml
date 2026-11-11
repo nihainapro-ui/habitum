@@ -5,10 +5,25 @@ updates:
     schedule: { interval: weekly, day: monday }
     open-pull-requests-limit: 5
     groups:
-      # Grouper les mineures et correctifs : une PR par semaine plutôt que dix,
-      # et moins de minutes d'Actions consommées sur un dépôt privé.
+      # Grouper les mineures et correctifs : une PR par semaine plutôt que dix.
       mineures-et-correctifs:
         update-types: [minor, patch]
+        # Playwright HORS du groupe — 11 novembre 2026. Sa version est liée à
+        # l'image du job `visuel` (ci.yml) et au socle de captures :
+        # `tests/unit/harnais-visuel.test.ts` refuse qu'elles divergent. Dans le
+        # groupe, il faisait donc échouer la PR hebdomadaire ENTIÈRE, semaine
+        # après semaine (#59 à #68), et plus aucune mineure n'entrait. Seul, il
+        # ouvre sa propre PR, qu'on monte à la main avec l'image et le socle.
+        exclude-patterns: ['@playwright/test']
+    ignore:
+      # `next@16` : tentée le 18 août 2026, annulée — elle coûtait le service
+      # worker et le budget de polices de la vitrine (package.json,
+      # `_commentaire_overrides`). Les correctifs 15.x continuent d'arriver par
+      # le groupe. À retirer le jour où la montée est décidée, pas subie.
+      - dependency-name: next
+        update-types: ['version-update:semver-major']
+      - dependency-name: eslint-config-next
+        update-types: ['version-update:semver-major']
     labels: ['type:securite', 'prio:moyenne']
 
   - package-ecosystem: github-actions
