@@ -42,6 +42,13 @@ chronométré au milieu des 900 autres tests : 1 164 ms à une exécution,
 projet Playwright (`charge`, sans parallélisme), que `npm run test:e2e` lance
 après les parcours.
 
+**Et un débordement que seule la CI pouvait voir.** Les trois PR de la refonte
+mobile n'avaient jamais passé un test de bout en bout en CI. Au premier
+passage : dans l'éditeur d'habitude à 360 px, la rangée Début / Fin dépassait
+de 5 px sous Linux — la largeur d'un champ de date dépend de la police du
+système, et le poste Windows qui l'a écrite ne le montrait pas. `min-w-0` sur
+les deux moitiés de la rangée.
+
 **Documents corrigés** parce qu'ils étaient devenus faux : `CLAUDE.md` (« les
 vues ne sont pas en place »), `SECURITY.md` (« vos données ne quittent pas
 votre appareil » — faux dès qu'on active la synchronisation ; les limites du

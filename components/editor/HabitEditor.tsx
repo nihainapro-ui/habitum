@@ -297,9 +297,13 @@ export function HabitEditor({
       />
     ) : null;
 
+  /* `min-w-0` sur les deux moitiés : un enfant flex ne rétrécit pas sous sa
+     largeur intrinsèque, et celle d'un champ de date dépend de la police du
+     système. À 360 px sous Linux, la rangée débordait de 5 px — invisible sur
+     le poste qui l'a écrite, vu par la CI le 12 novembre 2026. */
   const champsDates = (
     <div className="flex gap-3">
-      <div className="flex-1">
+      <div className="min-w-0 flex-1">
         <TextInput
           label={t('fStart')}
           type="date"
@@ -307,7 +311,7 @@ export function HabitEditor({
           onChange={(x) => setValue('start', x)}
         />
       </div>
-      <div className="flex-1">
+      <div className="min-w-0 flex-1">
         <TextInput
           label={t('fEnd')}
           type="date"
