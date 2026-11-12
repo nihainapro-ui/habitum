@@ -17,7 +17,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:e2e": "playwright test --project=desktop --project=mobile",
+    "test:e2e": "playwright test --project=desktop --project=mobile && npm run test:charge",
+    "test:charge": "playwright test --project=charge",
     "test:visual": "node scripts/visual.mjs",
     "test:visual:update": "node scripts/visual.mjs --update",
     "check:messages": "node scripts/check-messages.mjs",
@@ -57,17 +58,18 @@
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-hook-form": "^7.85.0",
-    "zod": "^3.24.1",
+    "zod": "^4.6.7",
     "zustand": "^5.0.3"
   },
-  "_commentaire_overrides": "D11, 25 août 2026 — les quatre vulnérabilités HAUTES n'étaient pas dans `next` mais dans postcss et sharp IMBRIQUÉS sous lui. On les remonte ici plutôt que par next@16, dont la montée a été tentée et annulée le 18 août : elle coûtait le service worker et le budget de polices de la vitrine. sharp n'est de toute façon jamais appelé — `next/image` n'apparaît nulle part. À retirer le jour où next@16 passe, pas avant. // browserslist, 3 septembre 2026 — même forme, autre parent : `@serwist/next` l'ÉPINGLE à `4.28.6` (version exacte, pas une plage), donc aucune montée du paquet parent ne pouvait le corriger. `npm audit` proposait de redescendre @serwist/next en 9.4.1, une rupture pour deux avis dont ni l'un ni l'autre ne nous atteint : la croissance mémoire non bornée demande des requêtes distinctes répétées, et l'écriture de prototype demande un `browserslist-stats.json` non fiable — nous n'en avons pas. Le correctif est un correctif de version (4.28.8), pas une rupture. À retirer le jour où @serwist/next dépingle.",
+  "_commentaire_overrides": "D11, 25 août 2026 — les quatre vulnérabilités HAUTES n'étaient pas dans `next` mais dans postcss et sharp IMBRIQUÉS sous lui. On les remonte ici plutôt que par next@16, dont la montée a été tentée et annulée le 18 août : elle coûtait le service worker et le budget de polices de la vitrine. sharp n'est de toute façon jamais appelé — `next/image` n'apparaît nulle part. À retirer le jour où next@16 passe, pas avant. // browserslist, 3 septembre 2026 — même forme, autre parent : `@serwist/next` l'ÉPINGLE à `4.28.6` (version exacte, pas une plage), donc aucune montée du paquet parent ne pouvait le corriger. `npm audit` proposait de redescendre @serwist/next en 9.4.1, une rupture pour deux avis dont ni l'un ni l'autre ne nous atteint : la croissance mémoire non bornée demande des requêtes distinctes répétées, et l'écriture de prototype demande un `browserslist-stats.json` non fiable — nous n'en avons pas. Le correctif est un correctif de version (4.28.8), pas une rupture. À retirer le jour où @serwist/next dépingle. // zod, 11 novembre 2026 — GHSA-mrhx-c7xc-m3w5 (haute) touche tout zod < 4.6.6, la branche 3 comprise : aucun correctif en 3.x, donc le produit monte en zod 4 (six fichiers, lib/data et lib/validation). @serwist/* embarquait encore 4.6.5 :  l'aligne sur la version du produit. À retirer quand @serwist/build demandera >= 4.6.6.",
   "overrides": {
     "postcss": "^8.5.25",
     "nanoid": "^3.3.18",
     "sharp": "^0.35.3",
     "@swc/helpers": "^0.5.23",
     "uuid": "^11.1.1",
-    "browserslist": "^4.28.8"
+    "browserslist": "^4.28.8",
+    "zod": "$zod"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.13.0",

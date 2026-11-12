@@ -1,5 +1,53 @@
 # Journal des modifications
 
+## 2026-11-11 — Phase 0 : `main` repasse au vert, et l'audit ne peut plus éteindre les tests
+
+Premier lot du plan issu de l'audit complet du 11 novembre. Aucun changement
+visible dans l'application : c'est la chaîne de livraison qui est réparée.
+
+**`main` était rouge depuis le 16 septembre.** Pas à cause du code — les tests
+passaient — mais de `npm audit` : huit semaines sans push avaient laissé
+s'accumuler 22 avis, dont deux critiques dans `next` ≤ 15.5.23. Corrigé sans
+montée majeure de `next` : 15.5.29, plus les correctifs de `sharp` et
+`js-yaml`. Reste `zod` (GHSA-mrhx-c7xc-m3w5, haute), qui n'a aucun correctif en
+3.x : le produit monte en **zod 4** — six fichiers, `lib/data` et
+`lib/validation`, sans une ligne de schéma à réécrire — et un `override`
+aligne les copies que `@serwist/*` embarquait. `npm audit --audit-level=high`
+repasse ; il reste des avis modérés, sous le seuil.
+
+**L'audit a son propre workflow** (`.github/workflows/audit.yml`). Étape de
+`verify`, il faisait sauter `e2e` et `visuel` dès qu'un avis paraissait
+ailleurs : les trois PR de la refonte mobile n'étaient jamais passées par un
+test de bout en bout en CI. Il tourne désormais à chaque PR, à chaque push sur
+`main` et **chaque matin**, et ouvre une issue critique s'il échoue hors PR.
+
+**Dependabot débloqué.** `@playwright/test` sort du groupe hebdomadaire : lié
+à l'image du job `visuel`, il faisait échouer la PR groupée entière depuis
+septembre. Les majeures `next` et `eslint-config-next` sont ignorées, avec la
+raison datée.
+
+**Les APK ne sont plus suivis.** Deux APK de débogage (12 Mo) vivaient dans le
+dépôt public ; `App Mobile/`, `*.apk`, `*.aab` et `*.log` sont ignorés. Ils
+restent dans l'historique.
+
+**Deux défauts que cette CI, enfin entière, a montrés dès son premier passage.**
+zod 4 essaie `new Function` pour savoir s'il peut compiler ses schémas ; notre
+CSP le refuse, l'essai est attrapé, mais le navigateur consigne une violation
+sur chaque page — Lighthouse « bonnes pratiques » tombait à 0,96. zod n'entre
+plus que par `lib/zod.ts`, qui pose `jitless` avant tout schéma ; un test
+unitaire refuse tout autre import, et un test de bout en bout échoue à la
+première violation de CSP. Et le budget « ouverture sous 1,5 s » était
+chronométré au milieu des 900 autres tests : 1 164 ms à une exécution,
+2 748 ms à la suivante, sur le même code. Les budgets de charge ont leur
+projet Playwright (`charge`, sans parallélisme), que `npm run test:e2e` lance
+après les parcours.
+
+**Documents corrigés** parce qu'ils étaient devenus faux : `CLAUDE.md` (« les
+vues ne sont pas en place »), `SECURITY.md` (« vos données ne quittent pas
+votre appareil » — faux dès qu'on active la synchronisation ; les limites du
+relais et du verrou y sont maintenant écrites), `docs/adr/README.md` (B1
+« en attente » alors qu'elle est tranchée).
+
 ## 2026-09-16 (suite) — Silencieuse, notification ou alarme, et quand : rappel par rappel
 
 Chaque rappel — d'une habitude, d'une tâche, d'une étape de projet, d'un

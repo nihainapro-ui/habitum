@@ -4,11 +4,15 @@ Règles de travail sur ce dépôt. Elles priment sur l'habitude et sur le goût.
 
 ## Ce qu'est ce dépôt
 
-Une base Next.js 15 / TypeScript strict **volontairement partielle** : la structure,
-l'i18n, le moteur métier porté et les tests sont en place ; les vues ne le sont pas.
-La référence exécutable de chaque écran est le prototype, servi tel quel depuis
-`public/prototype/`. Il n'est **jamais** compilé, jamais importé, jamais modifié —
-c'est une pièce d'archive qui doit continuer à s'ouvrir seule dans un navigateur.
+Une application Next.js 15 / TypeScript strict **complète et en production** (v1.0.0,
+27 août 2026) : moteur métier, i18n, toutes les vues sous `app/(app)/app/`, la vitrine,
+la PWA, l'APK Android (Capacitor) et une synchronisation chiffrée facultative
+(`lib/sync/`, `sync-server/`). Le titre « dépôt de reprise » est historique.
+
+Le prototype, servi tel quel depuis `public/prototype/`, reste la référence du **moteur**
+(les 62 valeurs) et l'archive des écrans d'origine. Il n'est **jamais** compilé, jamais
+importé, jamais modifié — il doit continuer à s'ouvrir seul dans un navigateur. Sous
+768 px, la référence des écrans est la refonte mobile (`docs/handoff/10-ECARTS-P3-MOBILE.md`).
 
 ## Règles absolues
 
