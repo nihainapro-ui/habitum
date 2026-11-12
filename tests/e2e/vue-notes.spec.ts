@@ -67,11 +67,24 @@ test.describe('notes', () => {
     await expect(page.getByText('Aucune note ne correspond')).toBeVisible();
   });
 
-  test('une note d’habitude prise depuis Aujourd’hui apparaît ici', async ({ page }) => {
+  test('une note d’habitude prise depuis Aujourd’hui apparaît ici', async ({ page, isMobile }) => {
     await ouvrirAvecDemo(page, '/app/today');
 
-    await page.getByRole('button', { name: /Plus d’actions : Méditer/ }).click();
-    await page.getByRole('menuitem', { name: 'Ajouter une note' }).click();
+    if (isMobile) {
+      /* Refonte mobile : la ligne s'ouvre en feuille d'actions. */
+      await page
+        .locator('[data-row]')
+        .filter({ hasText: 'Méditer' })
+        .locator('[data-name]')
+        .click();
+      await page
+        .getByTestId('feuille-actions')
+        .getByRole('button', { name: 'Ajouter une note' })
+        .click();
+    } else {
+      await page.getByRole('button', { name: /Plus d’actions : Méditer/ }).click();
+      await page.getByRole('menuitem', { name: 'Ajouter une note' }).click();
+    }
     await page.getByRole('textbox', { name: 'Ajouter une note' }).fill('Dix minutes suffisent.');
     await page.getByRole('button', { name: 'Enregistrer' }).click();
 

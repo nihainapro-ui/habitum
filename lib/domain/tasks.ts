@@ -24,6 +24,12 @@ export function taskGroup(t: Task, weekStart: WeekStart = 'mon', now: Date = tod
   return t.date <= dateKey(addDays(startOfWeek(now, weekStart), 6)) ? 'week' : 'later';
 }
 
+/** En retard : non faite, et d'avant aujourd'hui. Le groupe « Aujourd'hui »
+ *  la contient (voir ci-dessus) ; la forme mobile l'ÉCRIT sur la ligne, en
+ *  rouge et avec le mot — la couleur seule ne dit rien. */
+export const estEnRetard = (t: Task, now: Date = today()): boolean =>
+  !t.done && t.date < dateKey(now);
+
 /** Tâches par groupe, triées par date puis par priorité décroissante — l'ordre
  *  du prototype : ce qui vient en premier, et à date égale ce qui pèse le plus. */
 export function groupTasks(

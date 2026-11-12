@@ -13,16 +13,23 @@ import { ForceError } from '@/components/dev/force-error';
 import { EditorSheet } from '@/components/editor/EditorSheet';
 import { BottomBar } from './bottom-bar';
 import { Header } from './header';
+import { HeaderMobile } from './header-mobile';
 import { LiveRegion } from './live-region';
 import { LockCurtain } from './lock-curtain';
-import { NavDrawer } from './nav-drawer';
 import { Rail } from './rail';
 import { ReticleCursor } from './reticle-cursor';
+import { estMobile, premiereOuverture } from '@/lib/features/mobile';
 import { ID_CONTENU, SkipLink } from './skip-link';
+import { normaliserChemin } from './nav-items';
 import { ToastHost } from './toast-host';
 import { UpdateBanner } from './update-banner';
 
 /* Coque applicative : rail, en-tête, contenu, barre basse, palette.
+
+   Sous 768 px (refonte mobile, PDF p. 2-3) : plus de tiroir latéral. La barre
+   basse porte quatre destinations dont « Plus », et l'en-tête mobile trois
+   éléments. Le rail et l'en-tête de bureau sont rendus mais masqués par le
+   CSS, ce qui laisse le rendu au-dessus de 768 px strictement inchangé.
 
    C'est aussi le seul endroit qui amorce la base et charge l'état — une fois,
    au montage. B4 : le chemin par défaut est le COMPTE VIERGE. La démonstration
@@ -74,6 +81,24 @@ export function AppShell({ children }: { children: ReactNode }) {
     router.replace('/onboarding');
   }, [pret, accueil, onboarded, chemin, router]);
 
+  /* ÉCRAN D'OUVERTURE sur téléphone — refonte mobile, PDF p. 2 : « Aujourd'hui
+     est l'écran d'ouverture. » `/app` reste le tableau de bord — c'est la
+     route que le rail, les liens et l'APK connaissent — mais la PREMIÈRE
+     arrivée d'une ouverture sur `/app`, sous 768 px, est renvoyée sur
+     Aujourd'hui. Une seule fois par SESSION d'onglet (`premiereOuverture`) :
+     taper « Tableau de bord » dans « Plus » mène bien au tableau de bord, un
+     rechargement ne renvoie pas, et le parcours d'accueil — qui se termine
+     sur `/app` — compte comme l'ouverture, ce qui laisse le nouveau compte
+     sur le tableau de bord que l'accueil vient de lui promettre. Le bureau
+     n'est pas concerné : son écran d'ouverture est le tableau de bord, comme
+     dans le prototype. */
+  useEffect(() => {
+    if (!pret) return;
+    if (!premiereOuverture()) return;
+    if (accueil || !onboarded) return;
+    if (estMobile() && normaliserChemin(chemin) === '/app') router.replace('/app/today');
+  }, [pret, accueil, onboarded, chemin, router]);
+
   useEffect(() => {
     const surFrappe = (e: KeyboardEvent) => {
       const s = useStore.getState();
@@ -85,12 +110,12 @@ export function AppShell({ children }: { children: ReactNode }) {
            à son déclencheur : ici on ne s'occupe que du reste. */
         echapper: () => {
           if (s.ui.commandOpen) return;
-          /* Le tiroir gère lui-même sa fermeture, pour rendre le focus à son
-             déclencheur — même raison que la palette. On s'abstient donc tant
-             qu'il est ouvert, au lieu de fermer l'éditeur derrière lui. */
-          if (s.ui.menuOpen) return;
-          if (s.ui.editor) s.closeEditor();
-          else if (s.ui.toast) s.dismissToast();
+          /* L'éditeur est une feuille Radix : Échap y est déjà traité par la
+             feuille, qui passe par la GARDE de fermeture (« Abandonner ? »
+             sur téléphone, `EditorSheet`). Le fermer d'ici contournerait
+             cette garde. */
+          if (s.ui.editor) return;
+          if (s.ui.toast) s.dismissToast();
         },
       });
       if (consomme) e.preventDefault();
@@ -143,6 +168,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       <div className="flex min-w-0 flex-1 flex-col">
         <Header />
+        <HeaderMobile />
         <main
           id={ID_CONTENU}
           tabIndex={-1}
@@ -162,9 +188,6 @@ export function AppShell({ children }: { children: ReactNode }) {
       </div>
 
       <BottomBar zen={zen} />
-      {/* Le tiroir n'est monté que sous 768 px (`md:hidden` sur sa racine) :
-          au-dessus, le rail est là et deux navigations se marcheraient dessus. */}
-      <NavDrawer />
       <LiveRegion />
       <ToastHost />
       <EditorSheet />

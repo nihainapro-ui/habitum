@@ -1,10 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import {
   BOTTOM_ITEMS,
+  enteteMobile,
   estActif,
+  ITEM_PLUS,
   itemActif,
   NAV_ITEMS,
   normaliserChemin,
+  PLUS_TILES,
 } from '@/components/shell/nav-items';
 
 /* La route courante décidait de trois choses à la fois — le titre de l'en-tête,
@@ -73,18 +76,45 @@ describe('itemActif', () => {
 });
 
 describe('table de navigation', () => {
-  it('la barre basse ne propose que des routes déclarées dans le rail', () => {
-    const routes = new Set(NAV_ITEMS.map((i) => i.href));
-    for (const item of BOTTOM_ITEMS) expect(routes.has(item.href), item.href).toBe(true);
+  it('la barre basse porte Aujourd’hui, Habitudes, Tâches et Plus, dans cet ordre', () => {
+    /* PDF p. 2 : « Une seule barre ». Le tableau de bord n'y est plus — il
+       synthétise, il n'agit pas — et « Plus » n'est pas une vue du rail. */
+    expect(BOTTOM_ITEMS.map((i) => i.href)).toEqual([
+      '/app/today',
+      '/app/habits',
+      '/app/tasks',
+      '/app/plus',
+    ]);
+    expect(BOTTOM_ITEMS[3]).toBe(ITEM_PLUS);
   });
 
-  it('les huit vues absentes de la barre basse existent bien', () => {
-    /* C'est la raison d'être du tiroir mobile : sous 768 px, celles-là n'ont
-       aucun chemin d'accès au doigt sans lui. Sept à l'origine, HUIT depuis
-       Work. Si ce compte change encore, le tiroir change de justification — et
-       ce test le dit, plutôt que la documentation qui répète le nombre. */
-    const bas = new Set(BOTTOM_ITEMS.map((i) => i.href));
-    expect(NAV_ITEMS.filter((i) => !bas.has(i.href))).toHaveLength(8);
+  it('les douze vues sont toutes à deux appuis : barre, tuile de « Plus », ou carte de profil', () => {
+    const atteignables = new Set([
+      ...BOTTOM_ITEMS.map((i) => i.href),
+      ...PLUS_TILES.map((i) => i.href),
+      '/app/profile',
+    ]);
+    for (const item of NAV_ITEMS) expect(atteignables.has(item.href), item.href).toBe(true);
+    /* Huit tuiles, ni plus ni moins : la grille de la maquette. */
+    expect(PLUS_TILES).toHaveLength(8);
+    expect(PLUS_TILES[0]?.href).toBe('/app');
+  });
+
+  it('« Plus » a un titre d’en-tête et un nom annoncé, comme les douze vues', () => {
+    expect(itemActif('/app/plus')?.key).toBe('navPlus');
+    expect(itemActif('/app/plus/index.html')?.key).toBe('navPlus');
+    /* Mais il ne fait PAS partie du rail. */
+    expect(NAV_ITEMS.map((i) => i.href)).not.toContain('/app/plus');
+  });
+
+  it('l’en-tête mobile crée le type courant sur Habitudes et Tâches, propose ailleurs', () => {
+    expect(enteteMobile('/app/habits')).toEqual({ action: 'search', plus: 'habit' });
+    expect(enteteMobile('/app/tasks')).toEqual({ action: 'date', plus: 'task' });
+    expect(enteteMobile('/app/today')).toEqual({ action: 'date', plus: 'choice' });
+    expect(enteteMobile('/app/goals')).toEqual({ action: null, plus: 'choice' });
+    /* Rien à créer depuis les réglages ; un chemin inconnu garde le « + ». */
+    expect(enteteMobile('/app/settings').plus).toBeNull();
+    expect(enteteMobile(undefined).plus).toBe('choice');
   });
 
   it('les douze vues sont déclarées', () => {

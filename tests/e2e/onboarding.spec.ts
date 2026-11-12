@@ -51,7 +51,10 @@ test('les habitudes cochées — et elles seules — sont créées', async ({ pa
   await expect(page.getByText('Lire 10 pages')).toBeVisible();
 });
 
-test('le jeu de démonstration est un choix explicite, et il reste signalé', async ({ page }) => {
+test('le jeu de démonstration est un choix explicite, et il reste signalé', async ({
+  page,
+  isMobile,
+}) => {
   await page.goto('/onboarding');
   await attendreHydratation(page);
 
@@ -60,6 +63,15 @@ test('le jeu de démonstration est un choix explicite, et il reste signalé', as
   await page.getByRole('button', { name: /essayer avec des données/i }).click();
 
   await expect(page).toHaveURL(/\/app$/);
+  if (isMobile) {
+    /* Sur téléphone, l'en-tête n'a plus de badge (refonte mobile) : le jeu de
+       démonstration est dit dans la carte de profil de « Plus ». */
+    await page.getByTestId('bottom-bar').getByRole('link', { name: 'Plus' }).click();
+    await expect(page.getByRole('link', { name: 'Ouvrir le profil' })).toContainText(
+      'Jeu de démonstration',
+    );
+    return;
+  }
   /* Le badge se réduit à sa marque sous 1200 px : c'est le conteneur qui porte
      le libellé, visible aux deux paliers. */
   await expect(page.getByTitle('Jeu de démonstration')).toBeVisible();

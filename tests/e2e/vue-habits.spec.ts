@@ -7,6 +7,9 @@ import { ouvrirAvecDemo, ouvrirVierge, verifierPaliers } from './helpers/app';
 
 const ROUTE = '/app/habits';
 
+/* Sous 768 px la vue prend sa forme téléphone (`vue-habits-mobile.spec.ts`). */
+test.skip(({ isMobile }) => !!isMobile, 'forme bureau de la vue');
+
 test.describe('habits', () => {
   test('une carte par habitude, archivées comprises', async ({ page }) => {
     await ouvrirAvecDemo(page, ROUTE, { historique: true });

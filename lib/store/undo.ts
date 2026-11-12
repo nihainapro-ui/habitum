@@ -177,3 +177,19 @@ export async function withUndo<T>(
 
   return resultat;
 }
+
+/** Pose un toast SANS annulation, qui s'efface seul.
+ *
+ *  Même minuterie que `withUndo` : un toast éphémère posé après un toast
+ *  annulable remplace celui-ci et en annule le compte à rebours — sinon la
+ *  minuterie du premier viendrait effacer le second avant son heure. C'est
+ *  la règle « un seul toast à la fois », tenue au même endroit. */
+export function toastEphemere(get: Get, toast: { messageKey: string; label: string }): void {
+  if (minuterie) clearTimeout(minuterie);
+  get().showToast(toast);
+  minuterie = setTimeout(() => {
+    minuterie = null;
+    get().dismissToast();
+  }, UNDO_MS);
+  (minuterie as { unref?: () => void }).unref?.();
+}

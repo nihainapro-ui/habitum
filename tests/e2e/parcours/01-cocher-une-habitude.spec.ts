@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import golden from '@/tests/fixtures/golden.json';
 import { attendreHydratation, ecrireEnBase, ouvrirAvecDemo } from '../helpers/app';
 
@@ -17,8 +17,20 @@ import { attendreHydratation, ecrireEnBase, ouvrirAvecDemo } from '../helpers/ap
    exactement le défaut que ce parcours doit attraper.
    ========================================================================= */
 
-test('cocher, décocher, recharger : la valeur, la série et le taux suivent', async ({ page }) => {
+/* Sur téléphone (refonte mobile), les entrées SANS heure — l'eau, les cafés —
+   sont repliées sous « Plus tard » : on les déplie avant d'y toucher, et de
+   nouveau après chaque rechargement, qui replie. */
+const deplierPlusTard = async (page: Page, isMobile: boolean) => {
+  if (!isMobile || !/\/app\/today/.test(page.url())) return;
+  await page.getByRole('button', { name: /Plus tard/ }).click();
+};
+
+test('cocher, décocher, recharger : la valeur, la série et le taux suivent', async ({
+  page,
+  isMobile,
+}) => {
   await ouvrirAvecDemo(page, '/app/today', { historique: true });
+  await deplierPlusTard(page, isMobile);
 
   const eau = page.getByRole('checkbox', { name: "Boire 8 verres d'eau" });
   await expect(eau).not.toBeChecked();
@@ -37,6 +49,7 @@ test('cocher, décocher, recharger : la valeur, la série et le taux suivent', a
      portage écrit dans IndexedDB, et une écriture avalée ne se voit qu'ici. */
   await page.reload();
   await attendreHydratation(page);
+  await deplierPlusTard(page, isMobile);
   await expect(page.getByText('8/8 verres')).toBeVisible();
   await expect(page.getByRole('checkbox', { name: "Boire 8 verres d'eau" })).toBeChecked();
 
@@ -59,6 +72,7 @@ test('cocher, décocher, recharger : la valeur, la série et le taux suivent', a
 
   await page.reload();
   await attendreHydratation(page);
+  await deplierPlusTard(page, isMobile);
   await expect(
     page.getByRole('article', { name: "Boire 8 verres d'eau" }).getByTestId('streak'),
   ).toHaveText(String(golden['habit.water'].streak));
@@ -74,6 +88,7 @@ test('cocher, décocher, recharger : la valeur, la série et le taux suivent', a
    absente, jamais devenir zéro. */
 test('une habitude à plafond ne se coche pas d’avance, même après rechargement', async ({
   page,
+  isMobile,
 }) => {
   /* Le jeu de démonstration ne porte aucune habitude à plafond : on en pose
      une, SANS aucune entrée du jour. C'est exactement le cas qui piège. */
@@ -102,6 +117,7 @@ test('une habitude à plafond ne se coche pas d’avance, même après rechargem
 
   await page.reload();
   await attendreHydratation(page);
+  await deplierPlusTard(page, isMobile);
   /* Rien de journalisé : PAS réussi. Le piège serait de lire « 0 ≤ 2 » sur une
      clé absente et de cocher la case. */
   await expect(plafond()).not.toBeChecked();
@@ -111,6 +127,7 @@ test('une habitude à plafond ne se coche pas d’avance, même après rechargem
   await expect(plafond()).toBeChecked();
   await page.reload();
   await attendreHydratation(page);
+  await deplierPlusTard(page, isMobile);
   await expect(plafond()).toBeChecked();
 
   /* Deux : encore dedans. Trois : dehors — et ça survit aussi. */
@@ -121,5 +138,6 @@ test('une habitude à plafond ne se coche pas d’avance, même après rechargem
 
   await page.reload();
   await attendreHydratation(page);
+  await deplierPlusTard(page, isMobile);
   await expect(plafond()).not.toBeChecked();
 });

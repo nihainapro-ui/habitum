@@ -4,22 +4,19 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
-import {
-  CalendarDays,
-  Maximize2,
-  Menu,
-  PanelLeft,
-  PanelLeftClose,
-  Plus,
-  Search,
-} from 'lucide-react';
+import { CalendarDays, Maximize2, PanelLeft, PanelLeftClose, Plus, Search } from 'lucide-react';
 import { useProgression, useStore } from '@/lib/store';
 import { applyRail, readRailCookie, type EtatRail } from '@/lib/rail';
 import { ENCRE_SUR_TEINTE } from '@/components/ui/encre';
 import { itemActif } from './nav-items';
 import { MonthPicker } from './month-picker';
 
-/* En-tête — porté de `<header data-topbar>` (`Habitum.dc.html`, lignes 208–235).
+/* En-tête DE BUREAU — porté de `<header data-topbar>` (`Habitum.dc.html`,
+ * lignes 208–235). Sous 768 px il n'est plus rendu (`hidden md:flex`) : c'est
+ * `header-mobile.tsx` qui prend le relais, avec trois éléments au lieu de huit
+ * (refonte mobile, PDF p. 2). Ce qui suit décrit le bureau, et le paragraphe
+ * « SUR TÉLÉPHONE » ci-dessous est conservé comme histoire : il dit pourquoi
+ * l'en-tête a fini par être coupé en deux.
  *
  * De gauche à droite : pastille d'état, TITRE DE LA VUE, sur-titre et badge de
  * démonstration ; puis pilule de profil, mode zen, indice, filet, calendrier,
@@ -66,8 +63,6 @@ export function Header() {
   const setCommandOpen = useStore((s) => s.setCommandOpen);
   const toggleZen = useStore((s) => s.toggleZen);
   const openEditor = useStore((s) => s.openEditor);
-  const menuOpen = useStore((s) => s.ui.menuOpen);
-  const setMenuOpen = useStore((s) => s.setMenuOpen);
 
   /* Lecture APRÈS montage, comme `RailFooter` le fait pour le thème : la
      préférence n'existe que dans le navigateur, la lire au rendu divergerait à
@@ -95,7 +90,7 @@ export function Header() {
          maigri de 3 px. Encoche : l'en-tête est collé en haut, c'est donc lui
          qui doit s'en écarter ; l'inset vaut 0 partout où il n'y en a pas —
          bureau compris, ce qui laisse les captures de référence inchangées. */
-      className="sticky top-0 z-[18] flex flex-nowrap items-center gap-2 border-b px-[13px] py-[11px] pt-[calc(11px+env(safe-area-inset-top))] md:gap-4 md:px-[26px] md:py-[14px] md:pt-[calc(14px+env(safe-area-inset-top))]"
+      className="sticky top-0 z-[18] hidden flex-nowrap items-center gap-2 border-b px-[13px] py-[11px] pt-[calc(11px+env(safe-area-inset-top))] md:flex md:gap-4 md:px-[26px] md:py-[14px] md:pt-[calc(14px+env(safe-area-inset-top))]"
       style={{
         borderColor: 'var(--line)',
         /* Dégradé et flou : le contenu qui passe dessous se devine sans jamais
@@ -106,20 +101,6 @@ export function Header() {
         WebkitBackdropFilter: 'blur(18px)',
       }}
     >
-      {/* Bouton du tiroir — mobile seulement. Au-dessus de 768 px le rail est
-          rendu et un second accès aux mêmes onze vues n'apporterait rien. */}
-      <button
-        type="button"
-        onClick={() => setMenuOpen(true)}
-        aria-expanded={menuOpen}
-        aria-label={t('app.menuOpen')}
-        title={t('app.menuOpen')}
-        className="grid h-[34px] w-[34px] flex-none cursor-pointer place-items-center rounded-[10px] border md:hidden"
-        style={{ borderColor: 'var(--line)', background: 'var(--panel2)', color: 'var(--txt2)' }}
-      >
-        <Menu size={16} strokeWidth={1.9} aria-hidden="true" />
-      </button>
-
       <div className="flex min-w-0 flex-[1_1_120px] flex-col gap-[3px] overflow-hidden">
         <div className="flex min-w-0 items-center gap-[9px]">
           <span

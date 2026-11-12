@@ -42,11 +42,207 @@ chronométré au milieu des 900 autres tests : 1 164 ms à une exécution,
 projet Playwright (`charge`, sans parallélisme), que `npm run test:e2e` lance
 après les parcours.
 
+**Et un débordement que seule la CI pouvait voir.** Les trois PR de la refonte
+mobile n'avaient jamais passé un test de bout en bout en CI. Au premier
+passage : dans l'éditeur d'habitude à 360 px, la rangée Début / Fin dépassait
+de 5 px sous Linux — la largeur d'un champ de date dépend de la police du
+système, et le poste Windows qui l'a écrite ne le montrait pas. `min-w-0` sur
+les deux moitiés de la rangée.
+
 **Documents corrigés** parce qu'ils étaient devenus faux : `CLAUDE.md` (« les
 vues ne sont pas en place »), `SECURITY.md` (« vos données ne quittent pas
 votre appareil » — faux dès qu'on active la synchronisation ; les limites du
 relais et du verrou y sont maintenant écrites), `docs/adr/README.md` (B1
 « en attente » alors qu'elle est tranchée).
+
+## 2026-09-18 — Refonte mobile, P3 lot 1 : Habitudes et Tâches
+
+Troisième livraison de la cartographie « Refonte mobile Habitum » (PDF p. 6 et
+8), précédée d'une analyse d'écart de chacun des neuf écrans que le PDF avait
+dessinés sans les avoir vus — `docs/handoff/10-ECARTS-P3-MOBILE.md`, dont les
+onze arbitrages ont été validés le 18 septembre. Toujours sous 768 px
+seulement ; le bureau ne bouge pas.
+
+**Habitudes : deux onglets, une ligne, sept pastilles.** Segments Actives ·
+n / Archivées · n. Chaque ligne : glyphe de catégorie, nom, « fréquence ·
+catégorie · objectif » en clair, taux sur 30 jours et record sur une ligne
+d'appoint, la série en gros à droite, et les SEPT PASTILLES cochables de la
+semaine à 44 px — c'est par elles qu'on rattrape un jour oublié, la maquette
+les avait oubliées, elles restent. Cocher pose un toast « Annuler ». Sous la
+liste, « 7 derniers jours : 4 jours complets · 1 partiel · 1 manqué » — une
+brique de domaine, `resumeSemaine`, qui ne compte que des jours journalisés
+(jour courant exclu, jours sans rien de planifié ignorés) ; un compte vierge
+ne l'affiche pas. État vide : « Aucune habitude » et les trois suggestions de
+l'accueil, à un appui, aucune créée d'avance. Archivées vide : « Rien
+d'archivé ».
+
+**Tâches : À faire / Faites, groupes dans une seule carte, retard écrit.**
+Les groupes Aujourd'hui → Demain → Cette semaine → Plus tard sont des sections
+à en-tête dans une seule carte, plus des cartes dans une carte. La ligne
+écrit tout : carré ET mot de priorité, heure, date lisible (« Hier »,
+« Demain », « ven. 7 août »), ↻ ET mot de récurrence, « 2/3 » et les
+sous-tâches cochables en place. Une tâche en retard reste dans « Aujourd'hui »
+— choix du domaine, conservé — mais le dit en rouge et en toutes lettres
+(`estEnRetard`). La liste de courses n'est pas retirée : repliée sous « Liste
+de courses · n ». États : « Aucune tâche » + « Nouvelle tâche » ; « Tout est
+fait » seulement s'il y a des tâches ; « Aucune tâche terminée ».
+
+**Pas d'appui long : une feuille de menu.** Le PDF voulait un appui long sur
+six écrans ; le dépôt n'en a pas, c'est un geste caché sans équivalent
+clavier. L'appui sur le nom ouvre `FeuilleMenu` (`components/shell/`), en
+cibles de 52 px : Modifier · Archiver/Désarchiver · Voir les statistiques ·
+Supprimer pour une habitude ; Modifier · Marquer fait · Reporter · Ajouter
+une note · Supprimer pour une tâche. Supprimer passe par la feuille de
+confirmation à conséquence chiffrée, puis reste annulable six secondes.
+Archiver depuis la liste est neuf et annulable (`archiveHabitAnnulable`).
+Reporter ouvre `FeuilleReport` : Aujourd'hui / Demain / Choisir un jour — la
+grille du mois de P2 — et « Demain » est le lendemain d'aujourd'hui, pas de
+l'échéance, sinon une tâche en retard de trois jours le resterait.
+
+**Écarts assumés au PDF :** pas de groupe « En retard » ; pas de « Dupliquer »
+(inexistant) ; pas de bandeau « Sauvegarde différée » (aucun mode différé
+n'existe) ; le glissement gauche = Supprimer/Archiver n'est pas repris (P1 a
+fixé gauche = Focus, droite = Reporter, et la liste ne porte pas de geste
+horizontal) ; « Faites » garde toutes les tâches terminées, sans fenêtre.
+
+Trois briques de domaine testées — `resumeSemaine`, `archivedHabits`,
+`estEnRetard` —, `habitDepuisSuggestion` partagée avec l'accueil, `WeekDots`
+et `ShoppingList` gagnent une option sans changer leur forme de bureau, et
+dix-neuf tests de bout en bout neufs (`vue-habits-mobile`,
+`vue-tasks-mobile`). Les specs de bureau de ces deux vues se retirent sous
+768 px, comme Aujourd'hui.
+
+À faire hors de ce lot, parce qu'il touche une capture du socle visuel : la
+ligne de tâche du bureau (`TaskItem`) n'écrit pas la récurrence alors
+qu'Aujourd'hui le fait.
+
+## 2026-09-17 (suite) — Refonte mobile, P2 : tableau de bord compact, calendrier et sélecteur de jour
+
+Deuxième livraison de la cartographie « Refonte mobile Habitum » (PDF p. 4 et
+9). Toujours sous 768 px seulement ; le bureau ne bouge pas.
+
+**Le tableau de bord répond en un regard, puis laisse agir.** L'anneau occupait
+un tiers de l'écran à côté d'un vide, et quatre tuiles s'imbriquaient dans une
+grande carte. Il y a maintenant une ligne de synthèse — anneau de 52 px, date,
+« 3 habitudes faites · 2 tâches à faire · série 8 j » —, trois indicateurs sur
+une rangée (Record, Focus, Tâches, chacun menant à sa vue), puis « À faire
+maintenant » : cinq entrées non faites au plus, avec les lignes d'Aujourd'hui
+— donc cochables, avec leur pas à pas et leur feuille d'actions, dès le
+premier écran. « Tout voir » devient « Aujourd'hui › ». Dernière ligne :
+l'objectif en cours le plus avancé. Le rappel de sauvegarde, les tâches à
+venir et la mini-carte de trente jours restent, sous l'essentiel : rien n'est
+retiré. Un compte vierge lit 0/0, 0 j, 0 h 00, et propose d'ajouter une
+habitude.
+
+**Le mois existe enfin sur téléphone.** Avant, tout retombait sur l'agenda
+sous 768 px. Trois modes désormais — Mois, Semaine, Agenda. Le mois : 42 cases
+de 44 px, un TRAIT d'état sous chaque jour — complet, partiel, manqué — avec
+sa légende écrite et l'état dans le nom accessible de la case : jamais la
+couleur seule. Un jour à venir, un jour sans rien de planifié et le jour
+courant pas encore fini ne sont pas « manqués » : ils n'ont pas de trait. Sous
+la grille, le détail du jour choisi — le même `ui.day` qu'Aujourd'hui —, ses
+lignes cochables, et « Ouvrir › ». Glisser change de mois ; deux flèches font
+de même pour qui ne glisse pas.
+
+**Le sélecteur de jour est cette même grille, en feuille basse.** Le dialogue
+plein écran, sans indication de ce qui s'était passé chaque jour, est remplacé
+sur téléphone par `MoisMobile` dans une feuille ancrée en bas : un appui
+choisit, la feuille se referme sur Aujourd'hui réglée sur ce jour, et Échap
+rend le focus au bouton du calendrier. Le dialogue du bureau est inchangé.
+
+**Écart assumé :** la vue Semaine n'est pas une grille horaire où l'on glisse
+une tâche — sept colonnes d'heures ne tiennent pas dans 358 px sans défilement
+horizontal, que les règles du dépôt interdisent. C'est la semaine en sept
+cellules puis le détail du jour ; déplacer une tâche passe par « Reprogrammer »
+ou son éditeur. Le titre d'en-tête reste « Calendrier » : le mois est écrit
+au-dessus de la grille, entre ses deux flèches.
+
+**`Forme`, une seule forme dans le document.** Aujourd'hui, le tableau de bord
+et le calendrier choisissent leur forme après montage
+(`components/shell/forme.tsx`) au lieu de rendre les deux et d'en masquer une :
+une vue rendue deux fois double son DOM et fait exister chaque texte en double.
+
+Cinq briques de domaine testées — `etatJour`, `longestCurrentStreak`,
+`nearestGoal`, `aFaireMaintenant`, `ecartMois` — et dix-sept tests de bout en
+bout neufs (`vue-dash-mobile`, `vue-calendar-mobile`).
+
+## 2026-09-17 — Refonte mobile, P1 : une seule barre, une seule carte, une seule couleur d'action
+
+Première livraison de la cartographie UX/UI « Refonte mobile Habitum » (PDF de
+17 pages, `UX-UI/`, hors dépôt). Elle ne concerne que le téléphone — sous
+768 px — et laisse le rendu de bureau, validé par les trente-trois captures
+du socle visuel, strictement inchangé : partout où c'était possible, les deux
+formes sont rendues et le CSS tranche avant la première peinture.
+
+**Une seule navigation.** La barre basse porte Aujourd'hui · Habitudes ·
+Tâches · Plus, en pastille flottante dont l'entrée courante est un aplat
+turquoise. Le tiroir latéral — douze entrées, carte de niveau, thème, langue —
+n'existe plus, ni son bouton de menu. « Plus » (`/app/plus`) est l'écran qui
+le remplace : une carte de profil (avatar, rang, niveau, barre d'expérience,
+badge de démonstration) puis huit tuiles, chacune avec une ligne d'état lue
+dans le store — « 4 / 8 aujourd'hui », « 1 projet », « 2 h 18 cette semaine »
+— et jamais un chiffre de courtoisie : un compte vierge lit « Aucun projet »
+et « 0 min ». Le vocabulaire est celui de la journée : « Analyste · Niveau 3 »,
+plus « LVL 3 · ANALYSTE ». Le niveau, le thème et la langue restent réglables,
+dans Profil et Réglages.
+
+**Aujourd'hui ouvre l'application sur téléphone.** `/app` reste le tableau de
+bord — c'est la route que le rail, les liens et l'APK connaissent — mais la
+première arrivée d'un chargement y est renvoyée sur Aujourd'hui, une seule
+fois : taper « Tableau de bord » dans « Plus » mène bien au tableau de bord.
+
+**Un en-tête à trois éléments.** Titre, une action contextuelle (le calendrier
+sur Aujourd'hui et Tâches, la recherche sur Habitudes, Notes et Plus), le
+« + ». Plus de sur-titre, de pastille d'état ni de losange. Sur Aujourd'hui
+le titre est la date du jour affiché, et l'appuyer ramène à aujourd'hui. Le
+« + » ouvre une feuille de choix — Habitude · Tâche · Note · Session — sauf
+sur Habitudes et Tâches, où il crée directement le type courant.
+
+**Aujourd'hui, refaite pour le pouce.** Sept cellules égales pour la semaine
+du jour affiché, jamais tronquées (glisser : semaine ±1 ; flèches : jour ±1) ;
+segments avec compteurs ; ligne = case ronde de 44 px · glyphe · nom · méta ·
+action droite — pas à pas de 44 px aligné sur le compteur, ou ▷ qui lance
+Focus sur une habitude de durée. Les entrées sans heure sont repliées sous
+« Plus tard · n ». Cocher pose un toast « Annuler ». Un jour passé porte un
+bandeau « Vous modifiez le … », un jour à venir « Pas encore », une journée
+entièrement faite « Journée parfaite ». L'état vide dit « Journée libre » et
+propose de planifier une habitude.
+
+**Le « ⋮ » devient une feuille d'actions, pour ne rien retirer.** La maquette
+ne laisse à droite de la ligne que l'action principale ; or Passer, Reporter,
+Note et la saisie directe n'avaient pas d'autre porte, et retirer une
+fonctionnalité est interdit. L'appui sur le nom ouvre donc une feuille basse
+dont « Modifier » est la première ligne — l'éditeur reste à un appui de plus
+que dans la maquette, c'est l'écart assumé — puis Réussi · Saisir la valeur ·
+Focus · Passer ou Reporter · Note · Supprimer. Supprimer demande une
+confirmation chiffrée (« Supprimer « Méditer » et 180 jours d'historique ? »)
+avant le toast annulable. Les glissements — à gauche Focus, à droite reporter
+une tâche — sont des raccourcis vers ces actions, jamais leur seul chemin.
+
+**L'éditeur d'habitude sur un seul écran.** Annuler / Titre / Enregistrer en
+zone sûre ; Nom → Catégorie + Type → sept jours en cases rondes de 44 px avec
+la phrase qui confirme (« En semaine · 5 jours sur 7 ») → Rappels → « Réglages
+avancés » repliés → « Supprimer l'habitude… » seul en bas, confirmé avec le
+nombre de jours d'historique. Le bouton « Enregistrer », en aplat turquoise,
+est ancré au-dessus du clavier et désactivé tant que le nom est vide. Annuler
+avec des modifications demande « Abandonner ? » — Échap aussi, par la même
+garde. Même `useForm`, même schéma que les quatre onglets du bureau : seule
+la mise en page change. Les autres éditeurs attendent P3.
+
+**Le domaine gagne quatre briques, chacune testée** : `semaineDe`,
+`partagerPlusTard`, `nbJoursJournalises`, `resumeJours`. Le store gagne les
+bascules annulables `toggleHabitAnnulable` / `toggleTaskOnAnnulable` et un
+toast éphémère `flashToast`, sur la même minuterie que les toasts annulables.
+Trois primitives naissent : feuille basse, feuille de confirmation, barre de
+progression. Les libellés nouveaux sont propres au téléphone (préfixe `mob`) :
+changer « File d'exécution » ou « Clinical » sur le bureau aurait changé un
+rendu validé — c'est le seul point où le PDF cède devant le dépôt.
+
+Quarante-six tests de bout en bout neufs sur le projet mobile (navigation,
+Aujourd'hui, éditeur), dix tests unitaires sur le domaine et la table de
+navigation ; `vue-today.spec.ts`, `editeur.spec.ts` et `edition-et-rail.spec.ts`
+se retirent sous 768 px, `tiroir-mobile.spec.ts` disparaît avec le tiroir.
+Captures à 390 px : `npx playwright test captures-mobile --project=mobile`.
 
 ## 2026-09-16 (suite) — Silencieuse, notification ou alarme, et quand : rappel par rappel
 

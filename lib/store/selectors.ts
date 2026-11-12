@@ -8,6 +8,7 @@ import {
   dateKey,
   dayAgenda,
   dayRatio,
+  etatJour,
   parseKey,
   focusMinutes,
   isScheduled,
@@ -17,6 +18,7 @@ import {
   sumValues,
   today,
   type DayRatio,
+  type EtatJour,
   type EntreeJour,
   type Habit,
   type Progression,
@@ -70,6 +72,30 @@ export const useDayAgenda = (date: Date): EntreeJour[] => {
     return entrees;
   }, [logIndex, habits, tasks, occurrences, filter, jour]);
 };
+
+/** Compteurs des segments de la vue Aujourd'hui sur téléphone — PDF p. 5 :
+ *  « Tout · 5 · Habitudes · 4 · Tâches · 1 ». Calculés AVANT le filtre, sinon
+ *  choisir « Tâches » ferait tomber le compte des habitudes à zéro. Trois
+ *  nombres, donc `useShallow` suffit. */
+export const useDayCounts = (date: Date): { all: number; habits: number; tasks: number } =>
+  useStore(
+    useShallow((s) => {
+      const entrees = dayAgenda(s.logIndex, s.habits, s.tasks, date, today(), s.occurrences);
+      const habits = entrees.filter((e) => e.kind === 'habit').length;
+      return { all: entrees.length, habits, tasks: entrees.length - habits };
+    }),
+  );
+
+/** État de plusieurs journées — le trait sous chaque jour du calendrier
+ *  mobile. Des CHAÎNES, donc `useShallow` les compare une à une. */
+export const useDayStates = (dates: readonly Date[]): EtatJour[] =>
+  useStore(
+    useShallow((s) =>
+      dates.map((d) =>
+        etatJour(dayRatio(s.logIndex, s.habits, s.tasks, d, today(), s.occurrences), d),
+      ),
+    ),
+  );
 
 /** Habitudes planifiées ce jour-là, archivées exclues. */
 export const useHabitsOfDay = (date: Date): Habit[] =>

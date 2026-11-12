@@ -2,13 +2,20 @@
 
 import { useMemo } from 'react';
 import { useDayAgenda, useJourAffiche } from '@/lib/store';
+import { Forme } from '@/components/shell/forme';
 import { DayNav } from './DayNav';
 import { DayStrip } from './DayStrip';
 import { FilterBar } from './FilterBar';
 import { UnifiedList } from './UnifiedList';
+import { TodayMobile } from './mobile/TodayMobile';
 
 /* Vue « Aujourd'hui » — exécution séquentielle de la journée.
-   05-SPEC-VUES.md § 2. */
+   05-SPEC-VUES.md § 2.
+
+   Deux formes, une seule dans le document (`components/shell/forme.tsx`) :
+   sous 768 px `mobile/TodayMobile.tsx` (refonte mobile, PDF p. 5), au-dessus
+   la forme portée du prototype, inchangée. Les données sont les mêmes — un
+   seul sélecteur, une seule liste d'entrées, un seul jour affiché. */
 
 export function TodayView() {
   const date = useJourAffiche();
@@ -19,15 +26,20 @@ export function TodayView() {
   const cle = useMemo(() => date.getTime(), [date]);
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-center gap-3">
-        <DayNav />
-        <div className="flex-1" />
-        <FilterBar />
-      </div>
+    <Forme
+      mobile={<TodayMobile date={date} entrees={entrees} />}
+      bureau={
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-wrap items-center gap-3">
+            <DayNav />
+            <div className="flex-1" />
+            <FilterBar />
+          </div>
 
-      <DayStrip />
-      <UnifiedList key={cle} date={date} entrees={entrees} />
-    </div>
+          <DayStrip />
+          <UnifiedList key={cle} date={date} entrees={entrees} />
+        </div>
+      }
+    />
   );
 }

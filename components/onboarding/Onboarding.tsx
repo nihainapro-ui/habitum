@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useStore } from '@/lib/store';
-import { StepHabits, type Suggestion } from './StepHabits';
+import { habitDepuisSuggestion, StepHabits, type Suggestion } from './StepHabits';
 import { StepLang } from './StepLang';
 import { StepTheme } from './StepTheme';
 
@@ -31,24 +31,7 @@ export function Onboarding() {
   const suivante = () => setEtape((e) => Math.min(e + 1, ETAPES.length - 1));
 
   const terminer = async (choisies: Suggestion[]) => {
-    for (const s of choisies) {
-      await createHabit({
-        name: t(s.cle),
-        category: s.category,
-        goal: {
-          kind: s.kind,
-          target: s.target,
-          step: 1,
-          unit: s.unite ? t(s.unite) : '',
-        },
-        mode: 'dow',
-        days: [0, 1, 2, 3, 4, 5, 6],
-        subItems: [],
-        reminders: [],
-        archived: false,
-        note: '',
-      });
-    }
+    for (const s of choisies) await createHabit(habitDepuisSuggestion(s, t));
     await completeOnboarding();
     router.replace('/app');
   };

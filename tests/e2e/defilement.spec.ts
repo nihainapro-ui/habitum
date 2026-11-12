@@ -67,10 +67,10 @@ test('l’éditeur ouvert ne fait pas défiler la page derrière lui', async ({ 
   await page.setViewportSize({ width: 390, height: 844 });
   await ouvrirAvecDemo(page, '/app/tasks');
 
-  await page
-    .getByRole('button', { name: /modifier/i })
-    .first()
-    .click();
+  /* À 390 px la vue est sa forme téléphone : le nom ouvre la feuille de
+     menu, « Modifier » y est en tête. */
+  await page.locator('[data-name]').first().click();
+  await page.getByTestId('feuille-menu').getByRole('button', { name: 'Modifier' }).click();
   await expect(page.getByRole('dialog')).toBeVisible();
 
   expect(await chainageNonRetenu(page)).toEqual([]);
@@ -86,6 +86,7 @@ test('un ancrage n’atterrit pas sous l’en-tête collant', async ({ page }) =
   const marge = await page.evaluate(() =>
     parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop),
   );
-  const enTete = (await page.locator('header').first().boundingBox())!.height;
+  /* L'en-tête VISIBLE : à 390 px c'est l'en-tête mobile, l'autre est masqué. */
+  const enTete = (await page.locator('header:visible').first().boundingBox())!.height;
   expect(marge, 'la marge doit couvrir l’en-tête').toBeGreaterThanOrEqual(enTete);
 });

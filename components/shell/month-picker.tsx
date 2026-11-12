@@ -11,6 +11,9 @@ import { Dialog } from '@/components/ui';
 
 /* Le calendrier mensuel de l'en-tête — spec du 2026-09-02, lot C.
 
+   BUREAU SEULEMENT depuis la refonte mobile (P2) : sous 768 px, l'en-tête
+   mobile ouvre `feuille-date.tsx`, qui montre l'état de chaque jour.
+
    IL N'AFFICHE AUCUNE PASTILLE D'ACTIVITÉ, et c'est une décision : les
    calculer demanderait l'état de chaque jour du mois à l'ouverture, alors que
    ce que l'utilisateur vient chercher ici est la NAVIGATION — « aller voir un

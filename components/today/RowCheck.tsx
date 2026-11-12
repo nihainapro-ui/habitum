@@ -16,12 +16,16 @@ export function RowCheck({
   disabled,
   onToggle,
   size = 26,
+  rond = false,
 }: {
   name: string;
   checked: boolean;
   disabled?: boolean | undefined;
   onToggle: () => void;
   size?: number | undefined;
+  /** Case RONDE — refonte mobile, PDF p. 17 : « cases à cocher rondes ». Le
+   *  bureau garde ses coins de 7 px, validés par le socle visuel. */
+  rond?: boolean | undefined;
 }) {
   return (
     <button
@@ -31,7 +35,7 @@ export function RowCheck({
       aria-label={name}
       disabled={disabled}
       onClick={onToggle}
-      className="rounded-btn-sm grid flex-none place-items-center border disabled:opacity-40"
+      className={`${rond ? 'rounded-pill' : 'rounded-btn-sm'} grid flex-none place-items-center border disabled:opacity-40`}
       style={{
         width: size,
         height: size,

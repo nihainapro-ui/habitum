@@ -7,6 +7,10 @@ import { ouvrirAvecDemo, ouvrirVierge, verifierPaliers } from './helpers/app';
 
 const ROUTE = '/app';
 
+/* Sous 768 px, le tableau de bord prend la forme de la refonte mobile (PDF
+   p. 4) : `vue-dash-mobile.spec.ts` l'éprouve. Ici, la forme de bureau. */
+test.skip(({ isMobile }) => !!isMobile, 'forme bureau de la vue');
+
 test.describe('dash', () => {
   test('l’anneau et les compteurs reprennent les chiffres du jour', async ({ page }) => {
     await ouvrirAvecDemo(page, ROUTE, { historique: true });

@@ -130,3 +130,27 @@ export function habitWeek(
   }
   return jours;
 }
+
+export interface FileDuJour {
+  /** Les entrées qui ont une heure — la journée telle qu'elle se déroule. */
+  maintenant: EntreeJour[];
+  /** Les entrées SANS heure : « quand vous voulez ». Sur téléphone, elles
+   *  sont repliées sous « Plus tard », pour que la liste commence par ce qui
+   *  a un moment. Si RIEN n'a d'heure, il n'y a pas de « plus tard » : tout
+   *  est la journée, et replier la liste entière serait la cacher. */
+  plusTard: EntreeJour[];
+}
+
+/** Sépare la file d'une journée en « maintenant » et « plus tard ».
+ *  Pure : elle ne trie pas, elle respecte l'ordre reçu de `dayAgenda`. */
+export function partagerPlusTard(entrees: readonly EntreeJour[]): FileDuJour {
+  const avecHeure = entrees.filter((e) => e.time !== null);
+  if (avecHeure.length === 0) return { maintenant: [...entrees], plusTard: [] };
+  return { maintenant: avecHeure, plusTard: entrees.filter((e) => e.time === null) };
+}
+
+/** « À faire maintenant » — les premières entrées NON FAITES de la journée,
+ *  dans l'ordre de la file. Le tableau de bord mobile en montre cinq au plus
+ *  (PDF p. 4) : il résume, et renvoie à Aujourd'hui pour le reste. */
+export const aFaireMaintenant = (entrees: readonly EntreeJour[], max = 5): EntreeJour[] =>
+  entrees.filter((e) => !e.done).slice(0, max);

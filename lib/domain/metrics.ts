@@ -148,3 +148,71 @@ export function focusMinutes(
   }
   return m;
 }
+
+/** Nombre de jours pour lesquels une habitude a une entrée de journal.
+ *
+ *  Sert à la confirmation de suppression — « Supprimer et 84 jours
+ *  d'historique ? » — qui doit dire un chiffre RÉEL (CLAUDE.md § 3) : une
+ *  habitude jamais cochée annonce 0 jour, pas une estimation. Une entrée à
+ *  zéro compte : « passée » est une information écrite, pas une absence. */
+export function nbJoursJournalises(log: LogIndex, habitId: string): number {
+  const prefixe = `${habitId}|`;
+  let n = 0;
+  for (const cle of log.keys()) if (cle.startsWith(prefixe)) n++;
+  return n;
+}
+
+/** État d'une journée pour le trait du calendrier mobile (PDF p. 9) :
+ *  complet / partiel / manqué, ou rien.
+ *
+ *  `none` couvre deux cas qui ne doivent PAS se dire « manqué » : un jour où
+ *  rien n'était planifié, et un jour à venir — on ne peut pas avoir manqué
+ *  demain. Le jour courant sans rien de fait n'est pas manqué non plus : il
+ *  n'est pas fini (même tolérance que la série). */
+export type EtatJour = 'none' | 'missed' | 'partial' | 'complete';
+
+export function etatJour(r: DayRatio, d: Date, now: Date = today()): EtatJour {
+  if (r.scheduled === 0 || d > now) return 'none';
+  if (r.ratio >= 1) return 'complete';
+  if (r.ratio > 0) return 'partial';
+  return dateKey(d) === dateKey(now) ? 'none' : 'missed';
+}
+
+export interface ResumeSemaine {
+  complets: number;
+  partiels: number;
+  manques: number;
+}
+
+/** « 7 derniers jours : 4 complets · 1 partiel · 1 manqué » — pied de la
+ *  liste des habitudes sur téléphone (PDF p. 6). Les sept jours PASSÉS, le
+ *  jour courant exclu : il n'est pas fini. Habitudes seules — les tâches
+ *  ne sont pas de cette vue — et archivées exclues par `dayRatio`. Un jour
+ *  où rien n'était planifié (`none`) ne compte nulle part : ce n'est pas un
+ *  échec. */
+export function resumeSemaine(
+  log: LogIndex,
+  habits: readonly Habit[],
+  now: Date = today(),
+): ResumeSemaine {
+  const r: ResumeSemaine = { complets: 0, partiels: 0, manques: 0 };
+  for (let i = 7; i >= 1; i--) {
+    const d = addDays(now, -i);
+    const etat = etatJour(dayRatio(log, habits, [], d, now), d, now);
+    if (etat === 'complete') r.complets++;
+    else if (etat === 'partial') r.partiels++;
+    else if (etat === 'missed') r.manques++;
+  }
+  return r;
+}
+
+/** La plus longue série EN COURS, toutes habitudes confondues — la « série
+ *  6 j » de la synthèse du tableau de bord mobile. Distincte du record
+ *  (`bestStreakOverall`), qui regarde le passé. */
+export function longestCurrentStreak(
+  log: LogIndex,
+  habits: readonly Habit[],
+  now: Date = today(),
+): number {
+  return habits.reduce((max, h) => Math.max(max, currentStreak(log, h, now)), 0);
+}

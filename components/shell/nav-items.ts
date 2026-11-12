@@ -64,21 +64,77 @@ export const NAV_GROUPS: NavGroup[] = [
 
 export const NAV_ITEMS: NavItem[] = NAV_GROUPS.flatMap((g) => g.items);
 
-/** Les quatre entrées de la barre basse, sous 768 px. Le prototype garde les
- *  usages quotidiens sous le pouce.
+/** « Plus » — la quatrième destination de la barre basse (refonte mobile,
+ *  PDF p. 2-3). Ce n'est PAS une vue du rail : au-dessus de 768 px, les
+ *  douze vues sont à un clic et un écran de destinations n'y aurait rien à
+ *  offrir. Déclarée à part pour que `NAV_ITEMS` reste la liste du rail. */
+export const ITEM_PLUS: NavItem = {
+  href: '/app/plus',
+  key: 'navPlus',
+  icon: 'more',
+  subKey: 'plusSub',
+};
+
+/** Les quatre entrées de la barre basse, sous 768 px — PDF p. 2 : « Une
+ *  seule barre : Aujourd'hui · Habitudes · Tâches · Plus. Le tiroir
+ *  disparaît. »
  *
- *  LES SEPT AUTRES VUES PASSENT PAR LE TIROIR (`nav-drawer.tsx`), et non par la
- *  palette ⌘K comme l'annonçait cette note. La palette suppose un clavier —
- *  l'APK Android n'en a pas — et une recherche à taper n'est pas une
- *  navigation : il faut connaître le nom de ce qu'on cherche avant d'y aller.
- *  Calendrier, objectifs, statistiques, profil, minuteur, notes et réglages
- *  n'avaient donc, sur téléphone, aucun chemin d'accès. */
+ *  Le tableau de bord n'y est plus : il SYNTHÉTISE plutôt qu'il n'agit, et
+ *  c'est Aujourd'hui qui ouvre l'application sur téléphone. Il reste à un
+ *  appui de « Plus », en tête de grille. Le tiroir latéral, ses douze entrées,
+ *  le niveau, le thème et la langue ont disparu de la navigation : le niveau
+ *  vit dans la carte de profil de « Plus », le thème et la langue dans les
+ *  réglages. */
 export const BOTTOM_ITEMS: NavItem[] = [
-  { href: '/app', key: 'navDash', icon: 'dash', subKey: 'dashSub' },
   { href: '/app/today', key: 'navToday', icon: 'today', subKey: 'todaySub' },
   { href: '/app/habits', key: 'navHabits', icon: 'habits', subKey: 'habitsSubT' },
   { href: '/app/tasks', key: 'navTasks', icon: 'tasks', subKey: 'tasksSub' },
+  ITEM_PLUS,
 ];
+
+/** Les huit tuiles de l'écran « Plus » (PDF p. 3), dans l'ordre de la
+ *  maquette. Le profil n'en fait pas partie : il est la CARTE en tête de
+ *  l'écran. Avec les trois entrées de la barre, les douze vues sont toutes à
+ *  deux appuis au plus — c'est ce que `tests/unit/nav-items.test.ts` vérifie. */
+const ORDRE_PLUS = [
+  '/app',
+  '/app/calendar',
+  '/app/goals',
+  '/app/stats',
+  '/app/work',
+  '/app/timer',
+  '/app/notes',
+  '/app/settings',
+] as const;
+
+export const PLUS_TILES: NavItem[] = ORDRE_PLUS.map((href) => {
+  const item = NAV_ITEMS.find((i) => i.href === href);
+  if (!item) throw new Error(`Destination inconnue dans l'écran Plus : ${href}`);
+  return item;
+});
+
+/** Ce que l'en-tête MOBILE montre à droite du titre, vue par vue — PDF p. 2 :
+ *  « trois éléments : titre, une action contextuelle (date ou recherche), le
+ *  « + » ». `plus` dit ce que le « + » crée : directement le type courant sur
+ *  Habitudes et Tâches, une feuille de choix ailleurs, rien là où créer n'a
+ *  pas de sens. */
+export interface EnteteMobile {
+  action: 'date' | 'search' | null;
+  plus: 'habit' | 'task' | 'choice' | null;
+}
+
+const ENTETE_MOBILE: Record<string, EnteteMobile> = {
+  '/app/today': { action: 'date', plus: 'choice' },
+  '/app/tasks': { action: 'date', plus: 'task' },
+  '/app/habits': { action: 'search', plus: 'habit' },
+  '/app/notes': { action: 'search', plus: 'choice' },
+  '/app/plus': { action: 'search', plus: null },
+  '/app/settings': { action: null, plus: null },
+  '/app/profile': { action: null, plus: null },
+};
+
+export const enteteMobile = (href: string | undefined): EnteteMobile =>
+  (href && ENTETE_MOBILE[href]) || { action: null, plus: 'choice' };
 
 /** Chemin rendu COMPARABLE aux `href` de la table ci-dessus.
  *
@@ -112,6 +168,7 @@ export const normaliserChemin = (chemin: string): string => {
 export const estActif = (pathname: string, href: string): boolean =>
   normaliserChemin(pathname) === href;
 
-/** Entrée correspondant au chemin courant. */
+/** Entrée correspondant au chemin courant — les douze vues, plus « Plus »,
+ *  qui a un titre à afficher dans l'en-tête et un nom à annoncer. */
 export const itemActif = (pathname: string): NavItem | undefined =>
-  NAV_ITEMS.find((i) => estActif(pathname, i.href));
+  [...NAV_ITEMS, ITEM_PLUS].find((i) => estActif(pathname, i.href));

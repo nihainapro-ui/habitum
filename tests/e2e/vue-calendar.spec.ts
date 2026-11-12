@@ -30,12 +30,21 @@ test.describe('calendar', () => {
     await expect(page.locator('[data-agenda]')).toBeVisible();
   });
 
-  test('sous 768 px, le calendrier est un agenda', async ({ page }) => {
+  /* Avant la refonte mobile, tout retombait sur l'agenda sous 768 px (D6).
+     Le mois y existe désormais — `vue-calendar-mobile.spec.ts` l'éprouve ; ici
+     on vérifie seulement que la bascule se fait, y compris quand la fenêtre
+     rétrécit sur un poste de bureau. */
+  test('sous 768 px, le calendrier prend sa forme mobile : mois, semaine, agenda', async ({
+    page,
+  }) => {
     await page.setViewportSize({ width: 390, height: 900 });
     await ouvrirAvecDemo(page, ROUTE);
 
+    await expect(page.getByTestId('mois-mobile').locator('[data-jour]')).toHaveCount(42);
+    await expect(page.getByRole('radio', { name: 'Mois' })).toBeChecked();
+    await expect(page.getByRole('radio', { name: 'Jour' })).toHaveCount(0);
+    await page.getByRole('radio', { name: 'Agenda' }).click();
     await expect(page.locator('[data-agenda]')).toBeVisible();
-    await expect(page.getByRole('radio', { name: 'Mois' })).toHaveCount(0);
   });
 
   /* Le test qui compte : une tâche doit pouvoir être déplacée INTÉGRALEMENT au
@@ -126,6 +135,7 @@ test.describe('calendar', () => {
   test('état vide : rien de prévu sur la période', async ({ page }) => {
     await ouvrirVierge(page, ROUTE);
     await page.setViewportSize({ width: 390, height: 900 });
+    await page.getByRole('radio', { name: 'Agenda' }).click();
     await expect(page.getByText('Rien de prévu')).toBeVisible();
   });
 

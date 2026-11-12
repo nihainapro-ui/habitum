@@ -141,10 +141,12 @@ test('la grille du mois montre 42 cases et navigue de mois en mois', async ({ pa
   await expect(boite.getByText('août 2026')).toBeVisible();
 });
 
-test('choisir un jour mène à Aujourd’hui, réglé sur ce jour', async ({ page }) => {
+test('choisir un jour mène à Aujourd’hui, réglé sur ce jour', async ({ page, isMobile }) => {
   /* L'horloge des tests est figée au mercredi 5 août 2026 : le 12 est donc à
      sept jours, la dernière position du bandeau (−4 … +7). */
-  await ouvrirAvecDemo(page, '/app');
+  /* Sur téléphone, le calendrier de l'en-tête n'est que sur Aujourd'hui et
+     Tâches (en-tête à trois éléments, refonte mobile) : on part de là. */
+  await ouvrirAvecDemo(page, isMobile ? '/app/today' : '/app');
   await page.getByRole('button', { name: 'Ouvrir le calendrier' }).click();
 
   const boite = page.getByRole('dialog', { name: 'Choisir un jour' });
@@ -154,14 +156,16 @@ test('choisir un jour mène à Aujourd’hui, réglé sur ce jour', async ({ pag
   await expect(boite).toBeHidden();
 
   /* Le témoin est le bandeau, pas une variable interne : c'est ce que
-     l'utilisateur voit surligné qui doit être juste. */
+     l'utilisateur voit surligné qui doit être juste. Sur bureau c'est le
+     bandeau −4 … +7 ; sur téléphone, la semaine entière (refonte mobile) —
+     le 12 août y est un mercredi de la semaine suivante, montrée en entier. */
   await expect(page.getByRole('button', { name: 'mercredi 12 août' })).toHaveAttribute(
     'aria-current',
     'date',
   );
 });
 
-test('un jour d’un mois voisin est choisissable, pas un cul-de-sac', async ({ page }) => {
+test('un jour d’un mois voisin est choisissable, pas un cul-de-sac', async ({ page, isMobile }) => {
   /* La grille d'août 2026 commence le 27 juillet. Refuser ces cases obligerait
      à revenir en arrière pour un jour déjà sous les yeux.
 
@@ -169,16 +173,27 @@ test('un jour d’un mois voisin est choisissable, pas un cul-de-sac', async ({ 
      bouton à surligner, et c'est précisément l'observable. Si le clic n'avait
      rien réglé, `ui.day` vaudrait 0 et « mercredi 5 août » serait courant —
      l'assertion tomberait. */
-  await ouvrirAvecDemo(page, '/app');
+  /* Sur téléphone, le calendrier de l'en-tête n'est que sur Aujourd'hui et
+     Tâches (en-tête à trois éléments, refonte mobile) : on part de là. */
+  await ouvrirAvecDemo(page, isMobile ? '/app/today' : '/app');
   await page.getByRole('button', { name: 'Ouvrir le calendrier' }).click();
   await page.getByRole('dialog').locator('[data-jour="2026-07-28"]').click();
 
   await expect(page).toHaveURL(/\/app\/today/);
-  await expect(page.locator('[aria-current="date"]')).toHaveCount(0);
+  if (isMobile) {
+    /* La semaine suit le jour choisi (refonte mobile) : le 28 juillet est
+       surligné, dans la semaine du 27 juillet au 2 août. */
+    await expect(
+      page.getByTestId('semaine-strip').locator('[data-jour="2026-07-28"]'),
+    ).toHaveAttribute('aria-current', 'date');
+  } else {
+    await expect(page.locator('[aria-current="date"]')).toHaveCount(0);
+  }
 });
 
 test('rouvrir le dialogue montre le mois du jour affiché, pas le mois courant', async ({
   page,
+  isMobile,
 }) => {
   /* Constat 5 de la revue finale : le dialogue s'ouvrait TOUJOURS sur le mois
      courant, même quand `ui.day` pointait ailleurs — rouvrir après avoir choisi
@@ -186,7 +201,9 @@ test('rouvrir le dialogue montre le mois du jour affiché, pas le mois courant',
      précédente (← / →) survivait en plus à la fermeture. Ici, choisir le 28
      juillet règle `ui.day` sur un jour de JUILLET ; rouvrir doit montrer
      juillet, pas août — le mois courant de l'horloge figée du test. */
-  await ouvrirAvecDemo(page, '/app');
+  /* Sur téléphone, le calendrier de l'en-tête n'est que sur Aujourd'hui et
+     Tâches (en-tête à trois éléments, refonte mobile) : on part de là. */
+  await ouvrirAvecDemo(page, isMobile ? '/app/today' : '/app');
   await page.getByRole('button', { name: 'Ouvrir le calendrier' }).click();
   await page.getByRole('dialog').locator('[data-jour="2026-07-28"]').click();
   await expect(page).toHaveURL(/\/app\/today/);
@@ -229,10 +246,14 @@ test.describe('en-tête', () => {
          en ligne sans repli (`flex-nowrap`), donc un enfant de trop ne coupe
          aucun texte — il pousse la boîte. `scrollWidth > clientWidth` sur le
          `<header>` est la seule chose qui l'attrape. */
-      const boite = await page.evaluate(() => {
-        const h = document.querySelector('header');
+      /* DEUX en-têtes depuis la refonte mobile — bureau et téléphone — dont le
+         CSS ne montre qu'un : on mesure celui de la largeur courante. */
+      const selecteur =
+        largeur < 768 ? '[data-testid="header-mobile"]' : 'header:not([data-testid])';
+      const boite = await page.evaluate((sel) => {
+        const h = document.querySelector<HTMLElement>(sel);
         return h ? { scroll: h.scrollWidth, client: h.clientWidth } : null;
-      });
+      }, selecteur);
       expect(boite, 'aucun <header> trouvé — la coque a changé de forme').not.toBeNull();
       expect(
         boite!.scroll,
@@ -241,11 +262,13 @@ test.describe('en-tête', () => {
 
       /* Et les textes de ses enfants, avec la même mesure que le filet des
          vues — mêmes exclusions, même doctrine, une seule implémentation. */
-      const { releve, balayes } = await releverDebordements(page, 'header');
+      const { releve, balayes } = await releverDebordements(page, selecteur);
+      /* L'en-tête mobile n'a que trois éléments — c'est son cahier des
+         charges (PDF p. 2) — dont deux boîtes de bloc mesurables. */
       expect(
         balayes,
         `${balayes} élément(s) balayé(s) dans l'en-tête — la mesure est suspecte`,
-      ).toBeGreaterThan(5);
+      ).toBeGreaterThan(largeur < 768 ? 1 : 5);
       expect(releve).toEqual([]);
     });
   }

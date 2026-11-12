@@ -16,6 +16,10 @@ import { attendreHydratation, ouvrirAvecDemo } from './helpers/app';
    ========================================================================= */
 
 test.describe('édition depuis la vue Aujourd’hui', () => {
+  /* Sur téléphone, la ligne s'ouvre en FEUILLE d'actions (refonte mobile) :
+     `vue-today-mobile.spec.ts` vérifie que « Modifier » y est en premier. */
+  test.skip(({ isMobile }) => !!isMobile, 'tiroir « ⋮ » de la forme bureau');
+
   test('une habitude s’édite depuis son tiroir d’actions', async ({ page }) => {
     await ouvrirAvecDemo(page, '/app/today');
 

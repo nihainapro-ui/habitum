@@ -238,7 +238,7 @@ test('le glisser-déposer du calendrier a une alternative clavier atteignable au
       n'a pas l'écran sous les yeux.
    -------------------------------------------------------------------------- */
 
-test('les changements passent par une région live polie', async ({ page }) => {
+test('les changements passent par une région live polie', async ({ page, isMobile }) => {
   await ouvrirAvecDemo(page, '/app/today');
 
   /* La région existe AVANT l'événement : une région insérée en même temps que
@@ -258,8 +258,22 @@ test('les changements passent par une région live polie', async ({ page }) => {
 
   /* Et elle est réellement alimentée : supprimer une ligne annonce l'annulation
      possible, pas seulement l'affiche. */
-  await page.getByRole('button', { name: /Plus d’actions : Cours de guitare/ }).click();
-  await page.getByRole('menuitem', { name: 'Supprimer' }).click();
+  if (isMobile) {
+    /* Refonte mobile : feuille d'actions, puis confirmation. */
+    await page
+      .locator('[data-row]')
+      .filter({ hasText: 'Cours de guitare' })
+      .locator('[data-name]')
+      .click();
+    await page.getByTestId('feuille-actions').getByRole('button', { name: 'Supprimer' }).click();
+    await page
+      .getByTestId('feuille-confirmation')
+      .getByRole('button', { name: 'Supprimer' })
+      .click();
+  } else {
+    await page.getByRole('button', { name: /Plus d’actions : Cours de guitare/ }).click();
+    await page.getByRole('menuitem', { name: 'Supprimer' }).click();
+  }
   await expect(page.getByRole('status')).toContainText(/annuler/i);
 });
 

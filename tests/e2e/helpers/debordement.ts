@@ -56,8 +56,9 @@ import type { Page } from '@playwright/test';
      de `Select` — eux aussi portés hors de `<main>`, mais qu'aucun appelant ne
      fait encore passer par cette fonction. Un débordement là-dedans resterait
      invisible ici ; il demande son propre appel à `releverDebordements`, ou à
-     défaut son propre test — `tiroir-mobile.spec.ts` couvre déjà le tiroir
-     mobile, mais pour la taille des cibles et le retour du focus, jamais pour
+     défaut son propre test — `navigation-mobile.spec.ts` mesure désormais la
+     barre basse et l'en-tête mobile (refonte P1) ; le tiroir mobile n'existe
+     plus. Il couvrait la taille des cibles et le retour du focus, jamais
      la coupe de texte.
    - `el.clientWidth === 0` écarte aussi les boîtes EN LIGNE (`span`, `a`
      inline) sans dimension de mise en page propre — un `<span>` qui hérite de

@@ -1,4 +1,5 @@
 import type { StateCreator } from 'zustand';
+import { toastEphemere } from '../undo';
 import type { AppState, UiActions, UiState } from '../types';
 
 export const uiInitial: UiState = {
@@ -10,7 +11,6 @@ export const uiInitial: UiState = {
   editor: null,
   toast: null,
   commandOpen: false,
-  menuOpen: false,
   /* Fermé par défaut, et rouvert à chaque ouverture : le rideau ne se souvient
      pas. Sans verrou posé, personne ne regarde ce drapeau. */
   unlocked: false,
@@ -32,12 +32,12 @@ export const createUiSlice: StateCreator<AppState, [], [], UiActions> = (set, ge
   openEditor: (editor) => set(majUi({ editor })),
   closeEditor: () => set(majUi({ editor: null })),
   setCommandOpen: (commandOpen) => set(majUi({ commandOpen })),
-  setMenuOpen: (menuOpen) => set(majUi({ menuOpen })),
 
   /* Un seul toast à la fois — comportement du prototype (`notify()` posait un
      `clearTimeout` sur le précédent). Deux toasts empilés, c'est une annulation
      qu'on croit avoir et qu'on n'a pas. */
   showToast: (toast) => set(majUi({ toast })),
+  flashToast: (messageKey, label = '') => toastEphemere(get, { messageKey, label }),
   dismissToast: () => {
     if (get().ui.toast) set(majUi({ toast: null }));
   },
