@@ -83,6 +83,17 @@ tests/e2e/visual/socle/*-darwin.png
 /packaging/android/capacitor-cordova-android-plugins
 /packaging/android/local.properties
 
+# Les APK construits localement — 11 novembre 2026. Deux APK de débogage
+# étaient SUIVIS (12 Mo de binaire dans un dépôt public, dont un réécrit à
+# chaque construction). Un APK est une sortie : il se reconstruit par
+# `npm run paquet:apk`, et une version à distribuer s'attache à une release.
+/App Mobile/
+*.apk
+*.aab
+
+# Journaux d'outils (`debug.log` de Chromium, entre autres).
+*.log
+
 # Magasin de clés de signature. Il ne DOIT jamais entrer au dépôt : il est le
 # seul moyen de publier une mise à jour par-dessus une version installée, et
 # quiconque l'obtient peut signer une contrefaçon qu'Android acceptera.

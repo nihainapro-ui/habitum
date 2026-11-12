@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from '@/lib/zod';
 import { CATEGORIES, GOAL_KINDS } from '@/lib/domain';
 import { dateKeyOuVide, reglageRappelSchema } from './habit.schema';
 

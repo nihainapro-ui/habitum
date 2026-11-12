@@ -137,7 +137,7 @@ test('200 habitudes × 3 ans : ouverture sous 1,5 s, interaction sous 100 ms', a
      payer deux fois n'apprendrait rien, car les deux projets partagent le même
      moteur — seul le gabarit d'écran change, et ce budget-ci ne mesure ni la
      mise en page ni le tactile. */
-  test.skip(info.project.name !== 'desktop', 'budget moteur, pas gabarit d’écran');
+  test.skip(info.project.name !== 'charge', 'budget moteur : projet `charge` seulement');
 
   await semerLaCharge(page);
 
@@ -345,7 +345,7 @@ async function mesurerImport(page: Page, mo: number): Promise<{ ms: number; octe
 }
 
 test('un import de 2 Mo aboutit, et restitue ce qu’il a lu', async ({ page }, info) => {
-  test.skip(info.project.name !== 'desktop', 'budget moteur, pas gabarit d’écran');
+  test.skip(info.project.name !== 'charge', 'budget moteur : projet `charge` seulement');
   test.slow();
 
   const { ms, octets } = await mesurerImport(page, 2);
@@ -391,7 +391,7 @@ test('un import de 2 Mo aboutit, et restitue ce qu’il a lu', async ({ page }, 
    ÉCRIT ici, et ce test repassera au vert le jour où il sera tenu. Un seuil
    qu'on descend pour faire passer la suite ne mesure plus rien. */
 test.fixme('un import de 2 Mo tient le budget de 5 s du plan', async ({ page }, info) => {
-  test.skip(info.project.name !== 'desktop', 'budget moteur, pas gabarit d’écran');
+  test.skip(info.project.name !== 'charge', 'budget moteur : projet `charge` seulement');
   test.slow();
 
   const { ms } = await mesurerImport(page, 2);
@@ -427,7 +427,7 @@ test.fixme('un import de 2 Mo tient le budget de 5 s du plan', async ({ page }, 
 test.fixme('restaurer sa propre sauvegarde à la charge du plan (défaut connu)', async ({
   page,
 }, info) => {
-  test.skip(info.project.name !== 'desktop', 'budget moteur, pas gabarit d’écran');
+  test.skip(info.project.name !== 'charge', 'budget moteur : projet `charge` seulement');
 
   await semerLaCharge(page);
   await ouvrir(page, '/app/habits');

@@ -20,6 +20,7 @@ remplace la précédente et on marque l'ancienne « remplacée par ».
 > (système visuel) porte les primitives et refermera le sujet — c'est la fin annoncée par
 > l'ADR elle-même, pas un contournement.
 
-**Décision encore en attente** — le système visuel *Modernist* rattaché au projet contredit
-l'interface sombre construite : voir `docs/handoff/07-DECISION-B1.md`. Elle n'est pas tranchée ici
-parce qu'elle appartient au commanditaire, pas à l'équipe technique.
+**Décision B1 — tranchée par le commanditaire, option (c)** : l'application reste sombre, la
+vitrine porte le système *Modernist*, et les deux surfaces ne partagent aucun composant. Le
+dossier est `docs/handoff/07-DECISION-B1.md` ; elle n'a pas d'ADR parce qu'elle appartenait au
+commanditaire, pas à l'équipe technique.
