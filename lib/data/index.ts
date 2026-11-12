@@ -7,3 +7,5 @@ export * from './export';
 export * from './seed';
 export * from './legacy';
 export * from './migrations';
+export * from './stockage';
+export * from './onglets';

@@ -807,7 +807,12 @@
     "verSchema": "Version du schéma de données",
     "verTitle": "À propos",
     "verUnknown": "inconnue",
-    "vibrateHint": "Une vibration courte à la fin de chaque phase du minuteur."
+    "vibrateHint": "Une vibration courte à la fin de chaque phase du minuteur.",
+    "storTitle": "Stockage sur cet appareil",
+    "storProtected": "Protégé : le navigateur s’est engagé à ne pas effacer vos données.",
+    "storUnprotected": "Non protégé : le navigateur peut effacer ces données s’il manque de place. Installez l’application, ou exportez régulièrement.",
+    "storUsage": "{used} utilisés sur {quota} accordés par le navigateur",
+    "storageFull": "Stockage plein : la dernière modification n’a pas été enregistrée"
   },
   "cat": {
     "health": "Santé",

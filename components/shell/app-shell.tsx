@@ -7,6 +7,7 @@ import { seedEmpty } from '@/lib/data';
 import { useReminders } from '@/lib/features/reminders';
 import { usePhaseFeedback } from '@/lib/features/feedback';
 import { useSync } from '@/lib/features/sync';
+import { useStockage } from '@/lib/features/stockage';
 import { traiterFrappe } from '@/lib/keyboard/shortcuts';
 import { CommandPalette } from '@/components/command/command-palette';
 import { ForceError } from '@/components/dev/force-error';
@@ -64,6 +65,9 @@ export function AppShell({ children }: { children: ReactNode }) {
   /* Synchronisation : montage, retour d'onglet, retour du réseau. Ne part
      JAMAIS sans code d'appairage — la garde est dans la tranche, pas ici. */
   useSync();
+  /* La base locale : persistance demandée, quota dépassé annoncé, et relecture
+     quand un autre onglet écrit. */
+  useStockage(pret);
 
   useEffect(() => {
     void (async () => {

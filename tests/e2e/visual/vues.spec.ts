@@ -146,7 +146,13 @@ test.describe('non-régression visuelle', () => {
              sans qu'aucune régression n'ait eu lieu. On masque la VALEUR, pas
              la ligne : sa présence, sa position et son libellé restent
              comparés. */
-          mask: [page.locator('[data-version-value="built"]')],
+          /* Même raison pour la place occupée (Réglages → Données, 12 novembre
+             2026) : ce sont les octets que le navigateur déclare, qui varient
+             d'une exécution à l'autre sans que rien n'ait changé. */
+          mask: [
+            page.locator('[data-version-value="built"]'),
+            page.locator('[data-stockage-usage]'),
+          ],
         });
       });
     }

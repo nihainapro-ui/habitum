@@ -11,9 +11,9 @@ import { useStore } from '@/lib/store';
    1. **Au montage**, une fois l'appairage connu. C'est le cas qui compte : on
       ouvre l'application sur le téléphone après avoir travaillé sur
       l'ordinateur.
-   2. **Au retour de l'onglet** (`visibilitychange`). Un onglet laissé ouvert
-      trois jours n'a rien manqué s'il se remet à jour en revenant au premier
-      plan.
+   2. **Au changement de visibilité**, dans les deux sens. En revenant : un
+      onglet laissé ouvert trois jours n'a rien manqué s'il se remet à jour.
+      En partant : ce qu'on vient de saisir s'en va tout de suite.
    3. **Au retour du réseau** (`online`). C'est l'échec le plus fréquent —
       métro, ascenseur, avion — et le seul qui se répare tout seul.
 
@@ -39,9 +39,13 @@ export function useSync(): void {
 
     lancer();
 
-    const auReveil = () => {
-      if (document.visibilityState === 'visible') lancer();
-    };
+    /* DANS LES DEUX SENS — 12 novembre 2026. Ne synchroniser qu'au retour
+       laissait sur le téléphone tout ce qu'on venait d'y saisir : on coche, on
+       range l'appareil, et l'ordinateur n'en sait rien tant qu'on ne rouvre
+       pas l'application sur le téléphone. En partant, on envoie. La requête
+       peut être coupée par le système ; rien n'est perdu alors, le filigrane
+       ne bouge qu'après un envoi complet. */
+    const auReveil = () => lancer();
     document.addEventListener('visibilitychange', auReveil);
     window.addEventListener('online', lancer);
     return () => {

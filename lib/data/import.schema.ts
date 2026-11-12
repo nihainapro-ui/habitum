@@ -1,5 +1,11 @@
 import { z } from '@/lib/zod';
-import { FREQUENCES, GOAL_KINDS, HABIT_GOAL_KINDS, TYPES_RAPPEL } from '@/lib/domain';
+import {
+  FREQUENCES,
+  GOAL_KINDS,
+  HABIT_GOAL_KINDS,
+  PREAVIS_NOTIF,
+  TYPES_RAPPEL,
+} from '@/lib/domain';
 
 /* ⚠ PIÈGE DÉJÀ PAYÉ. Les listes blanches ci-dessous sont IMPORTÉES de
    lib/domain/types.ts. Les recopier, c'est reproduire le défaut qui a fait
@@ -157,6 +163,56 @@ export const legacyProject = z.object({
   note: z.string().default(''),
 });
 
+/* Profils — CLÉ NEUVE (12 novembre 2026). Jusqu'ici la sauvegarde ne les
+   contenait pas : restaurer sur un appareil neuf rendait les habitudes et
+   perdait le nom, la photo et la date d'arrivée de leur titulaire.
+
+   Chaque champ a un repli : un profil au nom vide vaut mieux qu'un profil
+   écarté. La photo n'est PAS validée ici — `profilChamps()` le fait à
+   l'affichage, au seul endroit prévu pour (`lib/domain/profil.ts`). */
+export const exportedProfile = z.object({
+  id: z.string().min(1),
+  name: z.string().default(''),
+  handle: z.string().default(''),
+  glyph: z.string().default('◉'),
+  hue: z.number().min(0).max(360).catch(188),
+  role: z.number().int().min(0).catch(0),
+  metier: z.string().optional(),
+  email: z.string().optional(),
+  photo: z.string().optional(),
+  since: dateKey.optional(),
+});
+
+/* Réglages — CLÉ NEUVE. Chaque champ est FACULTATIF et retombe sur « absent »
+   s'il est invalide : un réglage inconnu ne doit ni faire refuser la
+   sauvegarde, ni entrer en base — une langue qui n'existe pas laisserait
+   l'interface sans libellés. Ce qui manque garde sa valeur actuelle. */
+const heure = z.string().regex(/^\d{2}:\d{2}$/);
+const facultatif = <S extends z.ZodTypeAny>(s: S) => s.optional().catch(undefined);
+export const exportedSettings = z
+  .object({
+    lang: facultatif(z.enum(['fr', 'en'])),
+    theme: facultatif(z.enum(['neural', 'plasma', 'clinical'])),
+    weekStart: facultatif(z.enum(['mon', 'sun'])),
+    notifications: facultatif(z.boolean()),
+    sound: facultatif(z.boolean()),
+    vibrate: facultatif(z.boolean()),
+    confetti: facultatif(z.boolean()),
+    customCursor: facultatif(z.boolean()),
+    notifHabits: facultatif(z.boolean()),
+    notifTasks: facultatif(z.boolean()),
+    notifWork: facultatif(z.boolean()),
+    notifGoals: facultatif(z.boolean()),
+    notifLead: facultatif(z.union(PREAVIS_NOTIF.map((n) => z.literal(n)))),
+    notifDayHour: facultatif(heure),
+    notifDigest: facultatif(z.boolean()),
+    notifDigestHour: facultatif(heure),
+    notifQuiet: facultatif(z.boolean()),
+    notifQuietFrom: facultatif(heure),
+    notifQuietTo: facultatif(heure),
+  })
+  .catch({});
+
 export const legacyProjectTask = z.object({
   id: z.string().optional(),
   projectId: z.string(),
@@ -189,6 +245,11 @@ export const habitumExport = z.object({
   shop: z.array(z.unknown()).default([]),
   proj: z.array(z.unknown()).default([]),
   ptask: z.array(z.unknown()).default([]),
+  /* Profils et réglages — clés neuves du 12 novembre 2026, absentes de toute
+     sauvegarde antérieure : leur absence ne change rien à ce qui existe. */
+  profiles: z.array(z.unknown()).default([]),
+  settings: z.unknown().optional(),
+  activeProfile: z.string().optional(),
   /* Occurrences accomplies des tâches récurrentes. Nom FIGÉ (G1) : c'est celui
      du prototype, et des sauvegardes réelles le portent. */
   occ: z.record(z.string(), z.number()).optional(),

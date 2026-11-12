@@ -304,7 +304,7 @@ export interface SyncState {
    *  Sans ce compte, « dernière synchronisation : 15 h 22 » s'affiche
    *  exactement pareil qu'un échange ait eu lieu ou non — et celui qui vient
    *  d'appairer son téléphone n'a aucun moyen de savoir si ça a marché. */
-  bilan: { recus: number; envoyes: number } | null;
+  bilan: { recus: number; envoyes: number; ecartees: number } | null;
   /** Les appareils qui partagent ce code, celui-ci compris. Reconstruite à
    *  chaque synchronisation depuis les présences reçues. */
   appareils: Presence[];

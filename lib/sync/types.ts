@@ -20,6 +20,10 @@ export const SYNC_KINDS = [
 
 export type SyncKind = (typeof SYNC_KINDS)[number];
 
+/** Taille d'une page de tirage — le plafond du relais (`MAX_LIGNES`). Ne sert
+ *  qu'à deviner « il en reste » face à un relais qui ne le dit pas encore. */
+export const PAGE_TIRAGE = 500;
+
 /** Une ligne telle qu'elle voyage. `blob` est opaque : le serveur ne peut ni
  *  le lire ni le vérifier. */
 export interface SyncRow {

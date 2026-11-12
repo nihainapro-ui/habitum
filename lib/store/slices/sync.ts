@@ -19,7 +19,7 @@ import {
   urlSync,
   type Cles,
 } from '@/lib/sync';
-import { rechargerDonnees } from '../hydrate';
+import { completerJournalEnFond, rechargerDonnees } from '../hydrate';
 import type { AppState, SyncActions, SyncState } from '../types';
 
 /* La tranche « synchronisation » : elle branche le moteur au produit, et ne
@@ -203,6 +203,25 @@ export const createSyncSlice: StateCreator<AppState, [], [], SyncActions> = (set
         ...(donnees ?? {}),
         sync: { ...s.sync, enCours: false, lastAt, echec: null, bilan, moi, appareils },
       }));
+
+      /* Du journal est arrivé : le moteur a oublié l'instantané d'ouverture,
+         et le rechargement n'a donc lu que la fenêtre récente. On complète en
+         fond, comme à la toute première ouverture (`store.ts`) — sans quoi
+         l'historique ancien resterait hors de l'écran jusqu'au prochain
+         lancement. Ce qui est en mémoire fait autorité : une coche posée
+         pendant la relecture ne doit pas être écrasée. */
+      if (donnees && !donnees.logIndexComplete) {
+        void completerJournalEnFond(set, get).catch((e: unknown) => void logError('journal', e));
+      }
+
+      /* Une ligne écartée n'est pas un échec — le reste est parti — mais elle
+         ne doit pas disparaître sans trace : le journal local la consigne. */
+      if (bilan.ecartees > 0) {
+        void logError(
+          'sync',
+          new Error(`${bilan.ecartees} ligne(s) trop volumineuse(s), non envoyée(s)`),
+        );
+      }
     } catch (e) {
       /* `SyncErreur` porte un genre traduisible ; tout le reste est un vrai
          défaut, qui part au journal local pour être diagnosticable. */

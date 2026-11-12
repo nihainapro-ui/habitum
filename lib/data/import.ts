@@ -5,6 +5,8 @@ import {
   DATE_KEY_RE,
   LOG_KEY_RE,
   MAX_IMPORT_BYTES,
+  exportedProfile,
+  exportedSettings,
   habitumExport,
   legacyGoal,
   legacyHabit,
@@ -29,6 +31,7 @@ import type {
   Habit,
   LogEntry,
   Note,
+  Profile,
   RappelBrut,
   RappelEntite,
   Session,
@@ -65,7 +68,8 @@ export type ImportEntity =
   | 'shopping'
   | 'occurrences'
   | 'projects'
-  | 'projectTasks';
+  | 'projectTasks'
+  | 'profiles';
 
 export interface ImportReport {
   read: number;
@@ -110,6 +114,7 @@ export const emptyReport = (): ImportReport => ({
     shopping: { read: 0, kept: 0 },
     projects: { read: 0, kept: 0 },
     projectTasks: { read: 0, kept: 0 },
+    profiles: { read: 0, kept: 0 },
     occurrences: { read: 0, kept: 0 },
   },
 });
@@ -433,8 +438,46 @@ export async function importFromJson(input: unknown): Promise<ImportReport> {
 
   rapport.byEntity.occurrences = { read: occLues, kept: Object.keys(occurrences).length };
 
-  /* ---- notes ---- */
-  const notes = notesToRows(src.notes, at, habitIds, rapport.dropped);
+  /* ---- profils ---- */
+  const profilsBruts = parseAll(exportedProfile, src.profiles, 'profiles', rapport.dropped);
+  const profiles: Profile[] = profilsBruts.map((p) => ({
+    id: p.id,
+    name: p.name,
+    handle: p.handle,
+    glyph: p.glyph,
+    hue: p.hue,
+    role: p.role,
+    ...(p.metier ? { metier: p.metier } : {}),
+    ...(p.email ? { email: p.email } : {}),
+    ...(p.photo ? { photo: p.photo } : {}),
+    since: p.since ?? dateKey(today()),
+    createdAt: at,
+    updatedAt: at,
+  }));
+  rapport.byEntity.profiles = { read: src.profiles.length, kept: profiles.length };
+
+  /* ---- réglages ---- Seuls les champs VALIDES de la sauvegarde sont retenus ;
+     ils se posent sur les réglages actuels, qui gardent tout le reste. Hors du
+     rapport : ce n'est pas une entité, et un compte « lu / gardé » n'aurait
+     rien à compter. */
+  const reglagesLus = Object.fromEntries(
+    Object.entries(exportedSettings.parse(src.settings ?? {})).filter(([, v]) => v !== undefined),
+  );
+
+  /* ---- notes ----
+     L'IDENTIFIANT D'UNE NOTE DÉJÀ PRÉSENTE EST REPRIS. Le format figé du
+     prototype n'en transporte pas (`j|date`, `n|habitude`) : en tirer un neuf
+     à chaque import doublait le journal du jour et la note de chaque habitude
+     à la seconde restauration — et, avec la synchronisation, sur tous les
+     appareils. Une date n'a qu'un journal, une habitude qu'une note : c'est
+     cette clé naturelle qui retrouve la ligne à réécrire. */
+  const idsNotes = new Map<string, string>();
+  for (const n of await db.notes.toArray()) {
+    if (n.deletedAt) continue;
+    if (n.kind === 'journal' && n.date) idsNotes.set(`j|${n.date}`, n.id);
+    else if (n.kind === 'habit' && n.habitId) idsNotes.set(`n|${n.habitId}`, n.id);
+  }
+  const notes = notesToRows(src.notes, at, habitIds, rapport.dropped, idsNotes);
   rapport.byEntity.notes = {
     read: src.notes && typeof src.notes === 'object' ? Object.keys(src.notes).length : 0,
     kept: notes.length,
@@ -454,9 +497,35 @@ export async function importFromJson(input: unknown): Promise<ImportReport> {
       db.notes,
       db.projects,
       db.projectTasks,
+      db.profiles,
       db.meta,
     ],
     async () => {
+      if (profiles.length) {
+        /* LE PROFIL VIERGE DE L'AMORÇAGE CÈDE LA PLACE. Une base neuve en
+           porte un, sans nom ; le garder à côté des profils restaurés
+           laisserait un titulaire fantôme en tête de liste. Il reçoit une
+           pierre tombale — pas un effacement dur, que la synchronisation ne
+           saurait pas propager. Un profil NOMMÉ, lui, n'est jamais touché. */
+        const importes = new Set(profiles.map((p) => p.id));
+        for (const p of await db.profiles.toArray()) {
+          if (p.deletedAt || importes.has(p.id) || p.name.trim() || p.handle.trim()) continue;
+          await db.profiles.put({ ...p, deletedAt: at, updatedAt: at });
+        }
+        await db.profiles.bulkPut(profiles);
+        if (src.activeProfile && importes.has(src.activeProfile)) {
+          await db.meta.put({ key: 'activeProfile', value: src.activeProfile, updatedAt: at });
+        }
+      }
+      if (Object.keys(reglagesLus).length) {
+        const actuels = (await db.meta.get('settings'))?.value as object | undefined;
+        await db.meta.put({
+          key: 'settings',
+          value: { ...(actuels ?? {}), ...reglagesLus },
+          updatedAt: at,
+        });
+      }
+
       await db.habits.bulkPut(habits);
       await db.tasks.bulkPut(tasks);
       await db.goals.bulkPut(goals);
@@ -497,6 +566,7 @@ function notesToRows(
   at: string,
   habitIds: ReadonlySet<string>,
   dropped: string[],
+  idsConnus: ReadonlyMap<string, string>,
 ): Note[] {
   const rows: Note[] = [];
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return rows;
@@ -532,7 +602,7 @@ function notesToRows(
       }
       if (!valeur.trim()) continue;
       rows.push({
-        id: newId(),
+        id: idsConnus.get(cle) ?? newId(),
         kind: 'habit',
         habitId: reste,
         body: valeur,
@@ -550,7 +620,7 @@ function notesToRows(
     const mood = humeurs.get(date);
     if (!body.trim() && mood === undefined) continue;
     rows.push({
-      id: newId(),
+      id: idsConnus.get(`j|${date}`) ?? newId(),
       kind: 'journal',
       date,
       body,

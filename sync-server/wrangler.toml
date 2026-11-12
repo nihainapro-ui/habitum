@@ -22,3 +22,21 @@ database_id = "683a75ba-e661-4a18-9fcb-5278e71e94fc"
 # Les minuteries sont incluses dans le palier gratuit.
 [triggers]
 crons = ["0 3 * * *"]
+
+# Limite de débit PAR ESPACE — 12 novembre 2026. La clé est l'espace, jamais
+# l'adresse IP (`src/index.ts`). Compteurs en mémoire chez Cloudflare, par
+# emplacement, approximatifs : rien n'est écrit ni journalisé.
+#
+# 600 par minute : `REQUETES_PAR_MINUTE` dans `src/logique.ts`, et un test
+# vérifie que les deux valeurs disent la même chose. `period` ne peut valoir
+# que 10 ou 60. Demande wrangler 4.36 ou plus récent.
+#
+# `namespace_id` est un entier écrit en chaîne, propre à ce compte Cloudflare :
+# deux liaisons qui le partagent partagent leurs compteurs.
+[[ratelimits]]
+name = "LIMITE"
+namespace_id = "1001"
+
+  [ratelimits.simple]
+  limit = 600
+  period = 60

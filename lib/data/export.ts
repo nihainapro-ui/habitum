@@ -7,12 +7,14 @@ import {
   estRappelNu,
   normaliserRappel,
   type Frequence,
+  type Profile,
   type RappelBrut,
   type RappelEntite,
   type ReglageRappel,
+  type Settings,
   type SousTache,
 } from '@/lib/domain';
-import { META_KEYS } from './seed';
+import { DEFAULT_SETTINGS, META_KEYS } from './seed';
 import { nowIso } from './repositories/base';
 import {
   goalsRepo,
@@ -20,6 +22,7 @@ import {
   logsRepo,
   metaRepo,
   notesRepo,
+  profilesRepo,
   sessionsRepo,
   projectsRepo,
   projectTasksRepo,
@@ -60,6 +63,29 @@ export interface HabitumExport {
    *  sauvegarde produite avant Work doit s'importer sans erreur. */
   proj: ExportedProject[];
   ptask: ExportedProjectTask[];
+  /** Profils, réglages et profil courant — CLÉS NEUVES (12 novembre 2026).
+   *
+   *  La sauvegarde se disait complète et ne l'était pas : restaurée sur un
+   *  appareil neuf, elle rendait les habitudes sans le nom ni la photo de leur
+   *  titulaire, et tous les réglages de rappel étaient à refaire. Aucune clé
+   *  existante n'est renommée ; `cfg`, le nom du prototype pour ses
+   *  préférences, reste à lui — son sens n'est pas celui de `settings`. */
+  profiles: ExportedProfile[];
+  settings: Settings;
+  activeProfile?: string;
+}
+
+export interface ExportedProfile {
+  id: string;
+  name: string;
+  handle: string;
+  glyph: string;
+  hue: number;
+  role: number;
+  metier?: string;
+  email?: string;
+  photo?: string;
+  since: string;
 }
 
 export interface ExportedProject {
@@ -218,20 +244,51 @@ const rappelEntite = (e: RappelEntite): { nt?: false; ra?: string; rp?: Exported
   ...(e.rappels ? { rp: e.rappels.map(rappelExporte) } : {}),
 });
 
+/** Un profil, sans ses horodatages : ils valent la date d'import à la
+ *  relecture, comme pour toutes les entités (règle 4 de l'importeur). */
+const profilExporte = (p: Profile): ExportedProfile => ({
+  id: p.id,
+  name: p.name,
+  handle: p.handle,
+  glyph: p.glyph,
+  hue: p.hue,
+  role: p.role,
+  ...(p.metier ? { metier: p.metier } : {}),
+  ...(p.email ? { email: p.email } : {}),
+  ...(p.photo ? { photo: p.photo } : {}),
+  since: p.since,
+});
+
 export async function exportToJson(): Promise<HabitumExport> {
-  const [habits, tasks, goals, sessions, shopping, notes, logs, occ, projects, projectTasks] =
-    await Promise.all([
-      habitsRepo.list(),
-      tasksRepo.list(),
-      goalsRepo.list(),
-      sessionsRepo.list(),
-      shoppingRepo.list(),
-      notesRepo.list(),
-      logsRepo.all(),
-      metaRepo.get<Record<string, number>>(META_KEYS.occ),
-      projectsRepo.list(),
-      projectTasksRepo.list(),
-    ]);
+  const [
+    habits,
+    tasks,
+    goals,
+    sessions,
+    shopping,
+    notes,
+    logs,
+    occ,
+    projects,
+    projectTasks,
+    profiles,
+    reglages,
+    profilCourant,
+  ] = await Promise.all([
+    habitsRepo.list(),
+    tasksRepo.list(),
+    goalsRepo.list(),
+    sessionsRepo.list(),
+    shoppingRepo.list(),
+    notesRepo.list(),
+    logsRepo.all(),
+    metaRepo.get<Record<string, number>>(META_KEYS.occ),
+    projectsRepo.list(),
+    projectTasksRepo.list(),
+    profilesRepo.list(),
+    metaRepo.get<Partial<Settings>>(META_KEYS.settings),
+    metaRepo.get<string>(META_KEYS.activeProfile),
+  ]);
 
   /* Les occurrences d'une tâche disparue ne sortent pas : elles ne se
      rattacheraient à rien à la relecture, et l'import les écarterait une à une
@@ -351,5 +408,12 @@ export async function exportToJson(): Promise<HabitumExport> {
       sub: projectSubItems(t).map(sousElement),
       ...rappelEntite(t),
     })),
+    profiles: profiles.map(profilExporte),
+    /* Les défauts comblent ce qu'une base ancienne n'a jamais écrit : la
+       sauvegarde porte TOUS les réglages, pas ceux qui ont été touchés. */
+    settings: { ...DEFAULT_SETTINGS, ...(reglages ?? {}) },
+    ...(profilCourant && profiles.some((p) => p.id === profilCourant)
+      ? { activeProfile: profilCourant }
+      : {}),
   };
 }
