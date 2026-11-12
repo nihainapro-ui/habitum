@@ -1,4 +1,4 @@
-import type { z } from 'zod';
+import type { z } from '@/lib/zod';
 import { db } from './db';
 import { newId, nowIso } from './repositories/base';
 import {

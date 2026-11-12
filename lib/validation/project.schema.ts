@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from '@/lib/zod';
 import { PROJECT_STATUSES } from '@/lib/domain';
 import { dateKeyOuVide, heure, reglageRappelSchema } from './habit.schema';
 

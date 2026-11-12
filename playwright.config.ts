@@ -25,6 +25,10 @@ try {
   /* Pas de `.env.local` : c'est le cas normal en intégration continue. */
 }
 
+/* Ce que les projets `desktop` et `mobile` ne lancent pas : le socle visuel et
+   les budgets de charge ont chacun leur projet, plus bas. */
+const HORS_PARCOURS = ['**/visual/**', '**/charge.spec.ts'];
+
 export default defineConfig({
   testDir: './tests/e2e',
   fullyParallel: true,
@@ -64,10 +68,27 @@ export default defineConfig({
          tourner à même une machine Windows ou macOS (voir `visual/vues.spec.ts`
          § 3), et un `npm run test:e2e` rouge par construction sur deux tiers
          des postes est un test qu'on finit par ne plus lancer. */
-      testIgnore: '**/visual/**',
+      testIgnore: HORS_PARCOURS,
       use: { ...devices['Desktop Chrome'], viewport: { width: 1440, height: 900 } },
     },
-    { name: 'mobile', testIgnore: '**/visual/**', use: { ...devices['Pixel 7'] } },
+    { name: 'mobile', testIgnore: HORS_PARCOURS, use: { ...devices['Pixel 7'] } },
+    /* Les budgets de charge se mesurent SEULS — 12 novembre 2026.
+
+       « Ouverture sous 1,5 s » est un chronomètre. Lancé au milieu des 900
+       autres tests, il mesurait surtout son voisin : 1 164 ms à une exécution
+       de CI, 2 748 ms à la suivante, sur le même code (8 septembre). Il
+       passait au rattrapage, ou pas. Un budget qui dépend de l'ordonnanceur
+       n'est pas un budget.
+
+       D'où un projet à part, sans parallélisme, que `npm run test:e2e` lance
+       APRÈS les parcours, dans une exécution séparée : rien d'autre ne tourne
+       pendant qu'il chronomètre. */
+    {
+      name: 'charge',
+      testMatch: '**/charge.spec.ts',
+      fullyParallel: false,
+      use: { ...devices['Desktop Chrome'], viewport: { width: 1440, height: 900 } },
+    },
     /* Le projet `visual` existe, mais `npm run test:e2e` ne le NOMME PAS : le
        script cite explicitement `desktop` et `mobile`. Sans cela, `playwright
        test` exécute les trois projets, et sur une machine Windows ou macOS la

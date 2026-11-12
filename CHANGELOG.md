@@ -30,6 +30,18 @@ raison datée.
 dépôt public ; `App Mobile/`, `*.apk`, `*.aab` et `*.log` sont ignorés. Ils
 restent dans l'historique.
 
+**Deux défauts que cette CI, enfin entière, a montrés dès son premier passage.**
+zod 4 essaie `new Function` pour savoir s'il peut compiler ses schémas ; notre
+CSP le refuse, l'essai est attrapé, mais le navigateur consigne une violation
+sur chaque page — Lighthouse « bonnes pratiques » tombait à 0,96. zod n'entre
+plus que par `lib/zod.ts`, qui pose `jitless` avant tout schéma ; un test
+unitaire refuse tout autre import, et un test de bout en bout échoue à la
+première violation de CSP. Et le budget « ouverture sous 1,5 s » était
+chronométré au milieu des 900 autres tests : 1 164 ms à une exécution,
+2 748 ms à la suivante, sur le même code. Les budgets de charge ont leur
+projet Playwright (`charge`, sans parallélisme), que `npm run test:e2e` lance
+après les parcours.
+
 **Documents corrigés** parce qu'ils étaient devenus faux : `CLAUDE.md` (« les
 vues ne sont pas en place »), `SECURITY.md` (« vos données ne quittent pas
 votre appareil » — faux dès qu'on active la synchronisation ; les limites du

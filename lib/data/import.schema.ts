@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from '@/lib/zod';
 import { FREQUENCES, GOAL_KINDS, HABIT_GOAL_KINDS, TYPES_RAPPEL } from '@/lib/domain';
 
 /* ⚠ PIÈGE DÉJÀ PAYÉ. Les listes blanches ci-dessous sont IMPORTÉES de

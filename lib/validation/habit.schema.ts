@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from '@/lib/zod';
 import { CATEGORIES, HABIT_GOAL_KINDS, TYPES_RAPPEL } from '@/lib/domain';
 
 /* Validation du formulaire d'habitude.
