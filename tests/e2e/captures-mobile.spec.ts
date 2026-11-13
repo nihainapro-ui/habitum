@@ -177,7 +177,7 @@ test('capture statistiques', async ({ page }) => {
   await page.setViewportSize(TELEPHONE);
   await ouvrirAvecDemo(page, '/app/stats', { historique: true });
   await page.waitForTimeout(400);
-  await page.locator('[data-mois] button').nth(2).click();
+  await page.getByRole('button', { name: 'Jour précédent' }).click();
   await page.screenshot({ path: `${DOSSIER}/12-stats.png` });
   await page.screenshot({ path: `${DOSSIER}/12b-stats-entier.png`, fullPage: true });
 });
