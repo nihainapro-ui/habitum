@@ -111,7 +111,9 @@ describe('table de navigation', () => {
     expect(enteteMobile('/app/habits')).toEqual({ action: 'search', plus: 'habit' });
     expect(enteteMobile('/app/tasks')).toEqual({ action: 'date', plus: 'task' });
     expect(enteteMobile('/app/today')).toEqual({ action: 'date', plus: 'choice' });
-    expect(enteteMobile('/app/goals')).toEqual({ action: null, plus: 'choice' });
+    /* Corrigé au lot 2 de P3 : le « + » des Objectifs crée un objectif. */
+    expect(enteteMobile('/app/goals')).toEqual({ action: null, plus: 'goal' });
+    expect(enteteMobile('/app/stats')).toEqual({ action: null, plus: 'choice' });
     /* Rien à créer depuis les réglages ; un chemin inconnu garde le « + ». */
     expect(enteteMobile('/app/settings').plus).toBeNull();
     expect(enteteMobile(undefined).plus).toBe('choice');

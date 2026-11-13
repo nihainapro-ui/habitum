@@ -2,72 +2,47 @@
 
 import { useMemo } from 'react';
 import { useTranslations } from 'next-intl';
-import {
-  bestStreakOverall,
-  categoryBreakdown,
-  daysOfMonth,
-  globalScore,
-  habitRanking,
-  perfectDays,
-  splitHeuresMinutes,
-  sumValues,
-  type Habit,
-} from '@/lib/domain';
-import { useFocusMinutes, useStore, type Range } from '@/lib/store';
+import { type Range } from '@/lib/store';
 import { COULEURS_CATEGORIE, Panel, Ring, Segmented } from '@/components/ui';
 import { EmptyState } from '@/components/shell/empty-state';
+import { Forme } from '@/components/shell/forme';
 import { ViewActions } from '@/components/shell/view-actions';
 import { useLocaleSwitcher } from '@/components/shell/locale-provider';
+import { FENETRES, useStatistiques } from './donnees';
+import { StatsMobile } from './mobile/StatsMobile';
 import { Heatmap } from './Heatmap';
 
 /* Vue « Statistiques » — 05-SPEC-VUES.md § 8.
 
+   Deux formes : sous 768 px `mobile/StatsMobile.tsx` (refonte mobile, P3
+   lot 2) ; au-dessus, la forme portée du prototype, inchangée.
+
    Aucun agrégat n'est calculé ici : `lib/domain/stats.ts` les porte tous, et
-   ses tests les comparent aux 62 valeurs de référence. */
-
-const FENETRES: Range[] = [7, 30, 90, 365];
-
-/** Le focus est plafonné à 120 jours dans le prototype : au-delà, la somme
- *  cesse d'être une mesure de rythme. On conserve ce plafond. */
-const PLAFOND_FOCUS = 120;
+   ses tests les comparent aux 62 valeurs de référence. Les deux formes les
+   lisent par le même crochet, `donnees.ts`. */
 
 export function StatsView() {
+  return <Forme mobile={<StatsMobile />} bureau={<StatsBureau />} />;
+}
+
+function StatsBureau() {
   const t = useTranslations('app');
   const tc = useTranslations('cat');
   const { locale } = useLocaleSwitcher();
 
-  const logIndex = useStore((s) => s.logIndex);
-  const habits = useStore((s) => s.habits);
-  const tasks = useStore((s) => s.tasks);
-  const range = useStore((s) => s.ui.range);
-  const setRange = useStore((s) => s.setRange);
-  const focus = useFocusMinutes(Math.min(range, PLAFOND_FOCUS));
+  const {
+    aucuneHabitude,
+    range,
+    setRange,
+    score,
+    parfaits,
+    record,
+    focusTexte,
+    classement,
+    parts,
+    mois,
+  } = useStatistiques();
 
-  const cumul = useMemo(
-    () => (h: Habit) => (h.goal.kind === 'check' ? 0 : sumValues(logIndex, h, range)),
-    [logIndex, range],
-  );
-
-  const score = useMemo(
-    () => globalScore(logIndex, habits, tasks, range),
-    [logIndex, habits, tasks, range],
-  );
-  const parfaits = useMemo(
-    () => perfectDays(logIndex, habits, tasks, range),
-    [logIndex, habits, tasks, range],
-  );
-  const record = useMemo(() => bestStreakOverall(logIndex, habits), [logIndex, habits]);
-  const classement = useMemo(
-    () => habitRanking(logIndex, habits, range, undefined, cumul),
-    [logIndex, habits, range, cumul],
-  );
-  const parts = useMemo(
-    () => categoryBreakdown(logIndex, habits, range),
-    [logIndex, habits, range],
-  );
-  const mois = useMemo(() => daysOfMonth(logIndex, habits, tasks), [logIndex, habits, tasks]);
-
-  const { h, m } = splitHeuresMinutes(focus);
   /* Composé hors du JSX : `jsx-no-literals` interdit jusqu'aux gabarits. */
   const pourcentage = (n: number) => `${n} %`;
   const moisLabel = useMemo(
@@ -84,10 +59,10 @@ export function StatsView() {
     },
     { cle: 'parfaits', valeur: String(parfaits), libelle: t('perfectDays'), couleur: 'var(--ok)' },
     { cle: 'record', valeur: String(record), libelle: t('colBest'), couleur: 'var(--warn)' },
-    { cle: 'focus', valeur: `${h} h ${m}`, libelle: t('focusTime'), couleur: 'var(--acc)' },
+    { cle: 'focus', valeur: focusTexte, libelle: t('focusTime'), couleur: 'var(--acc)' },
   ];
 
-  if (habits.length === 0) {
+  if (aucuneHabitude) {
     return (
       <div className="flex flex-col gap-4">
         <EmptyState titleKey="system.emStatsT" bodyKey="system.emStatsD" />

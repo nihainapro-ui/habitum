@@ -46,6 +46,7 @@ export function GoalCard({ goal }: { goal: Goal }) {
   const habits = useStore((s) => s.habits);
   const logIndex = useStore((s) => s.logIndex);
   const openEditor = useStore((s) => s.openEditor);
+  const toggleMilestone = useStore((s) => s.toggleMilestone);
 
   const { current, total, percent, unit } = goalProgress(goal, habits, logIndex);
   const statut = goalStatus(goal, habits, logIndex);
@@ -121,18 +122,32 @@ export function GoalCard({ goal }: { goal: Goal }) {
       {goal.milestones?.length ? (
         <ul className="m-0 flex list-none flex-col gap-1.5 p-0">
           {goal.milestones.map((m, i) => (
-            <li key={`${m.label}-${i}`} className="flex items-center gap-2 text-[12px]">
-              <span aria-hidden="true" style={{ color: m.done ? 'var(--ok)' : 'var(--mut)' }}>
-                {m.done ? '◉' : '·'}
-              </span>
-              <span
-                style={{
-                  color: m.done ? 'var(--mut)' : 'var(--txt2)',
-                  textDecoration: m.done ? 'line-through' : 'none',
-                }}
+            <li key={`${m.label}-${i}`} className="flex">
+              {/* COCHABLE — arbitrage n° 5 du 18 septembre 2026. Le prototype
+                  le faisait (`objMsTog`) ; le portage n'en avait gardé que
+                  l'affichage. Le bouton reprend au pixel la ligne d'avant :
+                  le socle visuel ne doit pas voir la différence. */}
+              <button
+                type="button"
+                role="checkbox"
+                aria-checked={m.done}
+                aria-label={t('msA', { label: m.label })}
+                onClick={() => void toggleMilestone(goal.id, i)}
+                className="m-0 flex cursor-pointer items-center gap-2 border-0 bg-transparent p-0 text-left text-[12px]"
+                style={{ font: 'inherit', fontSize: 12, color: 'inherit' }}
               >
-                {m.label}
-              </span>
+                <span aria-hidden="true" style={{ color: m.done ? 'var(--ok)' : 'var(--mut)' }}>
+                  {m.done ? '◉' : '·'}
+                </span>
+                <span
+                  style={{
+                    color: m.done ? 'var(--mut)' : 'var(--txt2)',
+                    textDecoration: m.done ? 'line-through' : 'none',
+                  }}
+                >
+                  {m.label}
+                </span>
+              </button>
             </li>
           ))}
         </ul>

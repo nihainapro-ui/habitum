@@ -149,7 +149,16 @@ Une PR par écran ou par paire, empilées comme P1/P2, dans l'ordre d'usage :
    de `TaskItem` (récurrence absente) est reportée, car elle changerait une
    capture du socle visuel ; « Dupliquer » n'a pas été ajouté (`editor.dup`
    reste un libellé mort à nettoyer) ;
-2. Objectifs (avec le jalon cochable) + Statistiques ;
+2. Objectifs (avec le jalon cochable) + Statistiques — **livré le 13 novembre
+   2026** (branche `refonte-mobile-p3-lot2`). Le jalon se coche sur les deux
+   formes (`toggleMilestone`, annulable). Écarts au § 4 : le PDF n'a pas pu
+   être relu à cette date (outil de rendu absent du poste), le lot suit donc
+   ce document, qui en est la lecture validée ; les quatre tuiles des
+   Statistiques mènent à Habitudes (score, record), Calendrier (jours
+   parfaits) et Minuteur (focus) — le § 4 disait « tuiles-liens » sans nommer
+   les destinations ; la suppression d'un objectif reste annulable par le
+   toast, sans feuille de confirmation ; la date d'un objectif omet l'année
+   quand c'est l'année en cours ;
 3. Focus + Notes ;
 4. Work + Profil + Réglages.
 

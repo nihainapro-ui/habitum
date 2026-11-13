@@ -120,13 +120,17 @@ export const PLUS_TILES: NavItem[] = ORDRE_PLUS.map((href) => {
  *  pas de sens. */
 export interface EnteteMobile {
   action: 'date' | 'search' | null;
-  plus: 'habit' | 'task' | 'choice' | null;
+  plus: 'habit' | 'task' | 'goal' | 'choice' | null;
 }
 
 const ENTETE_MOBILE: Record<string, EnteteMobile> = {
   '/app/today': { action: 'date', plus: 'choice' },
   '/app/tasks': { action: 'date', plus: 'task' },
   '/app/habits': { action: 'search', plus: 'habit' },
+  /* Le « + » des Objectifs crée un OBJECTIF. Il ouvrait la feuille de choix,
+     qui ne le propose pas : on était sur l'écran des objectifs sans pouvoir
+     en créer un depuis l'en-tête. */
+  '/app/goals': { action: null, plus: 'goal' },
   '/app/notes': { action: 'search', plus: 'choice' },
   '/app/plus': { action: 'search', plus: null },
   '/app/settings': { action: null, plus: null },

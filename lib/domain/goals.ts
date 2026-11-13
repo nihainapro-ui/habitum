@@ -160,6 +160,49 @@ export function goalTrail(
   return courbe;
 }
 
+/** Les jalons d'un objectif, celui de cette position basculé.
+ *
+ *  `null` quand il n'y a rien à basculer — objectif sans jalons, position hors
+ *  liste : l'appelant n'écrit alors rien, plutôt qu'un trou en base. La liste
+ *  rendue est NEUVE ; celle de l'objectif n'est pas touchée (le store compare
+ *  des références, et l'annulation s'appuie dessus).
+ *
+ *  Le prototype le faisait (`objMsTog`) ; le portage l'avait perdu : un
+ *  objectif à jalons affichait « 2 / 5 » sans qu'aucun geste permette d'en
+ *  faire 3. */
+export function basculerJalon(g: Goal, index: number): NonNullable<Goal['milestones']> | null {
+  const jalons = g.milestones;
+  if (!jalons || !Number.isInteger(index) || !jalons[index]) return null;
+  return jalons.map((m, i) => (i === index ? { ...m, done: !m.done } : m));
+}
+
+/** Répartit les objectifs entre « en cours » et « atteints » — les deux
+ *  segments de la vue mobile. Un objectif à l'échéance dépassée reste EN
+ *  COURS : il n'est pas atteint, et le ranger ailleurs le ferait disparaître
+ *  de la liste où l'on s'attend à le retrouver. */
+export function partagerObjectifs(
+  goals: readonly Goal[],
+  habits: readonly Habit[],
+  log: LogIndex,
+  now: Date = today(),
+): { enCours: Goal[]; atteints: Goal[] } {
+  const enCours: Goal[] = [];
+  const atteints: Goal[] = [];
+  for (const g of goals) {
+    (goalProgress(g, habits, log, now).percent >= 100 ? atteints : enCours).push(g);
+  }
+  return { enCours, atteints };
+}
+
+/** Le repère « temps écoulé » a-t-il un sens ? Sans début ou sans échéance,
+ *  `goalElapsed` rend 0,5 par convention — une valeur de calcul, pas une
+ *  mesure : l'afficher serait fabriquer un chiffre. */
+export function aUneDuree(g: Goal): boolean {
+  const start = parseKey(g.start);
+  const due = parseKey(g.deadline);
+  return Boolean(start && due && due > start);
+}
+
 /** L'objectif NON ATTEINT le plus proche du but — la dernière ligne du
  *  tableau de bord mobile (PDF p. 4). `null` s'il n'y en a aucun en cours :
  *  la ligne disparaît alors, elle n'affiche pas un objectif de courtoisie. */

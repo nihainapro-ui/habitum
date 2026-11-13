@@ -42,7 +42,10 @@ test.describe('stats', () => {
     await expect(page.getByTestId('score')).not.toHaveText(avant ?? '');
   });
 
-  test('le classement descend du taux le plus haut au plus bas', async ({ page }) => {
+  test('le classement descend du taux le plus haut au plus bas', async ({ page }, info) => {
+    /* Sous 768 px le tableau devient une liste — `vue-stats-mobile.spec.ts`
+       y éprouve le même classement. */
+    test.skip(info.project.name === 'mobile', 'tableau de la forme bureau');
     await ouvrirAvecDemo(page, ROUTE, { historique: true });
 
     const lignes = page.locator('[data-score-row]');

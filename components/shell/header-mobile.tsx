@@ -69,6 +69,7 @@ export function HeaderMobile() {
   const surPlus = () => {
     if (entete.plus === 'habit') openEditor({ kind: 'habit', id: null });
     else if (entete.plus === 'task') openEditor({ kind: 'task', id: null });
+    else if (entete.plus === 'goal') openEditor({ kind: 'goal', id: null });
     else setChoix(true);
   };
 

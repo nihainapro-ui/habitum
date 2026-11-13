@@ -3,13 +3,23 @@
 import { useTranslations } from 'next-intl';
 import { useStore } from '@/lib/store';
 import { EmptyState } from '@/components/shell/empty-state';
+import { Forme } from '@/components/shell/forme';
 import { PrimaryButton } from '@/components/shell/primary-button';
 import { ViewActions } from '@/components/shell/view-actions';
 import { GoalCard } from './GoalCard';
+import { GoalsMobile } from './mobile/GoalsMobile';
 
-/* Vue « Objectifs » — 05-SPEC-VUES.md § 7. */
+/* Vue « Objectifs » — 05-SPEC-VUES.md § 7.
+
+   Deux formes : sous 768 px `mobile/GoalsMobile.tsx` (refonte mobile, P3
+   lot 2) ; au-dessus, la forme portée du prototype, inchangée — à un geste
+   près, commun aux deux : les jalons se cochent. */
 
 export function GoalsView() {
+  return <Forme mobile={<GoalsMobile />} bureau={<GoalsBureau />} />;
+}
+
+function GoalsBureau() {
   const t = useTranslations('app');
   const goals = useStore((s) => s.goals);
   const openEditor = useStore((s) => s.openEditor);
