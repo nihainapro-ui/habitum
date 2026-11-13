@@ -41,15 +41,75 @@ export function ligneValide(brute: unknown): brute is LigneValidee {
   const b = brute as Record<string, unknown>;
   return (
     typeof b.kind === 'string' &&
-    b.kind !== '' &&
+    GENRE.test(b.kind) &&
     typeof b.id === 'string' &&
     b.id !== '' &&
+    b.id.length <= MAX_ID &&
     typeof b.updatedAt === 'string' &&
-    b.updatedAt !== '' &&
+    HORODATAGE.test(b.updatedAt) &&
+    b.updatedAt.length <= MAX_HORODATAGE &&
     typeof b.blob === 'string' &&
-    b.blob !== ''
+    b.blob !== '' &&
+    b.blob.length <= MAX_BLOB
   );
 }
+
+/* --- Limites — 12 novembre 2026 --------------------------------------------
+
+   Le relais n'authentifie personne : connaître un espace suffit, et en inventer
+   un aussi. Jusqu'ici, rien ne bornait ce qu'on pouvait y déposer. Ces plafonds
+   ne distinguent pas l'abus de l'usage — le serveur ne lit rien — ; ils sont
+   posés LARGEMENT au-dessus de tout usage réel, et ferment ce qui restait
+   ouvert sans fin.
+
+   CE QU'ILS NE FERMENT PAS, et il faut le dire : la création d'espaces en
+   masse. Chaque espace inventé est borné, leur nombre ne l'est pas. Le fermer
+   demanderait de compter par adresse IP, que ce serveur s'interdit de
+   regarder ; la purge des espaces muets (six mois) reste le seul remède. */
+
+/** Lignes par requête, en lecture comme en écriture. */
+export const MAX_LIGNES = 500;
+
+/** Corps d'un envoi, en caractères. Le client vise un million par lot
+ *  (`lib/sync/engine.ts`) ; quatre laissent passer le lot et sa plus grosse
+ *  ligne. */
+export const MAX_CORPS = 4_000_000;
+
+/** Un chiffré. D1 refuse toute valeur de plus de 2 Mo : mieux vaut écarter la
+ *  ligne ici que de laisser l'erreur SQL faire échouer le lot entier. Le
+ *  client applique le même plafond avant d'envoyer. */
+export const MAX_BLOB = 1_900_000;
+
+/** Un identifiant. Le plus long que produit l'application — une entrée de
+ *  journal, `uuid|date` — fait 47 caractères. */
+export const MAX_ID = 256;
+
+const MAX_HORODATAGE = 40;
+
+/** Un genre : quelques lettres. Le serveur ne connaît pas la liste — elle
+ *  appartient au produit — mais il sait à quoi un genre ne ressemble pas. */
+const GENRE = /^[A-Za-z]{1,32}$/;
+
+/** Le DÉBUT d'un horodatage ISO 8601. L'arbitrage compare ces chaînes
+ *  lexicographiquement : une valeur quelconque (`"~"`) gagnerait tous les
+ *  arbitrages à venir et figerait la ligne pour toujours. */
+const HORODATAGE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/;
+
+/** Nombre d'écritures qu'un espace peut recevoir dans sa vie. `seq` les
+ *  compte déjà, une par ligne acceptée : le relire coûte une ligne d'index,
+ *  quand compter les lignes en coûterait autant qu'il y en a.
+ *
+ *  Deux millions : trois ans de journal pour deux cents habitudes en font
+ *  219 000, et un usage quotidien quelques centaines par jour. Un espace qui
+ *  l'atteint n'est pas un utilisateur. Effacer l'espace remet le compte à
+ *  zéro — c'est la sortie, et elle appartient à qui connaît le code. */
+export const MAX_ECRITURES = 2_000_000;
+
+/** Requêtes par minute et par espace, quand le limiteur est branché
+ *  (`wrangler.toml`). Un appareil en fait quelques-unes par ouverture ; un
+ *  premier appairage de 219 000 lignes en fait 1 100, étalées par le
+ *  chiffrement — d'où une limite large, qui n'arrête que ce qui martèle. */
+export const REQUETES_PAR_MINUTE = 600;
 
 /* --- Expiration des espaces abandonnés ------------------------------------
 

@@ -9,6 +9,12 @@ import { SyncErreur, type SyncRow } from './types';
 export interface Reponse {
   seq: number;
   lignes: SyncRow[];
+  /** Vrai s'il reste des lignes après cette page. Absent d'un relais d'avant
+   *  le 12 novembre 2026 : le moteur se rabat alors sur la taille de la page. */
+  encore?: boolean;
+  /** Plus grand `seq` de l'espace, rendu quand la page est VIDE. Inférieur à
+   *  notre curseur, il dit que l'espace a été vidé et repart de zéro. */
+  tete?: number;
 }
 
 export interface Transport {

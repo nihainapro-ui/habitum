@@ -232,7 +232,7 @@ describe('appareils appairés', () => {
     /* Un second passage n'a plus rien à dire, et le bilan doit le refléter
        plutôt que de rester sur les chiffres du précédent. */
     await useStore.getState().synchroniserMaintenant();
-    expect(useStore.getState().sync.bilan).toEqual({ recus: 0, envoyes: 0 });
+    expect(useStore.getState().sync.bilan).toEqual({ recus: 0, envoyes: 0, ecartees: 0 });
   }, 30_000);
 
   it('ne réécrit pas sa présence à chaque passage', async () => {

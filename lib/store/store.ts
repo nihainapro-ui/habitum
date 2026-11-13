@@ -3,7 +3,7 @@ import { DEFAULT_SETTINGS } from '@/lib/data';
 import { timerInitial } from '@/lib/domain';
 import { logError } from '@/lib/logger';
 import { cacheDerive } from './derived';
-import { chargerTout, completerJournal, memoriserJournal } from './hydrate';
+import { chargerTout, completerJournalEnFond, memoriserJournal } from './hydrate';
 import { createAccountSlice } from './slices/account';
 import { createGoalsSlice } from './slices/goals';
 import { createHabitsSlice } from './slices/habits';
@@ -107,16 +107,7 @@ export const useStore = create<AppState>()((...a) => ({
       /* Repli — aucun instantané enregistré : la fenêtre récente est déjà
          affichée, on complète en fond puis on mémorise. C'est la toute première
          ouverture d'une base importée : lente une fois, plus jamais. */
-      enFond(
-        completerJournal().then(({ index, watermark: filigrane }) => {
-          /* On ne réécrase que si rien n'a été journalisé entre-temps : une
-             coche faite pendant le chargement de fond ne doit pas être perdue.
-             La fenêtre récente fait autorité sur ce qu'elle contient. */
-          const complet = new Map([...index, ...useStore.getState().logIndex]);
-          set({ logIndex: complet, logIndexComplete: true });
-          return memoriserJournal(complet, filigrane);
-        }),
-      );
+      enFond(completerJournalEnFond(set, get));
     } catch (err) {
       /* Une lecture qui échoue ne doit pas laisser un écran de chargement
          éternel : l'utilisateur doit pouvoir agir — au minimum exporter ses

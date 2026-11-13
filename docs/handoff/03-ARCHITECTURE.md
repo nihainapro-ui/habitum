@@ -263,8 +263,8 @@ autres sont propres à l'application portée et documentées ici plutôt que dev
 | `errors` | vingt dernières erreurs attrapées, **local uniquement**, lisibles dans les réglages (5.1) | `lib/logger.ts` |
 | `bioLock` | verrou biométrique : `{credentialId, at}` — identifiant du credential WebAuthn de plateforme. **Local uniquement** : un credential n'existe que sur l'appareil qui l'a enregistré, le transporter poserait ailleurs un rideau que personne ne peut lever (lot D) | réglages |
 | `syncCode` | code d'appairage, 20 caractères. **Le seul secret** : il dérive l'espace ET la clé de chiffrement, et ne quitte jamais l'appareil. Absent = synchronisation inactive, et alors aucune requête ne sort | `activerSync()` |
-| `syncCursor` | dernier `seq` reçu du relais. Un **nombre**, pas une date : les horloges de deux appareils ne sont pas comparables | moteur de synchronisation |
-| `syncWatermark` | filigrane de lecture locale — borné à l'instant de fin de la passe, jamais au plus grand `updatedAt` envoyé (une écriture faite pendant l'aller-retour serait sinon sautée pour toujours) | moteur de synchronisation |
+| `syncCursor` | dernier `seq` **tiré** du relais, mémorisé page par page. Un **nombre**, pas une date : les horloges de deux appareils ne sont pas comparables. Il ne suit jamais nos propres envois — une ligne écrite par un autre appareil entre notre tirage et notre envoi serait sinon sautée pour toujours (corrigé le 12 novembre 2026). Remis à zéro, avec le filigrane, quand le relais annonce un espace vidé | moteur de synchronisation |
+| `syncWatermark` | filigrane de lecture locale — l'instant relevé **juste avant** la lecture des lignes à envoyer, posé seulement si tout l'envoi a abouti. Ni la fin de la passe (une saisie faite pendant l'envoi serait sautée pour toujours — c'était le cas jusqu'au 12 novembre 2026), ni le plus grand `updatedAt` envoyé | moteur de synchronisation |
 | `syncLastAt` | dernière synchronisation réussie, pour l'affichage seul | moteur de synchronisation |
 
 Les quatre clés `sync*` sont effacées **ensemble** au désappairage. Garder le curseur d'un code
@@ -280,10 +280,12 @@ renverrait que ce qui suit un numéro sans rapport.
 | `lib/sync/merge.ts` | arbitrage pur — **miroir exact** de `sync-server/src/logique.ts` | tout le reste |
 | `lib/sync/entites.ts` | **la seule partie qui connaît Dexie** : table ↔ lignes synchronisables | le réseau, le chiffrement |
 | `lib/sync/transport.ts` | les **deux seuls appels réseau** de l'application, plus l'effacement | Dexie, le chiffrement |
-| `lib/sync/engine.ts` | l'enchaînement, et rien d'autre : tirer → arbitrer → écrire → pousser → mémoriser | — |
+| `lib/sync/engine.ts` | l'enchaînement, et rien d'autre : tirer **page par page** → arbitrer → écrire → pousser **par lots** (200 lignes, un million de caractères) → mémoriser | — |
 | `lib/sync/config.ts` | `NEXT_PUBLIC_SYNC_URL` ; **vide = fonctionnalité absente de l'interface** | — |
 | `lib/store/slices/sync.ts` | branchement au produit : gardes, traduction des échecs, rechargement | l'arbitrage, le réseau |
-| `lib/features/sync/use-sync.ts` | **quand** on synchronise : montage, retour d'onglet, retour du réseau. Pas d'intervalle | le reste |
+| `lib/features/sync/use-sync.ts` | **quand** on synchronise : montage, changement de visibilité **dans les deux sens** (en revenant on reçoit, en partant on envoie), retour du réseau. Pas d'intervalle | le reste |
+| `lib/data/onglets.ts` | plusieurs onglets, une base : chaque écriture locale est annoncée (`BroadcastChannel`), les autres onglets relisent | le réseau |
+| `lib/data/stockage.ts` | stockage persistant demandé au navigateur, état lu pour les réglages, quota dépassé reconnu | le reste |
 
 **À horodatage égal, la distante gagne côté client** — délibéré. Le client ne peut pas départager
 par le chiffré : le vecteur d'initialisation est aléatoire, deux chiffrements de la même valeur ne

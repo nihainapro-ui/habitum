@@ -41,6 +41,9 @@ describe('un aller-retour', () => {
        repousserait la base entière, et le palier gratuit fondrait. */
     await preparer();
     await habitsRepo.create({ name: 'Courir', type: 'check' } as never);
+    /* Une milliseconde franche : le filigrane est inclusif, et une ligne
+       écrite dans la milliseconde même du départ serait renvoyée. */
+    await new Promise((r) => setTimeout(r, 3));
 
     await synchroniser({ transport, cles });
     const second = await synchroniser({ transport, cles });
@@ -51,6 +54,9 @@ describe('un aller-retour', () => {
   it('avance le curseur et note l’heure du succès', async () => {
     await preparer();
     await habitsRepo.create({ name: 'Courir', type: 'check' } as never);
+    await synchroniser({ transport, cles });
+    /* Le curseur ne suit QUE ce qui est tiré (12 novembre 2026) : il avance
+       au passage suivant, quand nos propres lignes reviennent du relais. */
     await synchroniser({ transport, cles });
 
     expect(await metaRepo.get<number>(META_KEYS.syncCursor)).toBeGreaterThan(0);

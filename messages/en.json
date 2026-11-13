@@ -807,7 +807,12 @@
     "verSchema": "Data schema version",
     "verTitle": "About",
     "verUnknown": "unknown",
-    "vibrateHint": "A short vibration at the end of every timer phase."
+    "vibrateHint": "A short vibration at the end of every timer phase.",
+    "storTitle": "Storage on this device",
+    "storProtected": "Protected: the browser has committed not to clear your data.",
+    "storUnprotected": "Not protected: the browser may clear this data if it runs low on space. Install the app, or export regularly.",
+    "storUsage": "{used} used of {quota} granted by the browser",
+    "storageFull": "Storage full: your last change was not saved"
   },
   "cat": {
     "health": "Health",

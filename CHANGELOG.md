@@ -1,5 +1,72 @@
 # Journal des modifications
 
+## 2026-11-12 — Phase 1 : fiabilité des données
+
+Deuxième lot du plan d'audit. Cinq chantiers, un seul sujet : ce que
+l'utilisateur a saisi ne doit plus pouvoir se perdre sans qu'on le sache.
+Aucun de ces défauts ne levait d'erreur.
+
+**La synchronisation perdait des lignes de quatre façons.** (1) Le tirage
+s'arrêtait à la première page de 500 : un appareil neuf affichait un
+historique tronqué en se disant à jour — il boucle désormais jusqu'au bout,
+curseur mémorisé page par page. (2) L'envoi partait d'un bloc : au-delà de
+500 lignes — un premier appairage, un import — le relais répondait 413, à
+chaque passage ; il part par lots de 200 lignes. (3) Le curseur avançait
+jusqu'au `seq` de notre propre envoi, sautant pour toujours ce qu'un autre
+appareil avait écrit juste avant ; il ne suit plus que ce qui est tiré, et
+l'écho de nos envois est reconnu sans être compté. (4) Le filigrane était posé
+à la fin de l'aller-retour : une saisie faite pendant l'envoi n'était jamais
+envoyée ; il est relevé avant la lecture, et posé seulement si tout est parti.
+
+Trois autres trous refermés au passage. Une ligne de journal reçue restait en
+base mais **hors de l'écran** après rechargement, l'instantané d'ouverture ne
+la voyant pas : il est oublié à la réception, et l'historique se recomplète en
+fond. Un espace vidé sur le relais (effacé ailleurs, ou purgé après six mois)
+laissait les appareils restants avec un curseur sans objet : le relais rend
+maintenant la tête de l'espace, et l'appareil repart de zéro en renvoyant
+tout. Enfin la synchronisation ne partait qu'au retour dans l'application ;
+elle part aussi quand on la quitte.
+
+**L'annulation réécrivait toute la base.** Chaque habitude, chaque tâche,
+chaque ligne de journal reprenait l'heure de l'annulation — de quoi écraser,
+au passage suivant, ce qu'un autre appareil avait modifié. Pire : à
+l'ouverture, tant que le journal n'est que partiellement en mémoire, tout ce
+que la base contenait au-delà recevait une pierre tombale — des années de
+suivi effacées pour avoir annulé une coche. Elle ne défait plus que la
+différence entre l'état d'avant l'action et l'état d'après. Projets, tâches de
+projet et occurrences, photographiés mais jamais restaurés, le sont ; un champ
+ajouté par l'action repart avec elle ; ce qui a été fait entre l'action et son
+annulation reste.
+
+**Le stockage local n'était protégé par rien.** L'application demande le
+stockage persistant dès que le compte contient quelque chose, et Réglages →
+Données dit ce que le navigateur répond, avec la place occupée — ses
+chiffres, pas les nôtres. Une écriture refusée faute de place s'annonce au
+lieu d'échouer en silence.
+
+**Deux onglets, deux vérités.** L'onglet resté ouvert affichait un état
+périmé et réécrivait à partir de lui. Chaque écriture est annoncée aux autres
+onglets, qui relisent la base ; une montée de schéma ouverte ailleurs recharge
+la page au lieu de la laisser muette.
+
+**La sauvegarde est complète et se rejoue.** Profils (nom, photo, poste),
+réglages et profil courant sortent enfin dans l'export — trois clés neuves,
+aucune renommée — et se restaurent, le profil vierge de l'amorçage cédant la
+place. Importer deux fois le même fichier doublait le journal du jour et la
+note de chaque habitude : l'identifiant d'une note déjà présente est repris.
+
+**Le relais a des limites** (`sync-server/README.md` § Limites) : taille du
+corps et de chaque ligne, forme des identifiants et des horodatages, deux
+millions d'écritures par espace, 600 requêtes par minute et par espace — la
+clé est l'espace, jamais l'adresse IP. La création d'espaces en masse reste
+ouverte, et c'est écrit.
+
+**À faire à la main : redéployer le Worker** (`wrangler deploy` dans
+`sync-server/`, wrangler ≥ 4.36). Le client fonctionne contre l'ancien relais
+— pagination, lots, curseur et filigrane sont corrigés de son côté — mais les
+limites et la reprise après un espace vidé n'existent qu'une fois le relais
+à jour.
+
 ## 2026-11-11 — Phase 0 : `main` repasse au vert, et l'audit ne peut plus éteindre les tests
 
 Premier lot du plan issu de l'audit complet du 11 novembre. Aucun changement

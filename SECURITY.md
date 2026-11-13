@@ -84,11 +84,14 @@ charge encore ses polices depuis `fonts.googleapis.com` : défaut connu, suivi s
   fait pour un dépôt où l'on pousse directement sur `main` ; depuis la refonte mobile, le
   travail passe par des PR, et la question mérite d'être reposée.
 
-- **Le relais de synchronisation n'est pas durci** (audit du 11 novembre 2026) : ni limitation
-  de débit, ni plafond de taille par ligne, création d'espaces illimitée, CORS ouvert. Le
-  chiffrement protège le **contenu** ; il ne protège pas le relais d'être saturé, et un appareil
-  dont l'horloge avance gagne les arbitrages. Le code d'appairage est conservé en clair dans le
-  stockage local de l'appareil. Corrections planifiées avec la fiabilité des données.
+- **Le relais de synchronisation est borné, pas authentifié** (durci le 12 novembre 2026,
+  `sync-server/README.md` § Limites) : taille du corps et de chaque ligne, forme des
+  identifiants et des horodatages, nombre d'écritures par espace, débit par espace. Ce qui
+  reste ouvert, et qui est un choix : **la création d'espaces en masse** — la fermer demanderait
+  de compter par adresse IP, que le relais s'interdit de regarder — et le CORS, l'espace étant
+  le secret et non l'origine. Le chiffrement protège le **contenu** ; un appareil dont l'horloge
+  avance gagne toujours les arbitrages. Le code d'appairage est conservé en clair dans le
+  stockage local de l'appareil. **Ces limites ne valent qu'une fois le Worker redéployé.**
 - **Le verrou biométrique est un rideau d'interface**, pas un chiffrement : il empêche de lire
   l'écran, pas de lire le stockage du navigateur.
 

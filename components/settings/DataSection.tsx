@@ -1,11 +1,18 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { Download, Loader2, RotateCcw, Upload } from 'lucide-react';
 import { useStore } from '@/lib/store';
 import { telechargerJson } from '@/lib/features/backup';
-import { ImportError, MAX_IMPORT_BYTES, type ImportReport } from '@/lib/data';
+import {
+  ImportError,
+  MAX_IMPORT_BYTES,
+  etatStockage,
+  type EtatStockage,
+  type ImportReport,
+} from '@/lib/data';
+import { estNatif } from '@/lib/features/reminders/canal-natif';
 import { useLocaleSwitcher } from '@/components/shell/locale-provider';
 
 /* Export, import et copie de secours — tâche 5.8.
@@ -45,6 +52,19 @@ export function DataSection() {
      interface muette sur une opération longue, c'est une interface qu'on croit
      plantée — et l'utilisateur ferme l'onglet AU MILIEU d'une écriture. */
   const [enCours, setEnCours] = useState(false);
+
+  /* Lu au montage, et relu après un import : c'est le seul geste de cet écran
+     qui change sensiblement la place occupée. */
+  const [stockage, setStockage] = useState<EtatStockage | null>(null);
+  useEffect(() => {
+    let vivant = true;
+    void etatStockage().then((e) => {
+      if (vivant) setStockage(e);
+    });
+    return () => {
+      vivant = false;
+    };
+  }, [rapport]);
 
   const exporter = async () => {
     try {
@@ -87,6 +107,19 @@ export function DataSection() {
     setRapport(r);
     setRestauree(r !== null);
   };
+
+  /* Octets → unité lisible, dans la langue de l'interface. `Intl` choisit
+     l'écriture ; les deux nombres viennent du navigateur, tels quels. */
+  const octets = (n: number): string =>
+    new Intl.NumberFormat(locale, {
+      style: 'unit',
+      unit: n >= 1024 ** 3 ? 'gigabyte' : 'megabyte',
+      maximumFractionDigits: 1,
+    }).format(n / (n >= 1024 ** 3 ? 1024 ** 3 : 1024 ** 2));
+  const usage =
+    stockage && stockage.utilise !== null && stockage.quota !== null
+      ? { used: octets(stockage.utilise), quota: octets(stockage.quota) }
+      : null;
 
   /* Composés hors du JSX — `jsx-no-literals` y interdit jusqu'aux gabarits. */
   const compte = rapport ? `${rapport.kept} / ${rapport.read}` : '';
@@ -218,6 +251,36 @@ export function DataSection() {
             </>
           ) : null}
         </section>
+      ) : null}
+
+      {/* L'ÉTAT DU STOCKAGE, tel que le navigateur le déclare — aucun chiffre
+          n'est calculé ici. Absent tant qu'il n'a rien dit, et dans l'APK :
+          la WebView Android ne purge pas le stockage d'une application
+          installée, et « non protégé » y serait une alarme sans objet. */}
+      {stockage && stockage.persistant !== null && !estNatif() ? (
+        <div
+          data-testid="stockage"
+          data-persistant={stockage.persistant ? 'oui' : 'non'}
+          className="flex flex-col gap-1 border-t pt-4"
+          style={{ borderColor: 'var(--line)' }}
+        >
+          <span className="text-[13px]">{ts('storTitle')}</span>
+          <span
+            className="text-[11.5px]"
+            style={{ color: stockage.persistant ? 'var(--mut)' : 'var(--warn)' }}
+          >
+            {ts(stockage.persistant ? 'storProtected' : 'storUnprotected')}
+          </span>
+          {usage ? (
+            <span
+              data-stockage-usage
+              className="font-mono text-[11px]"
+              style={{ color: 'var(--mut)' }}
+            >
+              {ts('storUsage', usage)}
+            </span>
+          ) : null}
+        </div>
       ) : null}
 
       <div className="flex flex-col gap-2 border-t pt-4" style={{ borderColor: 'var(--line)' }}>

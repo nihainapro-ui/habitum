@@ -25,6 +25,22 @@ export const completerJournal = loadLogIndexComplet;
 /** Enregistre l'instantané d'ouverture (tâche 5.10). */
 export const memoriserJournal = memoriserOuverture;
 
+/** Complète en fond un index du journal encore partiel, puis l'enregistre.
+ *
+ *  Trois appelants — l'ouverture, la synchronisation, l'annulation — et une
+ *  seule règle, qui est tout l'intérêt de la mettre ici : CE QUI EST EN
+ *  MÉMOIRE FAIT AUTORITÉ. Une coche posée pendant la relecture ne doit pas
+ *  être écrasée par ce que la base contenait une seconde plus tôt. */
+export async function completerJournalEnFond(
+  set: (p: Pick<DataState, 'logIndex' | 'logIndexComplete'>) => void,
+  get: () => Pick<DataState, 'logIndex'>,
+): Promise<void> {
+  const { index, watermark } = await loadLogIndexComplet();
+  const complet = new Map([...index, ...get().logIndex]);
+  set({ logIndex: complet, logIndexComplete: true });
+  await memoriserOuverture(complet, watermark);
+}
+
 /** Relit tout après une écriture massive (import, restauration,
  *  réinitialisation) et rend le seul état de données.
  *

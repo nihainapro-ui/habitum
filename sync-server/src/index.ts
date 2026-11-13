@@ -1,4 +1,12 @@
-import { accepterLigne, doitRafraichir, ligneValide, seuilExpiration } from './logique';
+import {
+  accepterLigne,
+  doitRafraichir,
+  ligneValide,
+  MAX_CORPS,
+  MAX_ECRITURES,
+  MAX_LIGNES,
+  seuilExpiration,
+} from './logique';
 
 /* Interfaces D1 minimales, déclarées ici plutôt que fournies par
  * `@cloudflare/workers-types` : ce paquet n'est PAS ajouté au dépôt — aucune
@@ -28,12 +36,21 @@ interface D1Database {
  * AUCUN JOURNAL : ni adresse IP, ni horodatage de requête. Un serveur qui ne
  * peut pas lire les données mais garde qui se connecte quand n'est pas aveugle. */
 
+/** Le limiteur de débit de Cloudflare (`[[ratelimits]]` de wrangler.toml).
+ *  Compteurs en mémoire, par emplacement, approximatifs — assez pour arrêter
+ *  ce qui martèle, sans rien écrire nulle part. */
+interface Limiteur {
+  limit(o: { key: string }): Promise<{ success: boolean }>;
+}
+
 interface Env {
   DB: D1Database;
+  /** FACULTATIF : sans lui le Worker fonctionne, sans limite de débit. Un
+   *  déploiement qui oublierait la liaison ne doit pas tomber pour autant. */
+  LIMITE?: Limiteur;
 }
 
 const ESPACE = /^[0-9A-HJKMNP-TV-Z]{32}$/;
-const MAX_LIGNES = 500;
 
 const json = (corps: unknown, statut = 200): Response =>
   new Response(JSON.stringify(corps), {
@@ -111,21 +128,50 @@ export default {
     const espace = url.pathname.split('/')[2] ?? '';
     if (!ESPACE.test(espace)) return json({ erreur: 'espace' }, 400);
 
+    /* LA CLÉ EST L'ESPACE, JAMAIS L'ADRESSE IP. Ce serveur ne regarde pas qui
+       appelle — c'est sa promesse — et la documentation de Cloudflare
+       déconseille d'ailleurs l'adresse, que des milliers de gens partagent
+       derrière un même opérateur mobile. Un limiteur en panne ne doit pas
+       couper le service : son échec vaut un oui. */
+    if (env.LIMITE) {
+      const feu = await env.LIMITE.limit({ key: espace }).catch(() => ({ success: true }));
+      if (!feu.success) return json({ erreur: 'limite' }, 429);
+    }
+
     if (req.method === 'GET') {
       await marquer(env, espace, Date.now());
       const depuis = Number(url.searchParams.get('depuis') ?? 0) || 0;
-      const { results } = await env.DB.prepare(
+      /* UNE LIGNE DE PLUS QUE LA PAGE : c'est elle qui dit s'il en reste. Sans
+         elle, une page exactement pleine obligerait le client à revenir pour
+         une page vide — ou, pire, à supposer qu'il n'y a plus rien. */
+      const { results: lues } = await env.DB.prepare(
         'SELECT kind, id, updated_at, seq, blob FROM lignes WHERE espace = ? AND seq > ? ORDER BY seq LIMIT ?',
       )
-        .bind(espace, depuis, MAX_LIGNES)
+        .bind(espace, depuis, MAX_LIGNES + 1)
         .all<{ kind: string; id: string; updated_at: string; seq: number; blob: string }>();
+      const encore = lues.length > MAX_LIGNES;
+      const results = encore ? lues.slice(0, MAX_LIGNES) : lues;
+
+      /* PAGE VIDE : on rend aussi la TÊTE de l'espace. Un client dont le
+         curseur la dépasse comprend que l'espace a été vidé — effacé ailleurs,
+         ou purgé — et repart de zéro. Sans elle, il attendrait sans fin des
+         numéros que l'espace, reparti de 1, mettra des mois à atteindre. */
+      if (!results.length) {
+        const tete = await env.DB.prepare(
+          'SELECT COALESCE(MAX(seq), 0) AS seq FROM lignes WHERE espace = ?',
+        )
+          .bind(espace)
+          .first<{ seq: number }>();
+        return json({ seq: depuis, lignes: [], encore: false, tete: tete?.seq ?? 0 });
+      }
 
       /* Le curseur rendu est le `seq` de la DERNIÈRE ligne servie, pas le
          plus grand `seq` de l'espace : avec la limite, il reste peut-être
          des lignes, et le client doit revenir les chercher. */
-      const seq = results.length ? results[results.length - 1]!.seq : depuis;
+      const seq = results[results.length - 1]!.seq;
       return json({
         seq,
+        encore,
         lignes: results.map((r) => ({
           kind: r.kind,
           id: r.id,
@@ -140,18 +186,37 @@ export default {
          de `fetch` et la réponse d'erreur du runtime n'a pas les en-têtes
          CORS posés par `json()` — le navigateur ne voit alors qu'une erreur
          opaque, jamais un 400 lisible. */
+      /* LA TAILLE SE JUGE AVANT L'ANALYSE. L'en-tête d'abord — il évite de
+         lire un corps qu'on va refuser —, le texte ensuite, parce qu'un
+         en-tête se ment ou s'omet. */
+      if (Number(req.headers.get('content-length') ?? 0) > MAX_CORPS) {
+        return json({ erreur: 'trop gros' }, 413);
+      }
       let corps: { lignes?: unknown };
       try {
-        corps = (await req.json()) as { lignes?: unknown };
+        const texte = await req.text();
+        if (texte.length > MAX_CORPS) return json({ erreur: 'trop gros' }, 413);
+        corps = JSON.parse(texte) as { lignes?: unknown };
       } catch {
         return json({ erreur: 'corps' }, 400);
       }
+      if (typeof corps !== 'object' || corps === null) return json({ erreur: 'corps' }, 400);
 
       const lignes = Array.isArray(corps.lignes) ? corps.lignes : [];
       if (lignes.length > MAX_LIGNES) return json({ erreur: 'trop de lignes' }, 413);
 
       try {
         await marquer(env, espace, Date.now());
+
+        /* L'espace a-t-il épuisé ses écritures ? `seq` en est le compte ; le
+           relire coûte une ligne d'index. 507 — « plus de place » — et non
+           429 : attendre n'y changera rien. */
+        const compte = await env.DB.prepare(
+          'SELECT COALESCE(MAX(seq), 0) AS seq FROM lignes WHERE espace = ?',
+        )
+          .bind(espace)
+          .first<{ seq: number }>();
+        if ((compte?.seq ?? 0) >= MAX_ECRITURES) return json({ erreur: 'plein' }, 507);
 
         /* `seq` attribué à la DERNIÈRE ligne acceptée pendant cette requête —
            c'est ce que la réponse rend. Reste `undefined` si aucune ligne
@@ -209,12 +274,7 @@ export default {
         /* Aucune ligne acceptée : rendre le maximum courant SANS rien
            écrire. `depuis` reste la référence du client tant qu'il n'y a
            rien de neuf pour son espace. */
-        const actuel = await env.DB.prepare(
-          'SELECT COALESCE(MAX(seq), 0) AS seq FROM lignes WHERE espace = ?',
-        )
-          .bind(espace)
-          .first<{ seq: number }>();
-        return json({ seq: actuel?.seq ?? 0 });
+        return json({ seq: compte?.seq ?? 0 });
       } catch {
         /* Une erreur D1 inattendue ne doit pas sortir de `fetch` non plus,
            pour la même raison que le `.json()` ci-dessus : sans ce filet, la
