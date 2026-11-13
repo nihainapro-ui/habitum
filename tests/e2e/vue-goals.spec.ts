@@ -62,6 +62,30 @@ test.describe('goals', () => {
     await expect(carte.getByTestId('pace')).toHaveCount(0);
   });
 
+  /* Arbitrage n° 5 du 18 septembre 2026 : le prototype le faisait, le portage
+     l'avait perdu. Éprouvé ici sur les DEUX formes — le geste est le même. */
+  test('un jalon se coche sur la carte, et l’avancement suit', async ({ page }) => {
+    await ouvrirAvecDemo(page, ROUTE, { historique: true });
+
+    const carte = page.getByRole('article', { name: 'Lancer le club de lecture' });
+    const jalon = carte.getByRole('checkbox', { name: 'Jalon : Inviter 10 personnes' });
+    await expect(jalon).not.toBeChecked();
+
+    await jalon.click();
+    await expect(jalon).toBeChecked();
+    await expect(carte.getByTestId('progress')).toHaveText('3 / 5');
+    await expect(carte.getByTestId('percent')).toHaveText('60 %');
+
+    /* Écrit, pas seulement affiché : le rechargement est le seul juge. */
+    await page.reload();
+    await expect(page.locator('[data-hydrated="true"]')).toBeAttached();
+    await expect(
+      page
+        .getByRole('article', { name: 'Lancer le club de lecture' })
+        .getByRole('checkbox', { name: 'Jalon : Inviter 10 personnes' }),
+    ).toBeChecked();
+  });
+
   test('la courbe d’avancement est tracée', async ({ page }) => {
     await ouvrirAvecDemo(page, ROUTE, { historique: true });
     await expect(page.getByRole('img', { name: /Courbe d’avancement/ }).first()).toBeVisible();

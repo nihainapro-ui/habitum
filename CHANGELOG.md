@@ -1,5 +1,37 @@
 # Journal des modifications
 
+## 2026-11-13 — Refonte mobile P3, lot 2 : Objectifs et Statistiques
+
+Suite de la refonte sous 768 px (`docs/handoff/10-ECARTS-P3-MOBILE.md`). Le
+bureau ne bouge pas, à un geste près.
+
+**Les jalons d'un objectif se cochent** — sur téléphone comme sur bureau. Le
+prototype le faisait ; le portage n'en avait gardé que l'affichage : un
+objectif à jalons montrait « 2 / 5 » sans qu'aucun geste permette d'en faire
+3. Un appui sur le jalon le bascule, l'avancement suit, et le geste s'annule
+par le toast.
+
+**Objectifs, sur téléphone.** Deux segments, « En cours » et « Atteints », avec
+leurs compteurs ; un objectif y passe de lui-même quand il atteint 100 %. Une
+carte par objectif : avancement, barre unie avec un repère qui dit où en est le
+temps — écrit en toutes lettres, et absent si l'objectif n'a pas de début ou
+d'échéance —, verdict, jours restants, rythme requis, habitude source, courbe.
+Les jalons tiennent sur des lignes de 44 px, trois d'abord, les autres derrière
+« + n ». L'appui sur le nom ouvre Modifier / Supprimer. Le « + » de l'en-tête
+crée désormais un objectif : il ouvrait une feuille de choix qui ne le
+proposait pas.
+
+**Statistiques, sur téléphone.** La période se choisit sur quatre segments
+pleine largeur. Les quatre indicateurs sont des liens vers l'écran qui les
+explique. Chaque barre du mois est un bouton : le jour touché s'écrit dessous
+(« lundi 3 août : 4 sur 4 ») — sur un téléphone, la valeur n'était lisible
+qu'au survol, donc jamais. Le tableau « Par habitude » devient une liste, taux
+et barre, puis série, record et cumul en clair. Carte de chaleur, répartition
+par catégorie et temps de focus sont conservés.
+
+Rien de ce que le PDF dessinait sans donnée derrière n'est affiché : ni
+variation « +6 pts », ni porteur du record, ni « léger retard ».
+
 ## 2026-11-12 — Phase 1 : fiabilité des données
 
 Deuxième lot du plan d'audit. Cinq chantiers, un seul sujet : ce que

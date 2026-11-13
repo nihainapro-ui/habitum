@@ -165,6 +165,8 @@ export interface GoalsActions {
   createGoal(input: CreateInput<Goal>): Promise<void>;
   updateGoal(id: string, patch: UpdatePatch<Goal>): Promise<void>;
   deleteGoal(id: string): Promise<void>;
+  /** Coche ou décoche le jalon à cette position — annulable. */
+  toggleMilestone(id: string, index: number): Promise<void>;
 }
 
 export interface NotesActions {

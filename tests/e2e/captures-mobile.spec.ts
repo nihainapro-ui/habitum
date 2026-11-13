@@ -162,3 +162,22 @@ test('capture sélecteur de jour', async ({ page }) => {
   await page.waitForTimeout(400);
   await page.screenshot({ path: `${DOSSIER}/08-feuille-date.png` });
 });
+
+/* --- P3, lot 2 : Objectifs et Statistiques */
+
+test('capture objectifs', async ({ page }) => {
+  await page.setViewportSize(TELEPHONE);
+  await ouvrirAvecDemo(page, '/app/goals', { historique: true });
+  await page.waitForTimeout(400);
+  await page.screenshot({ path: `${DOSSIER}/11-goals.png` });
+  await page.screenshot({ path: `${DOSSIER}/11b-goals-entier.png`, fullPage: true });
+});
+
+test('capture statistiques', async ({ page }) => {
+  await page.setViewportSize(TELEPHONE);
+  await ouvrirAvecDemo(page, '/app/stats', { historique: true });
+  await page.waitForTimeout(400);
+  await page.locator('[data-mois] button').nth(2).click();
+  await page.screenshot({ path: `${DOSSIER}/12-stats.png` });
+  await page.screenshot({ path: `${DOSSIER}/12b-stats-entier.png`, fullPage: true });
+});
